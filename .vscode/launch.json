@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:autosuggest}",
+            "name": "Debug AutoSuggestApp",
+            "target": "AutoSuggestApp",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug AutoSuggestApp"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:autosuggest}",
+            "name": "Release AutoSuggestApp",
+            "target": "AutoSuggestApp",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release AutoSuggestApp"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:autosuggest}",
+            "name": "Debug AutoSuggestRunner",
+            "target": "AutoSuggestRunner",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug AutoSuggestRunner"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:autosuggest}",
+            "name": "Release AutoSuggestRunner",
+            "target": "AutoSuggestRunner",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release AutoSuggestRunner"
+        }
+    ]
+}

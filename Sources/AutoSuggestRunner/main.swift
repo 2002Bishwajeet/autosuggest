@@ -1,0 +1,3 @@
+import AutoSuggestApp
+
+AutoSuggestMenuBarApp.run()
