@@ -6,7 +6,11 @@ struct InferenceRuntimeFactory {
     let personalizationEngine: PersonalizationEngine
     let coreMLModelAdapter: CoreMLModelAdapter
 
-    func makeRuntimes(config: LocalModelConfig) -> [InferenceRuntime] {
+    func makeRuntimes(
+        config: LocalModelConfig,
+        onlineLLMConfig: OnlineLLMConfig? = nil,
+        onlineAPIKey: String? = nil
+    ) -> [InferenceRuntime] {
         let order = config.runtimeOrder.isEmpty ? ["coreml", "ollama", "llama.cpp"] : config.runtimeOrder
         var runtimes: [InferenceRuntime] = []
         let logger = Logger(scope: "InferenceRuntimeFactory")
@@ -47,6 +51,22 @@ struct InferenceRuntimeFactory {
                 }
             default:
                 continue
+            }
+        }
+
+        // Add online LLM runtime if enabled and API key is present
+        if let onlineLLMConfig, onlineLLMConfig.enabled, let apiKey = onlineAPIKey, !apiKey.isEmpty {
+            let onlineRuntime = OnlineLLMInferenceRuntime(
+                provider: onlineLLMConfig.byok.provider,
+                model: onlineLLMConfig.byok.selectedModel,
+                endpointURL: onlineLLMConfig.byok.endpointURL,
+                apiKey: apiKey
+            )
+            switch onlineLLMConfig.byok.priority {
+            case .primary:
+                runtimes.insert(onlineRuntime, at: 0)
+            case .fallback:
+                runtimes.append(onlineRuntime)
             }
         }
 

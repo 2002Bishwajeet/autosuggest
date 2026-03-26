@@ -747,6 +747,98 @@ private struct KeycapView: View {
     }
 }
 
+struct OllamaDetectionView: View {
+    @State private var status: OllamaStatus = .checking
+
+    enum OllamaStatus {
+        case checking
+        case notInstalled
+        case installedNotRunning
+        case running
+    }
+
+    var body: some View {
+        SettingsCard {
+            HStack(spacing: 12) {
+                switch status {
+                case .checking:
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Checking Ollama status...")
+                        .foregroundStyle(.secondary)
+                case .notInstalled:
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.red)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Ollama not installed")
+                            .font(.headline)
+                        Text("Install with: brew install ollama")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                case .installedNotRunning:
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Ollama installed but not running")
+                            .font(.headline)
+                        Text("Start with: ollama serve")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                case .running:
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Ollama is running")
+                            .font(.headline)
+                        Text("Ready to use for suggestions.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Button("Recheck") {
+                    detectOllama()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .onAppear {
+            detectOllama()
+        }
+    }
+
+    private func detectOllama() {
+        status = .checking
+
+        // Check if ollama binary exists
+        let searchPaths = [
+            "/opt/homebrew/bin/ollama",
+            "/usr/local/bin/ollama",
+            "/usr/bin/ollama",
+        ]
+        let installed = searchPaths.contains { FileManager.default.fileExists(atPath: $0) }
+        guard installed else {
+            status = .notInstalled
+            return
+        }
+
+        // Check if ollama process is running
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        process.arguments = ["-x", "ollama"]
+        do {
+            try process.run()
+            process.waitUntilExit()
+            status = process.terminationStatus == 0 ? .running : .installedNotRunning
+        } catch {
+            status = .installedNotRunning
+        }
+    }
+}
+
 private extension OnboardingModelChoice {
     var displayTitle: String {
         switch self {

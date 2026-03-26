@@ -1,0 +1,23 @@
+# AutoSuggest Fine-Tuning Dependencies (Apple Silicon / MLX)
+# Install: pip install -r requirements-mlx.txt
+# Requires: macOS 14+ and Apple Silicon (M1/M2/M3/M4)
+
+# MLX — Apple's ML framework for Apple Silicon
+mlx>=0.21.0
+mlx-lm>=0.20.0
+
+# Tokenizers & model loading
+transformers>=4.46.0
+sentencepiece>=0.2.0
+protobuf>=5.28.0
+
+# Data handling
+datasets>=3.0.0
+
+# Model hub
+huggingface_hub>=0.26.0
+safetensors>=0.4.0
+
+# Optional: GGUF conversion (for Ollama import)
+# Uncomment if you want automatic GGUF export:
+# llama-cpp-python>=0.3.0

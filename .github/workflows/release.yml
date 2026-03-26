@@ -1,0 +1,64 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: macos
+        run: xcodegen generate
+
+      - name: Build app
+        working-directory: macos
+        run: |
+          xcodebuild build \
+            -project AutoSuggestDesktop.xcodeproj \
+            -scheme AutoSuggestDesktop \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Locate .app
+        id: locate
+        working-directory: macos
+        run: |
+          APP_PATH=$(find build -name "AutoSuggest.app" -type d | head -1)
+          echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Create DMG
+        run: |
+          mkdir -p dmg_stage
+          cp -R "macos/${{ steps.locate.outputs.app_path }}" dmg_stage/
+          hdiutil create -volname "AutoSuggest" \
+            -srcfolder dmg_stage \
+            -ov -format UDZO \
+            AutoSuggest.dmg
+
+      - name: Create ZIP
+        run: |
+          cd "macos/$(dirname "${{ steps.locate.outputs.app_path }}")"
+          zip -r "$GITHUB_WORKSPACE/AutoSuggest.zip" "AutoSuggest.app"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            AutoSuggest.dmg
+            AutoSuggest.zip

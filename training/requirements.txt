@@ -1,0 +1,27 @@
+# AutoSuggest Fine-Tuning Dependencies (CUDA / Colab)
+# Install: pip install -r requirements.txt
+
+# Unsloth — 2-5x faster LoRA training
+unsloth[colab-new]>=2024.12
+# Pin unsloth extras for Colab compatibility
+xformers>=0.0.28
+
+# Core training stack
+torch>=2.4.0
+transformers>=4.46.0
+datasets>=3.0.0
+trl>=0.12.0
+peft>=0.13.0
+accelerate>=1.0.0
+bitsandbytes>=0.44.0
+
+# Tokenizers
+sentencepiece>=0.2.0
+protobuf>=5.28.0
+
+# GGUF export
+gguf>=0.10.0
+
+# Utilities
+huggingface_hub>=0.26.0
+safetensors>=0.4.0

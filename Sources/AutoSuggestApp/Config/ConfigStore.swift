@@ -85,6 +85,12 @@ actor ConfigStore {
         persist(config)
     }
 
+    func updateOnlineLLM(_ onlineLLM: OnlineLLMConfig) {
+        var config = loadOrCreateDefault()
+        config.onlineLLM = onlineLLM
+        persist(config)
+    }
+
     func updateFullConfig(_ config: AppConfig) {
         persist(config)
     }

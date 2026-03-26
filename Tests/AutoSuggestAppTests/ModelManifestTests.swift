@@ -65,10 +65,11 @@ final class ModelManifestTests: XCTestCase {
     func testBYOKConfigDefaultValues() {
         let config = BYOKConfig.default
 
-        XCTAssertEqual(config.selectedProvider, "openai-compatible")
+        XCTAssertEqual(config.provider, .openAICompatible)
         XCTAssertEqual(config.selectedModel, "gpt-4o-mini")
         XCTAssertNil(config.endpointURL)
         XCTAssertEqual(config.apiKeyKeychainAccount, "autosuggest.online.byok.default")
+        XCTAssertEqual(config.priority, .fallback)
     }
 
     // MARK: - HuggingFaceFolderSource Codable

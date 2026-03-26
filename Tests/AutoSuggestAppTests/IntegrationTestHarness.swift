@@ -194,6 +194,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
             telemetryManager: telemetryManager,
             personalizationEngine: personalizationEngine,
             accessibilityAnnouncer: accessibilityAnnouncer,
+            trainingDataExporter: TrainingDataExporter(enabled: false),
             batteryMode: .alwaysOn
         )
 
@@ -256,6 +257,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
             telemetryManager: TelemetryManager(enabled: false),
             personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
             accessibilityAnnouncer: AccessibilityAnnouncer(),
+            trainingDataExporter: TrainingDataExporter(enabled: false),
             batteryMode: .alwaysOn
         )
 
@@ -310,6 +312,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
             telemetryManager: TelemetryManager(enabled: false),
             personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
             accessibilityAnnouncer: AccessibilityAnnouncer(),
+            trainingDataExporter: TrainingDataExporter(enabled: false),
             batteryMode: .alwaysOn
         )
 
@@ -357,6 +360,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
             telemetryManager: TelemetryManager(enabled: false),
             personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
             accessibilityAnnouncer: AccessibilityAnnouncer(),
+            trainingDataExporter: TrainingDataExporter(enabled: false),
             batteryMode: .alwaysOn
         )
 
@@ -402,6 +406,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
             telemetryManager: TelemetryManager(enabled: false),
             personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
             accessibilityAnnouncer: AccessibilityAnnouncer(),
+            trainingDataExporter: TrainingDataExporter(enabled: false),
             batteryMode: .alwaysOn
         )
 
@@ -444,6 +449,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
             telemetryManager: TelemetryManager(enabled: false),
             personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
             accessibilityAnnouncer: AccessibilityAnnouncer(),
+            trainingDataExporter: TrainingDataExporter(enabled: false),
             batteryMode: .alwaysOn
         )
 
@@ -485,6 +491,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
             telemetryManager: TelemetryManager(enabled: false),
             personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
             accessibilityAnnouncer: AccessibilityAnnouncer(),
+            trainingDataExporter: TrainingDataExporter(enabled: false),
             batteryMode: .alwaysOn
         )
 

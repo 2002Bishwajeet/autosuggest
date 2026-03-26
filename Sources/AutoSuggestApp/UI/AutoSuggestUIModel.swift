@@ -7,6 +7,7 @@ enum SettingsRoute: String, CaseIterable, Identifiable {
     case permissionsPrivacy
     case exclusions
     case accessibility
+    case onlineLLM
     case diagnostics
 
     var id: String { rawValue }
@@ -17,6 +18,8 @@ enum SettingsRoute: String, CaseIterable, Identifiable {
             return "General"
         case .models:
             return "Models"
+        case .onlineLLM:
+            return "Online LLM"
         case .permissionsPrivacy:
             return "Permissions & Privacy"
         case .exclusions:
@@ -34,6 +37,8 @@ enum SettingsRoute: String, CaseIterable, Identifiable {
             return "switch.2"
         case .models:
             return "cpu"
+        case .onlineLLM:
+            return "cloud"
         case .permissionsPrivacy:
             return "hand.raised"
         case .exclusions:
@@ -319,6 +324,15 @@ final class AutoSuggestUIModel: ObservableObject {
     var onDeleteExclusionRule: ((ExclusionRule) -> Void)?
     var onApplyExclusionPreset: ((String) -> Void)?
     var onPreviewAnnouncement: (() -> Void)?
+    var onUpdateOnlineLLMEnabled: ((Bool) -> Void)?
+    var onUpdateOnlineLLMProvider: ((OnlineLLMProvider) -> Void)?
+    var onUpdateOnlineLLMModel: ((String) -> Void)?
+    var onUpdateOnlineLLMEndpoint: ((String) -> Void)?
+    var onUpdateOnlineLLMPriority: ((OnlineLLMPriority) -> Void)?
+    var onUpdateOnlineLLMAPIKey: ((String) -> Void)?
+    var onUpdateTrainingDataCollection: ((Bool) -> Void)?
+    var onExportTrainingData: (() -> Void)?
+    var onClearTrainingData: (() -> Void)?
     var onQuitApp: (() -> Void)?
 
     init(config: AppConfig) {

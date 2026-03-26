@@ -140,6 +140,6 @@ final class AppConfigTests: XCTestCase {
     func testBYOKConfigDefault() {
         let byok = BYOKConfig.default
 
-        XCTAssertEqual(byok.selectedProvider, "openai-compatible")
+        XCTAssertEqual(byok.provider, .openAICompatible)
     }
 }

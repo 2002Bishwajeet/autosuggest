@@ -9,8 +9,19 @@ struct ConfigMigrationManager {
         if version < 1 {
             migrateV0toV1(&config)
         }
+        if version < 2 {
+            migrateV1toV2(&config)
+        }
 
         config.configVersion = AppConfig.currentConfigVersion
+    }
+
+    private func migrateV1toV2(_ config: inout AppConfig) {
+        // V1 had rolloutStage "post-mvp". V2 marks online LLM as "available".
+        if config.onlineLLM.rolloutStage == "post-mvp" {
+            config.onlineLLM.rolloutStage = "available"
+            logger.info("Migrated config v1->v2: online LLM rollout stage set to 'available'.")
+        }
     }
 
     private func migrateV0toV1(_ config: inout AppConfig) {
@@ -26,7 +37,7 @@ struct ConfigMigrationManager {
 }
 
 struct ConfigValidator {
-    private static let knownRuntimes: Set<String> = ["coreml", "ollama", "llama.cpp"]
+    private static let knownRuntimes: Set<String> = ["coreml", "ollama", "llama.cpp", "online"]
     private let logger = Logger(scope: "ConfigValidator")
 
     func validate(_ config: inout AppConfig) {

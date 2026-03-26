@@ -1,7 +1,7 @@
 import Foundation
 
 struct AppConfig: Codable {
-    static let currentConfigVersion = 1
+    static let currentConfigVersion = 2
 
     var configVersion: Int
     var enabled: Bool
@@ -66,7 +66,8 @@ struct AppConfig: Codable {
             ?? PrivacyConfig(
                 encryptedStorageEnabled: true,
                 piiFilteringEnabled: true,
-                trainingAllowlistBundleIDs: []
+                trainingAllowlistBundleIDs: [],
+                trainingDataCollectionEnabled: false
             )
         telemetry = try container.decodeIfPresent(TelemetryConfig.self, forKey: .telemetry)
             ?? TelemetryConfig(enabled: false, localStoreOnly: true)
@@ -249,19 +250,116 @@ struct OnlineLLMConfig: Codable {
     }
 }
 
+enum OnlineLLMProvider: String, Codable, CaseIterable, Identifiable, Hashable {
+    case openAICompatible = "openai-compatible"
+    case anthropic = "anthropic"
+    case openRouter = "openrouter"
+    case custom = "custom"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .openAICompatible: return "OpenAI-Compatible"
+        case .anthropic: return "Anthropic"
+        case .openRouter: return "OpenRouter"
+        case .custom: return "Custom Endpoint"
+        }
+    }
+
+    var defaultEndpoint: String {
+        switch self {
+        case .openAICompatible: return "https://api.openai.com"
+        case .anthropic: return "https://api.anthropic.com"
+        case .openRouter: return "https://openrouter.ai/api"
+        case .custom: return ""
+        }
+    }
+
+    var defaultModel: String {
+        switch self {
+        case .openAICompatible: return "gpt-4o-mini"
+        case .anthropic: return "claude-3-haiku-20240307"
+        case .openRouter: return "openai/gpt-4o-mini"
+        case .custom: return "default"
+        }
+    }
+
+    var requiresEndpointField: Bool {
+        self == .custom
+    }
+}
+
+enum OnlineLLMPriority: String, Codable, Hashable {
+    case primary
+    case fallback
+}
+
 struct BYOKConfig: Codable {
-    var selectedProvider: String
+    var provider: OnlineLLMProvider
     var selectedModel: String
     var endpointURL: String?
     var apiKeyKeychainAccount: String
+    var priority: OnlineLLMPriority
+
+    private enum CodingKeys: String, CodingKey {
+        case provider
+        case selectedProvider
+        case selectedModel
+        case endpointURL
+        case apiKeyKeychainAccount
+        case priority
+    }
+
+    init(
+        provider: OnlineLLMProvider,
+        selectedModel: String,
+        endpointURL: String?,
+        apiKeyKeychainAccount: String,
+        priority: OnlineLLMPriority = .fallback
+    ) {
+        self.provider = provider
+        self.selectedModel = selectedModel
+        self.endpointURL = endpointURL
+        self.apiKeyKeychainAccount = apiKeyKeychainAccount
+        self.priority = priority
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Support legacy "selectedProvider" string
+        if let providerEnum = try container.decodeIfPresent(OnlineLLMProvider.self, forKey: .provider) {
+            provider = providerEnum
+        } else if let legacyString = try container.decodeIfPresent(String.self, forKey: .selectedProvider) {
+            provider = OnlineLLMProvider(rawValue: legacyString) ?? .openAICompatible
+        } else {
+            provider = .openAICompatible
+        }
+
+        selectedModel = try container.decodeIfPresent(String.self, forKey: .selectedModel) ?? provider.defaultModel
+        endpointURL = try container.decodeIfPresent(String.self, forKey: .endpointURL)
+        apiKeyKeychainAccount = try container.decodeIfPresent(String.self, forKey: .apiKeyKeychainAccount) ?? "autosuggest.online.byok.default"
+        priority = try container.decodeIfPresent(OnlineLLMPriority.self, forKey: .priority) ?? .fallback
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(provider, forKey: .provider)
+        try container.encode(selectedModel, forKey: .selectedModel)
+        try container.encodeIfPresent(endpointURL, forKey: .endpointURL)
+        try container.encode(apiKeyKeychainAccount, forKey: .apiKeyKeychainAccount)
+        try container.encode(priority, forKey: .priority)
+    }
 }
 
 extension BYOKConfig {
     static let `default` = BYOKConfig(
-        selectedProvider: "openai-compatible",
+        provider: .openAICompatible,
         selectedModel: "gpt-4o-mini",
         endpointURL: nil,
-        apiKeyKeychainAccount: "autosuggest.online.byok.default"
+        apiKeyKeychainAccount: "autosuggest.online.byok.default",
+        priority: .fallback
     )
 }
 
@@ -269,6 +367,34 @@ struct PrivacyConfig: Codable {
     var encryptedStorageEnabled: Bool
     var piiFilteringEnabled: Bool
     var trainingAllowlistBundleIDs: [String]
+    var trainingDataCollectionEnabled: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case encryptedStorageEnabled
+        case piiFilteringEnabled
+        case trainingAllowlistBundleIDs
+        case trainingDataCollectionEnabled
+    }
+
+    init(
+        encryptedStorageEnabled: Bool,
+        piiFilteringEnabled: Bool,
+        trainingAllowlistBundleIDs: [String],
+        trainingDataCollectionEnabled: Bool = false
+    ) {
+        self.encryptedStorageEnabled = encryptedStorageEnabled
+        self.piiFilteringEnabled = piiFilteringEnabled
+        self.trainingAllowlistBundleIDs = trainingAllowlistBundleIDs
+        self.trainingDataCollectionEnabled = trainingDataCollectionEnabled
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        encryptedStorageEnabled = try container.decode(Bool.self, forKey: .encryptedStorageEnabled)
+        piiFilteringEnabled = try container.decode(Bool.self, forKey: .piiFilteringEnabled)
+        trainingAllowlistBundleIDs = try container.decode([String].self, forKey: .trainingAllowlistBundleIDs)
+        trainingDataCollectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .trainingDataCollectionEnabled) ?? false
+    }
 }
 
 struct TelemetryConfig: Codable {
@@ -335,13 +461,14 @@ extension AppConfig {
         ),
         onlineLLM: OnlineLLMConfig(
             enabled: false,
-            rolloutStage: "post-mvp",
+            rolloutStage: "available",
             byok: .default
         ),
         privacy: PrivacyConfig(
             encryptedStorageEnabled: true,
             piiFilteringEnabled: true,
-            trainingAllowlistBundleIDs: []
+            trainingAllowlistBundleIDs: [],
+            trainingDataCollectionEnabled: false
         ),
         telemetry: TelemetryConfig(
             enabled: false,

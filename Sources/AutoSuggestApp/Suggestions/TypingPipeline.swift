@@ -13,6 +13,7 @@ final class TypingPipeline {
     private let telemetryManager: TelemetryManager
     private let personalizationEngine: PersonalizationEngine
     private let accessibilityAnnouncer: AccessibilityAnnouncer
+    private let trainingDataExporter: TrainingDataExporter
     private let inputMethodMonitor = InputMethodMonitor()
     private let batteryMonitor = BatteryMonitor()
     private let batteryMode: BatteryMode
@@ -31,6 +32,7 @@ final class TypingPipeline {
         telemetryManager: TelemetryManager,
         personalizationEngine: PersonalizationEngine,
         accessibilityAnnouncer: AccessibilityAnnouncer,
+        trainingDataExporter: TrainingDataExporter,
         batteryMode: BatteryMode
     ) {
         self.inputMonitor = inputMonitor
@@ -43,6 +45,7 @@ final class TypingPipeline {
         self.telemetryManager = telemetryManager
         self.personalizationEngine = personalizationEngine
         self.accessibilityAnnouncer = accessibilityAnnouncer
+        self.trainingDataExporter = trainingDataExporter
         self.batteryMode = batteryMode
 
         suggestionOrchestrator.onSuggestion = { [weak self] candidate in
@@ -157,12 +160,18 @@ final class TypingPipeline {
                     await telemetryManager.record(event: "insertion_failed", payload: [:])
                 }
             } else {
+                let completionText = activeSuggestion.completion
+                let sourceContext = activeSuggestion.sourceContext
                 Task {
                     await metricsCollector.recordSuggestionAccepted()
-                    await personalizationEngine.recordAcceptedSuggestion(activeSuggestion.completion)
+                    await personalizationEngine.recordAcceptedSuggestion(completionText)
                     await telemetryManager.record(
                         event: "suggestion_accepted",
-                        payload: ["completion": activeSuggestion.completion]
+                        payload: ["completion": completionText]
+                    )
+                    await trainingDataExporter.recordTrainingPair(
+                        prompt: sourceContext,
+                        completion: completionText
                     )
                 }
             }

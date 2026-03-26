@@ -55,6 +55,7 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
         guard let url = URL(string: "\(baseURL)/completion") else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(
             LlamaCppCompletionRequest(
@@ -65,7 +66,13 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
             )
         )
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
+            throw InferenceError.runtimeUnavailable("llama-server is not running")
+        }
         guard let http = response as? HTTPURLResponse else { return nil }
         guard (200..<300).contains(http.statusCode) else { return nil }
         let decoded = try JSONDecoder().decode(LlamaCppCompletionResponse.self, from: data)
@@ -78,6 +85,7 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
         guard let url = URL(string: "\(baseURL)/v1/completions") else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(
             OpenAICompatRequest(

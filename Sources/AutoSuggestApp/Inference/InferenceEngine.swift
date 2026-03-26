@@ -1,12 +1,21 @@
 import Foundation
 
 @MainActor
-struct InferenceEngine {
+final class InferenceEngine {
     private let runtimes: [InferenceRuntime]
     private let logger = Logger(scope: "InferenceEngine")
+    private(set) var lastRuntimeErrors: [String: Error] = [:]
 
     init(runtimes: [InferenceRuntime]) {
         self.runtimes = runtimes
+    }
+
+    var runtimeNames: [String] {
+        runtimes.map(\.name)
+    }
+
+    var availableRuntimeNames: [String] {
+        runtimes.filter { $0.isAvailable() }.map(\.name)
     }
 
     func suggest(for context: String) async throws -> Suggestion {
@@ -14,6 +23,7 @@ struct InferenceEngine {
             throw InferenceError.runtimeUnavailable("No runtime configured")
         }
 
+        lastRuntimeErrors = [:]
         var lastError: Error?
         for runtime in runtimes {
             guard runtime.isAvailable() else { continue }
@@ -24,6 +34,7 @@ struct InferenceEngine {
                 }
             } catch {
                 lastError = error
+                lastRuntimeErrors[runtime.name] = error
                 logger.warn("Runtime \(runtime.name) failed: \(error.localizedDescription)")
             }
         }

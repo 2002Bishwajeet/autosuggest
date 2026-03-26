@@ -39,6 +39,7 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 10
         request.httpBody = try JSONEncoder().encode(
             OllamaGenerateRequest(
                 model: model,
@@ -48,7 +49,13 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
             )
         )
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
+            throw InferenceError.runtimeUnavailable("Ollama is not running. Start it with: ollama serve")
+        }
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }

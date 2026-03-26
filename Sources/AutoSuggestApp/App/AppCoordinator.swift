@@ -25,6 +25,7 @@ final class AppCoordinator {
         personalizationEngine: personalizationEngine,
         coreMLModelAdapter: coreMLModelAdapter
     )
+    private var trainingDataExporter = TrainingDataExporter(enabled: false)
 
     private var telemetryManager = TelemetryManager(enabled: false)
     private var currentConfig: AppConfig?
@@ -43,6 +44,7 @@ final class AppCoordinator {
         let config = await configStore.loadOrCreateDefault()
         currentConfig = config
         telemetryManager = TelemetryManager(enabled: config.telemetry.enabled)
+        trainingDataExporter = TrainingDataExporter(enabled: config.privacy.trainingDataCollectionEnabled)
 
         let uiModel = AutoSuggestUIModel(config: config)
         self.uiModel = uiModel
@@ -160,6 +162,33 @@ final class AppCoordinator {
         uiModel.onPreviewAnnouncement = { [weak self] in
             self?.accessibilityAnnouncer.announceSuggestion("AutoSuggest preview")
         }
+        uiModel.onUpdateOnlineLLMEnabled = { [weak self] enabled in
+            self?.updateOnlineLLMEnabled(enabled)
+        }
+        uiModel.onUpdateOnlineLLMProvider = { [weak self] provider in
+            self?.updateOnlineLLMProvider(provider)
+        }
+        uiModel.onUpdateOnlineLLMModel = { [weak self] model in
+            self?.updateOnlineLLMModel(model)
+        }
+        uiModel.onUpdateOnlineLLMEndpoint = { [weak self] endpoint in
+            self?.updateOnlineLLMEndpoint(endpoint)
+        }
+        uiModel.onUpdateOnlineLLMPriority = { [weak self] priority in
+            self?.updateOnlineLLMPriority(priority)
+        }
+        uiModel.onUpdateOnlineLLMAPIKey = { [weak self] key in
+            self?.updateOnlineLLMAPIKey(key)
+        }
+        uiModel.onUpdateTrainingDataCollection = { [weak self] enabled in
+            self?.updateTrainingDataCollection(enabled)
+        }
+        uiModel.onExportTrainingData = { [weak self] in
+            self?.exportTrainingData()
+        }
+        uiModel.onClearTrainingData = { [weak self] in
+            self?.clearTrainingData()
+        }
         uiModel.onQuitApp = {
             NSApp.terminate(nil)
         }
@@ -191,8 +220,18 @@ final class AppCoordinator {
             defaults: .default,
             userRules: config.exclusions.userRules
         )
+        // Resolve online API key if online LLM is enabled
+        var onlineAPIKey: String?
+        if config.onlineLLM.enabled {
+            onlineAPIKey = try? secretStore.read(account: config.onlineLLM.byok.apiKeyKeychainAccount)
+        }
+
         inferenceEngine = InferenceEngine(
-            runtimes: runtimeFactory.makeRuntimes(config: config.localModel)
+            runtimes: runtimeFactory.makeRuntimes(
+                config: config.localModel,
+                onlineLLMConfig: config.onlineLLM,
+                onlineAPIKey: onlineAPIKey
+            )
         )
 
         if let policyEngine, let inferenceEngine {
@@ -216,6 +255,7 @@ final class AppCoordinator {
                 telemetryManager: telemetryManager,
                 personalizationEngine: personalizationEngine,
                 accessibilityAnnouncer: accessibilityAnnouncer,
+                trainingDataExporter: trainingDataExporter,
                 batteryMode: config.battery.mode
             )
         }
@@ -652,6 +692,110 @@ final class AppCoordinator {
         }
         rebuildRuntimePipelines(using: currentConfig)
         refreshUIState()
+    }
+
+    private func updateOnlineLLMEnabled(_ enabled: Bool) {
+        mutateConfig({ config in
+            config.onlineLLM.enabled = enabled
+        }, persist: { [weak self] configStore in
+            guard let self else { return }
+            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+        }, rebuildPipelines: true)
+    }
+
+    private func updateOnlineLLMProvider(_ provider: OnlineLLMProvider) {
+        mutateConfig({ config in
+            config.onlineLLM.byok.provider = provider
+            config.onlineLLM.byok.selectedModel = provider.defaultModel
+            config.onlineLLM.byok.endpointURL = provider.defaultEndpoint
+        }, persist: { [weak self] configStore in
+            guard let self else { return }
+            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+        }, rebuildPipelines: true)
+    }
+
+    private func updateOnlineLLMModel(_ model: String) {
+        mutateConfig({ config in
+            config.onlineLLM.byok.selectedModel = model
+        }, persist: { [weak self] configStore in
+            guard let self else { return }
+            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+        })
+    }
+
+    private func updateOnlineLLMEndpoint(_ endpoint: String) {
+        mutateConfig({ config in
+            config.onlineLLM.byok.endpointURL = endpoint
+        }, persist: { [weak self] configStore in
+            guard let self else { return }
+            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+        }, rebuildPipelines: true)
+    }
+
+    private func updateOnlineLLMPriority(_ priority: OnlineLLMPriority) {
+        mutateConfig({ config in
+            config.onlineLLM.byok.priority = priority
+        }, persist: { [weak self] configStore in
+            guard let self else { return }
+            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+        }, rebuildPipelines: true)
+    }
+
+    private func updateOnlineLLMAPIKey(_ key: String) {
+        guard let currentConfig else { return }
+        do {
+            try secretStore.upsert(
+                account: currentConfig.onlineLLM.byok.apiKeyKeychainAccount,
+                secret: key
+            )
+        } catch {
+            logger.error("Failed to store API key: \(error.localizedDescription)")
+        }
+        rebuildRuntimePipelines(using: currentConfig)
+        setPipelineEnabledFromCurrentState()
+    }
+
+    private func updateTrainingDataCollection(_ enabled: Bool) {
+        mutateConfig({ config in
+            config.privacy.trainingDataCollectionEnabled = enabled
+        }, persist: { [weak self] configStore in
+            await configStore.updatePrivacy(self?.currentConfig?.privacy ?? AppConfig.default.privacy)
+        })
+        trainingDataExporter = TrainingDataExporter(enabled: enabled)
+        if let currentConfig {
+            rebuildRuntimePipelines(using: currentConfig)
+            setPipelineEnabledFromCurrentState()
+        }
+    }
+
+    private func exportTrainingData() {
+        Task { @MainActor in
+            do {
+                let url = try await trainingDataExporter.exportAnonymized()
+                uiModel?.showBanner(
+                    kind: .success,
+                    title: "Training data exported",
+                    message: url.path
+                )
+            } catch {
+                uiModel?.showBanner(
+                    kind: .error,
+                    title: "Export failed",
+                    message: error.localizedDescription
+                )
+            }
+        }
+    }
+
+    private func clearTrainingData() {
+        Task { @MainActor in
+            await trainingDataExporter.clearTrainingData()
+            uiModel?.showBanner(
+                kind: .success,
+                title: "Training data cleared",
+                message: "All locally stored training pairs have been removed."
+            )
+        }
     }
 
     private func deriveActiveRuntimeLabel(from report: ModelCompatibilityReport) -> String {
