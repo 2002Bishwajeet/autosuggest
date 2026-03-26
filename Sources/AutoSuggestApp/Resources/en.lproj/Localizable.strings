@@ -1,0 +1,342 @@
+/* ============================================================
+   Localizable.strings — AutoSuggest (English)
+   ============================================================ */
+
+
+/* ---------------------------------------------------------
+   Section: Status Popover
+   --------------------------------------------------------- */
+
+"status.headline.off" = "Autocomplete is off";
+"status.headline.live" = "Suggestions are live";
+"status.app.title" = "AutoSuggest";
+"status.label.runtime" = "Runtime";
+"status.label.model" = "Model";
+"status.label.permissions" = "Permissions";
+"status.label.latency" = "Latency";
+"status.latency.noSamples" = "No samples";
+"status.latency.ms" = "%d ms";
+"status.section.header" = "Status";
+"status.action.openSettings" = "Open Settings";
+"status.action.openSettings.hint" = "Opens the settings window";
+"status.action.pauseOneHour" = "Pause for 1 Hour";
+"status.action.pauseOneHour.hint" = "Pauses suggestions for one hour";
+"status.action.excludeCurrentApp" = "Exclude Current App";
+"status.action.excludeCurrentApp.hint" = "Adds the frontmost app to the exclusion list";
+"status.action.retryModel" = "Retry Model";
+"status.action.retryModel.hint" = "Retries loading the inference model";
+"status.action.exportDiagnostics" = "Export Diagnostics";
+"status.action.exportDiagnostics.hint" = "Exports diagnostics data to a file";
+"status.action.quit" = "Quit AutoSuggest";
+"status.action.quit.hint" = "Quits the application";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — General
+   --------------------------------------------------------- */
+
+"settings.general.toggle" = "AutoSuggest";
+"settings.general.batteryBehavior" = "Battery behavior";
+"settings.general.batteryAlwaysOn" = "Always On";
+"settings.general.batteryPauseLowPower" = "Pause on Low Power";
+"settings.general.strictUndo" = "Strict undo semantics";
+"settings.general.strictUndo.detail" = "When enabled, only clipboard-paste insertion is used, giving a cleaner Cmd+Z experience.";
+"settings.general.shortcuts.header" = "Shortcuts";
+"settings.general.shortcuts.detail" = "Accept suggestions with Tab or Enter. Dismiss with Esc. Left-click the status item for quick controls and right-click for overflow actions.";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — Models
+   --------------------------------------------------------- */
+
+"settings.models.currentRuntime" = "Current runtime: %@";
+"settings.models.currentModel" = "Current model: %@";
+"settings.models.runtimeOrder" = "Runtime order";
+"settings.models.modelSource.header" = "Model source";
+"settings.models.configureSource" = "Configure Source\U2026";
+"settings.models.downloading" = "Downloading model\U2026";
+"settings.models.retry" = "Retry";
+"settings.models.installedModels.header" = "Installed models";
+"settings.models.rollback" = "Rollback";
+"settings.models.rollback.confirmation" = "Rollback to previous model?";
+"settings.models.rollback.message" = "This will switch back to the previously active model.";
+"settings.models.rollback.action" = "Rollback";
+"settings.models.noInstalled" = "No installed models";
+"settings.models.noInstalled.detail" = "Configure a model source above or use the onboarding setup.";
+"settings.models.use" = "Use";
+"settings.models.noLocalModel" = "No local model configured";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — Model Source Editor
+   --------------------------------------------------------- */
+
+"settings.modelSource.title" = "Model Source";
+"settings.modelSource.source" = "Source";
+"settings.modelSource.directURL" = "Direct URL";
+"settings.modelSource.huggingFace" = "Hugging Face";
+"settings.modelSource.modelID" = "Model ID";
+"settings.modelSource.version" = "Version";
+"settings.modelSource.sha256" = "SHA256 checksum";
+"settings.modelSource.directURLField" = "Direct URL";
+"settings.modelSource.repo" = "Repo";
+"settings.modelSource.revision" = "Revision";
+"settings.modelSource.filePath" = "File Path";
+"settings.modelSource.optionalToken" = "Optional token";
+"settings.modelSource.cancel" = "Cancel";
+"settings.modelSource.saveAndDownload" = "Save & Download";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — Permissions & Privacy
+   --------------------------------------------------------- */
+
+"settings.permissions.inputMonitoringNote" = "If Input Monitoring was just enabled in System Settings, quit and reopen AutoSuggest once so macOS applies the change to the running app.";
+"settings.permissions.accessibility" = "Accessibility";
+"settings.permissions.inputMonitoring" = "Input Monitoring";
+"settings.permissions.granted" = "Granted";
+"settings.permissions.missing" = "Missing";
+"settings.permissions.recheck" = "Recheck Permissions";
+"settings.permissions.openSettings" = "Open Settings";
+"settings.permissions.privacyTelemetry.header" = "Privacy & Telemetry";
+"settings.permissions.piiFiltering" = "PII filtering";
+"settings.permissions.piiFiltering.detail" = "Strips emails, phone numbers, and card numbers from personalization data.";
+"settings.permissions.localTelemetry" = "Local telemetry";
+"settings.permissions.localOnlyExport" = "Local only export";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — Exclusions
+   --------------------------------------------------------- */
+
+"settings.exclusions.searchRules" = "Search rules";
+"settings.exclusions.excludeFrontmostApp" = "Exclude Frontmost App";
+"settings.exclusions.addRule" = "Add Rule\U2026";
+"settings.exclusions.noRules" = "No exclusion rules";
+"settings.exclusions.noRules.detail" = "Add rules to prevent suggestions in specific apps, windows, or when certain content is detected.";
+"settings.exclusions.customRule" = "Custom rule";
+"settings.exclusions.enable" = "Enable";
+"settings.exclusions.disable" = "Disable";
+"settings.exclusions.edit" = "Edit";
+"settings.exclusions.delete" = "Delete";
+"settings.exclusions.deleteConfirmation" = "Delete this exclusion rule?";
+"settings.exclusions.deleteMessage" = "This exclusion rule will be permanently removed.";
+"settings.exclusions.cancel" = "Cancel";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — Exclusion Rule Editor
+   --------------------------------------------------------- */
+
+"settings.exclusionEditor.title" = "Exclusion Rule";
+"settings.exclusionEditor.ruleEnabled" = "Rule enabled";
+"settings.exclusionEditor.bundleID" = "Bundle ID";
+"settings.exclusionEditor.windowTitleContains" = "Window title contains";
+"settings.exclusionEditor.contentRegex" = "Content regex";
+"settings.exclusionEditor.cancel" = "Cancel";
+"settings.exclusionEditor.save" = "Save";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — Accessibility
+   --------------------------------------------------------- */
+
+"settings.accessibility.voiceOver" = "VoiceOver announcements";
+"settings.accessibility.voiceOver.detail" = "Suggestions are announced once and stay keyboard-first.";
+"settings.accessibility.reduceTransparency" = "Reduce Transparency: %@";
+"settings.accessibility.reduceTransparency.enabled" = "Enabled";
+"settings.accessibility.reduceTransparency.disabled" = "Disabled";
+"settings.accessibility.increaseContrast" = "Increase Contrast: %@";
+"settings.accessibility.increaseContrast.enabled" = "Enabled";
+"settings.accessibility.increaseContrast.disabled" = "Disabled";
+"settings.accessibility.previewVoiceOver" = "Preview VoiceOver Announcement";
+
+
+/* ---------------------------------------------------------
+   Section: Settings — Diagnostics
+   --------------------------------------------------------- */
+
+"settings.diagnostics.metrics" = "Metrics";
+"settings.diagnostics.shown" = "Shown: %d";
+"settings.diagnostics.accepted" = "Accepted: %d";
+"settings.diagnostics.latency" = "Latency: %@";
+"settings.diagnostics.supportReport" = "Support report";
+"settings.diagnostics.copyReport" = "Copy Report";
+"settings.diagnostics.exportDiagnostics" = "Export Diagnostics";
+
+
+/* ---------------------------------------------------------
+   Section: Onboarding — Welcome
+   --------------------------------------------------------- */
+
+"onboarding.welcome.title" = "Welcome to AutoSuggest";
+"onboarding.welcome.subtitle" = "A native writing assistant for text fields across macOS.";
+"onboarding.welcome.permissionsAlreadyGranted" = "Permissions already granted";
+"onboarding.welcome.permissionsAlreadyGranted.detail" = "Accessibility and Input Monitoring are already enabled, so onboarding will skip the permission step.";
+"onboarding.welcome.description" = "AutoSuggest stays lightweight in the menu bar and keeps advanced controls in a dedicated settings window.";
+"onboarding.welcome.description.detail" = "Suggestions appear inline, accept with Tab or Enter, dismiss with Esc, and exclusions keep it out of editors and other sensitive contexts.";
+
+
+/* ---------------------------------------------------------
+   Section: Onboarding — Permissions
+   --------------------------------------------------------- */
+
+"onboarding.permissions.title" = "Grant Permissions";
+"onboarding.permissions.subtitle.ready" = "Everything required is ready.";
+"onboarding.permissions.subtitle.needed" = "AutoSuggest needs both permissions before it can listen and insert.";
+"onboarding.permissions.inputMonitoringNote" = "Input Monitoring can require one full app relaunch after you enable it in System Settings.";
+"onboarding.permissions.accessibility" = "Accessibility";
+"onboarding.permissions.inputMonitoring" = "Input Monitoring";
+"onboarding.permissions.granted" = "Granted";
+"onboarding.permissions.needsAction" = "Needs action";
+"onboarding.permissions.openAndPrompt" = "Open & Prompt";
+
+
+/* ---------------------------------------------------------
+   Section: Onboarding — Model Choice
+   --------------------------------------------------------- */
+
+"onboarding.model.title" = "Choose a Model Path";
+"onboarding.model.subtitle" = "Choose a runtime, then follow the matching setup path.";
+"onboarding.model.ollama.title" = "Recommended: Ollama";
+"onboarding.model.ollama.subtitle" = "Best overall quality path for the current app.";
+"onboarding.model.llamaCpp.title" = "Use Existing llama.cpp";
+"onboarding.model.llamaCpp.subtitle" = "Good if you already run a local server.";
+"onboarding.model.coreML.title" = "Import CoreML";
+"onboarding.model.coreML.subtitle" = "Use a local CoreML artifact or bootstrap the default package.";
+"onboarding.model.setup.ollama" = "Set up Ollama";
+"onboarding.model.setup.llamaCpp" = "Set up llama.cpp";
+"onboarding.model.setup.coreML" = "Set up CoreML";
+"onboarding.model.status.ready" = "Ready";
+"onboarding.model.status.needsSetup" = "Needs setup";
+"onboarding.model.recommendedCommands" = "Recommended commands";
+"onboarding.model.exampleServerCommand" = "Example server command";
+"onboarding.model.copyCommands" = "Copy Commands";
+"onboarding.model.copyCommand" = "Copy Command";
+"onboarding.model.openModelSettings" = "Open Model Settings";
+"onboarding.model.downloadingCoreML" = "Downloading CoreML model\U2026";
+"onboarding.model.coreMLAvailable" = "A local CoreML package is already available.";
+"onboarding.model.coreMLDownloadPrompt" = "Download the default CoreML package now or open model settings to use a custom source.";
+"onboarding.model.reinstallCoreML" = "Reinstall CoreML Model";
+"onboarding.model.downloadCoreMLNow" = "Download CoreML Now";
+"onboarding.model.coreMLSetupNote" = "CoreML setup happens inside AutoSuggest.";
+"onboarding.model.ollamaCommandsCopied" = "Ollama commands copied.";
+"onboarding.model.llamaCppCommandCopied" = "llama.cpp command copied.";
+
+
+/* ---------------------------------------------------------
+   Section: Onboarding — Finish
+   --------------------------------------------------------- */
+
+"onboarding.finish.title" = "First Use";
+"onboarding.finish.subtitle" = "See how suggestions appear and which keys control them.";
+"onboarding.finish.howSuggestionsAppear" = "How suggestions appear";
+"onboarding.finish.suggestionsDescription" = "When AutoSuggest has a completion, the suggested text appears inline and stays visually separate from what you already typed.";
+"onboarding.finish.previewTyped" = "Thanks for the";
+"onboarding.finish.previewSuggested" = " quick update";
+"onboarding.finish.tabToAccept" = "to accept the highlighted completion";
+"onboarding.finish.keyboardControls" = "Keyboard controls";
+"onboarding.finish.acceptSuggestion" = "Accept the suggestion";
+"onboarding.finish.acceptSuggestion.detail" = "The highlighted completion is inserted immediately.";
+"onboarding.finish.dismissForNow" = "Dismiss for now";
+"onboarding.finish.dismissForNow.detail" = "Hide the current suggestion and keep typing.";
+"onboarding.finish.quickControls" = "Quick controls";
+"onboarding.finish.quickControls.detail" = "Left-click the menu bar icon for status, pause, and diagnostics.";
+"onboarding.finish.overflowActions" = "Overflow actions";
+"onboarding.finish.overflowActions.detail" = "Right-click the menu bar icon for compact utility actions.";
+"onboarding.finish.selectedModel" = "%@ is selected";
+"onboarding.finish.openSettingsNote" = "Open Settings any time to manage models, permissions, exclusions, accessibility, and diagnostics.";
+
+
+/* ---------------------------------------------------------
+   Section: Onboarding — Navigation
+   --------------------------------------------------------- */
+
+"onboarding.nav.quit" = "Quit";
+"onboarding.nav.back" = "Back";
+"onboarding.nav.continue" = "Continue";
+"onboarding.nav.finish" = "Finish";
+
+
+/* ---------------------------------------------------------
+   Section: About Window
+   --------------------------------------------------------- */
+
+"about.windowTitle" = "About AutoSuggest";
+"about.appName" = "AutoSuggest";
+"about.tagline" = "System-wide autocomplete powered by local LLMs";
+"about.version" = "Version %@ (%@)";
+"about.license" = "License: GPL v3";
+"about.github" = "github.com/autosuggest";
+
+
+/* ---------------------------------------------------------
+   Section: Menu Bar (Overflow Menu)
+   --------------------------------------------------------- */
+
+"menu.openSettings" = "Open Settings\U2026";
+"menu.exportDiagnostics" = "Export Diagnostics";
+"menu.aboutAutoSuggest" = "About AutoSuggest";
+"menu.quitAutoSuggest" = "Quit AutoSuggest";
+
+
+/* ---------------------------------------------------------
+   Section: Banner Messages
+   --------------------------------------------------------- */
+
+"banner.modelSetupNeeded.title" = "Model setup needs attention";
+"banner.autoSuggestResumed.title" = "AutoSuggest resumed";
+"banner.autoSuggestResumed.message" = "The one-hour pause has ended.";
+"banner.modelSwitched.title" = "Model switched";
+"banner.modelSwitched.message" = "Now using %@ %@.";
+"banner.rollbackComplete.title" = "Rollback complete";
+"banner.rollbackComplete.message" = "The previous model is active again.";
+"banner.modelInstalled.title" = "Model installed";
+"banner.modelInstalled.message" = "Downloaded and activated %@ %@.";
+"banner.modelDownloadFailed.title" = "Model download failed";
+"banner.modelReady.title" = "Model ready";
+"banner.modelReady.message" = "Bootstrap completed successfully.";
+"banner.modelRetryFailed.title" = "Model retry failed";
+"banner.appExcluded.title" = "App excluded";
+"banner.appExcluded.message" = "%@ will no longer receive suggestions.";
+"banner.diagnosticsExported.title" = "Diagnostics exported";
+"banner.pausedForOneHour.title" = "Paused for one hour";
+"banner.pausedForOneHour.message" = "Suggestions will resume automatically.";
+
+
+/* ---------------------------------------------------------
+   Section: Diagnostics Report
+   --------------------------------------------------------- */
+
+"diagnostics.report.title" = "AutoSuggest Diagnostics";
+"diagnostics.report.state" = "State";
+"diagnostics.report.enabled" = "Enabled: %@";
+"diagnostics.report.permissions" = "Permissions: %@";
+"diagnostics.report.pauseReason" = "Pause reason: %@";
+"diagnostics.report.metrics" = "Metrics";
+"diagnostics.report.suggestionsShown" = "Suggestions shown: %d";
+"diagnostics.report.suggestionsAccepted" = "Suggestions accepted: %d";
+"diagnostics.report.suggestionsDismissed" = "Suggestions dismissed: %d";
+"diagnostics.report.suggestionErrors" = "Suggestion errors: %d";
+"diagnostics.report.insertionFailures" = "Insertion failures: %d";
+"diagnostics.report.avgLatency" = "Average latency: %d ms";
+"diagnostics.report.lastModelError" = "Last model error";
+
+
+/* ---------------------------------------------------------
+   Section: Pause Reasons
+   --------------------------------------------------------- */
+
+"pause.manual" = "Paused until %@";
+"pause.lowPowerMode" = "Paused because Low Power Mode is on";
+"pause.noRuntime" = "No local runtime is ready";
+"pause.noRuntimeLabel" = "No runtime ready";
+"pause.noLocalModel" = "No local model";
+
+
+/* ---------------------------------------------------------
+   Section: Accessibility Announcements
+   --------------------------------------------------------- */
+
+"accessibility.preview" = "AutoSuggest preview";
+"accessibility.couldNotResolveURL" = "Could not resolve a valid model download URL.";

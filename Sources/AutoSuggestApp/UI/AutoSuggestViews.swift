@@ -4,6 +4,13 @@ import SwiftUI
 struct StatusPopoverView: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
 
+    private var statusIndicator: StatusDot.Status {
+        if !uiModel.config.enabled { return .inactive }
+        if uiModel.quickPanelState.pauseReason != nil { return .paused }
+        if uiModel.modelHealth.lastError != nil { return .error }
+        return .active
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -11,11 +18,16 @@ struct StatusPopoverView: View {
                     BannerView(banner: banner, onDismiss: uiModel.dismissBanner)
                 }
 
-                Text("AutoSuggest")
-                    .font(.title3.weight(.semibold))
-                Text(uiModel.quickPanelState.statusHeadline)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    StatusDot(status: statusIndicator)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("AutoSuggest")
+                            .font(.title3.weight(.semibold))
+                        Text(uiModel.quickPanelState.statusHeadline)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 if let pauseReason = uiModel.quickPanelState.pauseReason {
                     SimplePanel {
@@ -24,46 +36,70 @@ struct StatusPopoverView: View {
                     }
                 }
 
-                Button(uiModel.config.enabled ? "Disable AutoSuggest" : "Enable AutoSuggest") {
-                    uiModel.toggleEnabled(!uiModel.config.enabled)
-                }
-                .buttonStyle(.borderedProminent)
+                Toggle("AutoSuggest", isOn: Binding(
+                    get: { uiModel.config.enabled },
+                    set: { uiModel.toggleEnabled($0) }
+                ))
+                .toggleStyle(.switch)
 
-                GroupBox("Status") {
+                GroupBox {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Runtime: \(uiModel.quickPanelState.activeRuntimeLabel)")
-                        Text("Model: \(uiModel.quickPanelState.activeModelLabel)")
-                        Text("Permissions: \(uiModel.permissionHealth.summary)")
-                        Text(uiModel.metrics.avgLatencyMs > 0 ? "Latency: \(Int(uiModel.metrics.avgLatencyMs.rounded())) ms" : "Latency: No samples")
+                        statusRow("Runtime", value: uiModel.quickPanelState.activeRuntimeLabel)
+                        statusRow("Model", value: uiModel.quickPanelState.activeModelLabel)
+                        statusRow("Permissions", value: uiModel.permissionHealth.summary)
+                        statusRow("Latency", value: uiModel.metrics.avgLatencyMs > 0
+                            ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms"
+                            : "No samples")
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                } label: {
+                    SectionHeader("Status", systemImage: "chart.bar")
                 }
 
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     QuickActionButton(title: "Open Settings", systemImage: "gearshape") {
                         uiModel.openSettings(.general)
                     }
+                    .accessibilityHint("Opens the settings window")
+                    Divider().padding(.horizontal, 8)
                     QuickActionButton(title: "Pause for 1 Hour", systemImage: "pause.circle") {
                         uiModel.pauseForHour()
                     }
+                    .accessibilityHint("Pauses suggestions for one hour")
                     QuickActionButton(title: "Exclude Current App", systemImage: "minus.circle") {
                         uiModel.excludeFrontmostApp()
                     }
+                    .accessibilityHint("Adds the frontmost app to the exclusion list")
                     QuickActionButton(title: "Retry Model", systemImage: "arrow.clockwise") {
                         uiModel.retryModel()
                     }
+                    .accessibilityHint("Retries loading the inference model")
+                    Divider().padding(.horizontal, 8)
                     QuickActionButton(title: "Export Diagnostics", systemImage: "square.and.arrow.up") {
                         uiModel.exportDiagnostics()
                     }
+                    .accessibilityHint("Exports diagnostics data to a file")
                     QuickActionButton(title: "Quit AutoSuggest", systemImage: "xmark.circle") {
                         uiModel.quitApp()
                     }
+                    .accessibilityHint("Quits the application")
                 }
             }
         }
         .padding(16)
         .frame(width: 368)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(AutoSuggestTheme.surfacePrimary)
+    }
+
+    private func statusRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .foregroundStyle(.secondary)
+                .font(.system(.body, design: .monospaced))
+            Spacer()
+            Text(value)
+                .font(.system(.body, design: .monospaced))
+        }
     }
 }
 
@@ -71,6 +107,8 @@ private struct QuickActionButton: View {
     let title: String
     let systemImage: String
     let action: () -> Void
+
+    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
@@ -81,11 +119,15 @@ private struct QuickActionButton: View {
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+                    .fill(isHovered
+                        ? Color.primary.opacity(0.08)
+                        : AutoSuggestTheme.surfaceSecondary)
             )
         }
         .buttonStyle(.plain)
+        .onHover { hovering in isHovered = hovering }
+        .accessibilityLabel(title)
     }
 }
 
@@ -148,6 +190,8 @@ private struct SettingsDetailContent: View {
     @State private var isRuleEditorPresented = false
     @State private var ruleDraft = ExclusionRuleDraft()
     @State private var editingRule: ExclusionRule?
+    @State private var ruleToDelete: ExclusionRule?
+    @State private var showRollbackConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -184,36 +228,35 @@ private struct SettingsDetailContent: View {
     private var generalSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             SimplePanel {
-                Button(uiModel.config.enabled ? "Turn AutoSuggest Off" : "Turn AutoSuggest On") {
-                    uiModel.toggleEnabled(!uiModel.config.enabled)
-                }
-                .buttonStyle(.borderedProminent)
+                Toggle("AutoSuggest", isOn: Binding(
+                    get: { uiModel.config.enabled },
+                    set: { uiModel.toggleEnabled($0) }
+                ))
 
-                HStack {
-                    Text("Battery behavior")
-                    Spacer()
-                    Button("Always On") {
-                        uiModel.updateBatteryMode(.alwaysOn)
-                    }
-                    .disabled(uiModel.config.battery.mode == .alwaysOn)
-                    Button("Pause on Low Power") {
-                        uiModel.updateBatteryMode(.pauseOnLowPower)
-                    }
-                    .disabled(uiModel.config.battery.mode == .pauseOnLowPower)
-                }
+                Divider()
 
-                HStack {
-                    Text("Strict undo semantics")
-                    Spacer()
-                    Button(uiModel.config.insertion.strictUndoSemantics ? "Enabled" : "Disabled") {
-                        uiModel.updateStrictUndo(!uiModel.config.insertion.strictUndoSemantics)
-                    }
+                Picker("Battery behavior", selection: Binding(
+                    get: { uiModel.config.battery.mode },
+                    set: { uiModel.updateBatteryMode($0) }
+                )) {
+                    Text("Always On").tag(BatteryMode.alwaysOn)
+                    Text("Pause on Low Power").tag(BatteryMode.pauseOnLowPower)
                 }
+                .pickerStyle(.segmented)
+
+                Divider()
+
+                Toggle("Strict undo semantics", isOn: Binding(
+                    get: { uiModel.config.insertion.strictUndoSemantics },
+                    set: { _ in uiModel.updateStrictUndo(!uiModel.config.insertion.strictUndoSemantics) }
+                ))
+                Text("When enabled, only clipboard-paste insertion is used, giving a cleaner Cmd+Z experience.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             SimplePanel {
-                Text("Shortcuts")
-                    .font(.headline)
+                SectionHeader("Shortcuts", systemImage: "keyboard")
                 Text("Accept suggestions with Tab or Enter. Dismiss with Esc. Left-click the status item for quick controls and right-click for overflow actions.")
                     .foregroundStyle(.secondary)
             }
@@ -258,8 +301,7 @@ private struct SettingsDetailContent: View {
 
             SimplePanel {
                 HStack {
-                    Text("Model source")
-                        .font(.headline)
+                    SectionHeader("Model source", systemImage: "arrow.down.circle")
                     Spacer()
                     Button("Configure Source…") {
                         sourceDraft = ModelSourceDraft(source: uiModel.config.localModel.customSource)
@@ -271,25 +313,54 @@ private struct SettingsDetailContent: View {
                     ProgressView("Downloading model…")
                 }
                 if let lastError = uiModel.modelHealth.lastError {
-                    Text(lastError)
-                        .foregroundStyle(.orange)
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(AutoSuggestTheme.warning)
+                        Text(lastError)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Retry") { uiModel.retryModel() }
+                            .buttonStyle(.bordered)
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+                            .fill(AutoSuggestTheme.warning.opacity(0.1))
+                    )
                 }
             }
 
             SimplePanel {
                 HStack {
-                    Text("Installed models")
-                        .font(.headline)
+                    SectionHeader("Installed models", systemImage: "cube")
                     Spacer()
                     Button("Rollback") {
-                        uiModel.rollbackModel()
+                        showRollbackConfirmation = true
                     }
                     .disabled(uiModel.modelHealth.installedModels.isEmpty)
+                    .confirmationDialog("Rollback to previous model?", isPresented: $showRollbackConfirmation) {
+                        Button("Rollback", role: .destructive) {
+                            uiModel.rollbackModel()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("This will switch back to the previously active model.")
+                    }
                 }
 
                 if uiModel.modelHealth.installedModels.isEmpty {
-                    Text("No installed models.")
-                        .foregroundStyle(.secondary)
+                    VStack(spacing: 6) {
+                        Image(systemName: "cube.transparent")
+                            .font(.title2)
+                            .foregroundStyle(.tertiary)
+                        Text("No installed models")
+                            .foregroundStyle(.secondary)
+                        Text("Configure a model source above or use the onboarding setup.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
                 } else {
                     ForEach(uiModel.modelHealth.installedModels, id: \.path.path) { model in
                         HStack {
@@ -308,48 +379,68 @@ private struct SettingsDetailContent: View {
 
     private var permissionsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SimplePanel {
-                Text("If Input Monitoring was just enabled in System Settings, quit and reopen AutoSuggest once so macOS applies the change to the running app.")
-                    .foregroundStyle(.secondary)
-                permissionRow(
-                    title: "Accessibility",
-                    status: uiModel.permissionHealth.accessibilityTrusted ? "Granted" : "Missing"
-                ) {
-                    uiModel.openAccessibilitySettings()
-                }
-                permissionRow(
-                    title: "Input Monitoring",
-                    status: uiModel.permissionHealth.inputMonitoringTrusted ? "Granted" : "Missing"
-                ) {
-                    uiModel.openInputMonitoringSettings()
-                }
-                Button("Recheck Permissions") {
+            // Accessibility row
+            PermissionSettingsRow(
+                systemImage: "accessibility",
+                title: "Accessibility",
+                description: "Required to read text context and insert completions into any text field.",
+                granted: uiModel.permissionHealth.accessibilityTrusted,
+                primaryLabel: "Show Prompt",
+                secondaryLabel: "Open Settings",
+                primaryAction: { uiModel.openAccessibilitySettings() },
+                secondaryAction: { uiModel.openAccessibilitySettings() }
+            )
+
+            // Input Monitoring row
+            PermissionSettingsRow(
+                systemImage: "keyboard",
+                title: "Input Monitoring",
+                description: "Required to detect Tab, Enter, and Esc for accepting or dismissing suggestions. Needs a relaunch after granting.",
+                granted: uiModel.permissionHealth.inputMonitoringTrusted,
+                primaryLabel: "Register & Open",
+                secondaryLabel: "Open Settings",
+                primaryAction: { uiModel.openInputMonitoringSettings() },
+                secondaryAction: { uiModel.openInputMonitoringSettings() }
+            )
+
+            // Relaunch / recheck controls
+            HStack(spacing: 10) {
+                Button("Recheck") {
                     uiModel.refreshPermissions()
+                }
+                .buttonStyle(.bordered)
+
+                if !uiModel.permissionHealth.isReady {
+                    Button("Relaunch Now") {
+                        uiModel.relaunchApp()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
                 }
             }
 
             SimplePanel {
-                HStack {
-                    Text("PII filtering")
-                    Spacer()
-                    Button(uiModel.config.privacy.piiFilteringEnabled ? "Enabled" : "Disabled") {
-                        uiModel.updatePIIFiltering(!uiModel.config.privacy.piiFilteringEnabled)
-                    }
-                }
-                HStack {
-                    Text("Local telemetry")
-                    Spacer()
-                    Button(uiModel.config.telemetry.enabled ? "Enabled" : "Disabled") {
-                        uiModel.updateTelemetryEnabled(!uiModel.config.telemetry.enabled)
-                    }
-                }
-                HStack {
-                    Text("Local only export")
-                    Spacer()
-                    Button(uiModel.config.telemetry.localStoreOnly ? "Enabled" : "Disabled") {
-                        uiModel.updateTelemetryLocalOnly(!uiModel.config.telemetry.localStoreOnly)
-                    }
-                }
+                SectionHeader("Privacy & Telemetry", systemImage: "hand.raised")
+
+                Toggle("PII filtering", isOn: Binding(
+                    get: { uiModel.config.privacy.piiFilteringEnabled },
+                    set: { _ in uiModel.updatePIIFiltering(!uiModel.config.privacy.piiFilteringEnabled) }
+                ))
+                Text("Strips emails, phone numbers, and card numbers from personalization data.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
+                Toggle("Local telemetry", isOn: Binding(
+                    get: { uiModel.config.telemetry.enabled },
+                    set: { _ in uiModel.updateTelemetryEnabled(!uiModel.config.telemetry.enabled) }
+                ))
+
+                Toggle("Local only export", isOn: Binding(
+                    get: { uiModel.config.telemetry.localStoreOnly },
+                    set: { _ in uiModel.updateTelemetryLocalOnly(!uiModel.config.telemetry.localStoreOnly) }
+                ))
             }
         }
     }
@@ -382,11 +473,25 @@ private struct SettingsDetailContent: View {
 
             SimplePanel {
                 if filteredRules.isEmpty {
-                    Text("No exclusion rules.")
-                        .foregroundStyle(.secondary)
+                    VStack(spacing: 6) {
+                        Image(systemName: "shield.slash")
+                            .font(.title2)
+                            .foregroundStyle(.tertiary)
+                        Text("No exclusion rules")
+                            .foregroundStyle(.secondary)
+                        Text("Add rules to prevent suggestions in specific apps, windows, or when certain content is detected.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
                 } else {
                     ForEach(Array(filteredRules.enumerated()), id: \.offset) { _, rule in
                         HStack {
+                            Circle()
+                                .fill(rule.enabled ? AutoSuggestTheme.success : AutoSuggestTheme.textTertiary)
+                                .frame(width: 6, height: 6)
                             Text(rule.bundleID ?? "Custom rule")
                             Spacer()
                             Button(rule.enabled ? "Disable" : "Enable") {
@@ -400,10 +505,25 @@ private struct SettingsDetailContent: View {
                             }
                             .buttonStyle(.borderless)
                             Button("Delete", role: .destructive) {
-                                uiModel.deleteExclusionRule(rule)
+                                ruleToDelete = rule
                             }
                             .buttonStyle(.borderless)
                         }
+                        Divider()
+                    }
+                    .confirmationDialog("Delete this exclusion rule?", isPresented: Binding(
+                        get: { ruleToDelete != nil },
+                        set: { if !$0 { ruleToDelete = nil } }
+                    )) {
+                        Button("Delete", role: .destructive) {
+                            if let rule = ruleToDelete {
+                                uiModel.deleteExclusionRule(rule)
+                            }
+                            ruleToDelete = nil
+                        }
+                        Button("Cancel", role: .cancel) { ruleToDelete = nil }
+                    } message: {
+                        Text("This exclusion rule will be permanently removed.")
                     }
                 }
             }
@@ -474,18 +594,66 @@ private struct SettingsDetailContent: View {
         }
     }
 
-    @ViewBuilder
-    private func permissionRow(title: String, status: String, action: @escaping () -> Void) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                Text(status)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+}
+
+private struct PermissionSettingsRow: View {
+    let systemImage: String
+    let title: String
+    let description: String
+    let granted: Bool
+    let primaryLabel: String
+    let secondaryLabel: String
+    let primaryAction: () -> Void
+    let secondaryAction: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(granted ? Color.green.opacity(0.1) : Color.orange.opacity(0.09))
+                    .frame(width: 40, height: 40)
+                Image(systemName: granted ? "checkmark.shield.fill" : systemImage)
+                    .font(.system(size: 18))
+                    .foregroundStyle(granted ? .green : .orange)
             }
-            Spacer()
-            Button("Open Settings", action: action)
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack {
+                    Text(title).font(.headline)
+                    Spacer()
+                    Text(granted ? "Granted" : "Required")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(granted ? Color.green.opacity(0.1) : Color.orange.opacity(0.1)))
+                        .foregroundStyle(granted ? .green : .orange)
+                }
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !granted {
+                    HStack(spacing: 8) {
+                        Button(primaryLabel, action: primaryAction)
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        Button(secondaryLabel, action: secondaryAction)
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    }
+                    .padding(.top, 2)
+                }
+            }
         }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(granted ? Color.green.opacity(0.18) : Color(nsColor: .separatorColor), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -643,9 +811,7 @@ private struct ExclusionRuleEditorView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Exclusion Rule")
                 .font(.title3.weight(.semibold))
-            Button(draft.enabled ? "Rule Enabled" : "Rule Disabled") {
-                draft.enabled.toggle()
-            }
+            Toggle("Rule enabled", isOn: $draft.enabled)
             TextField("Bundle ID", text: $draft.bundleID)
             TextField("Window title contains", text: $draft.windowTitleContains)
             TextField("Content regex", text: $draft.contentPattern)

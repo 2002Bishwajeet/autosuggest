@@ -13,6 +13,7 @@ struct AppConfig: Codable {
     var exclusions: ExclusionConfig
     var battery: BatteryConfig
     var insertion: InsertionConfig
+    var shortcuts: ShortcutConfig
 
     private enum CodingKeys: String, CodingKey {
         case configVersion
@@ -25,6 +26,7 @@ struct AppConfig: Codable {
         case exclusions
         case battery
         case insertion
+        case shortcuts
     }
 
     init(
@@ -37,7 +39,8 @@ struct AppConfig: Codable {
         telemetry: TelemetryConfig,
         exclusions: ExclusionConfig,
         battery: BatteryConfig,
-        insertion: InsertionConfig
+        insertion: InsertionConfig,
+        shortcuts: ShortcutConfig
     ) {
         self.configVersion = configVersion
         self.enabled = enabled
@@ -49,6 +52,7 @@ struct AppConfig: Codable {
         self.exclusions = exclusions
         self.battery = battery
         self.insertion = insertion
+        self.shortcuts = shortcuts
     }
 
     init(from decoder: Decoder) throws {
@@ -72,6 +76,8 @@ struct AppConfig: Codable {
             ?? BatteryConfig(mode: .alwaysOn)
         insertion = try container.decodeIfPresent(InsertionConfig.self, forKey: .insertion)
             ?? InsertionConfig(strictUndoSemantics: true)
+        shortcuts = try container.decodeIfPresent(ShortcutConfig.self, forKey: .shortcuts)
+            ?? ShortcutConfig(acceptKeyCodes: [48, 36, 76], dismissKeyCodes: [53])
     }
 }
 
@@ -282,6 +288,11 @@ struct InsertionConfig: Codable {
     var strictUndoSemantics: Bool
 }
 
+struct ShortcutConfig: Codable {
+    var acceptKeyCodes: [UInt16]
+    var dismissKeyCodes: [UInt16]
+}
+
 enum BatteryMode: String, Codable {
     case alwaysOn = "always_on"
     case pauseOnLowPower = "pause_on_low_power"
@@ -344,6 +355,10 @@ extension AppConfig {
         ),
         insertion: InsertionConfig(
             strictUndoSemantics: true
+        ),
+        shortcuts: ShortcutConfig(
+            acceptKeyCodes: [48, 36, 76],
+            dismissKeyCodes: [53]
         )
     )
 }

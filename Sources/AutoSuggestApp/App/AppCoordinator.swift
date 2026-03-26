@@ -115,6 +115,9 @@ final class AppCoordinator {
         uiModel.onRefreshPermissions = { [weak self] in
             self?.refreshUIState()
         }
+        uiModel.onRelaunchApp = { [weak self] in
+            self?.permissionManager.relaunchApp()
+        }
         uiModel.onUpdateBatteryMode = { [weak self] mode in
             self?.updateBatteryMode(mode)
         }

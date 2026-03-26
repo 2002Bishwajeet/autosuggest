@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "AutoSuggestApp",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v13),
     ],
@@ -26,6 +27,9 @@ let package = Package(
             name: "AutoSuggestApp",
             dependencies: [
                 .product(name: "Transformers", package: "swift-transformers"),
+            ],
+            resources: [
+                .process("Resources"),
             ]
         ),
         .executableTarget(

@@ -28,5 +28,9 @@
     <true/>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>AutoSuggest needs Accessibility permission to read text context and insert completions in any application.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>AutoSuggest uses Apple Events as a fallback for text insertion when direct Accessibility insertion is unavailable.</string>
 </dict>
 </plist>

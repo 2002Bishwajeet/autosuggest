@@ -23,6 +23,10 @@ struct OnboardingFlowView: View {
     @State private var isCoreMLInstalled: Bool
     @State private var heartbeat = Date()
     @State private var copyFeedback: String?
+    // Tracks whether Input Monitoring went from denied → granted this session,
+    // which requires a relaunch before the CGEvent tap can be installed.
+    @State private var inputMonitoringJustGranted = false
+    @State private var prevInputMonitoringState = false
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -98,7 +102,7 @@ struct OnboardingFlowView: View {
                         moveForward()
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(currentStep == .permissions && !permissionsReady)
+                    .disabled(currentStep == .permissions && (!permissionsReady || inputMonitoringJustGranted))
                 }
             }
         }
@@ -107,11 +111,14 @@ struct OnboardingFlowView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .onReceive(timer) { value in
             heartbeat = value
-            if permissionsReady && step == .permissions {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    step = .model
-                }
+            // Detect Input Monitoring transitioning from denied → granted.
+            // CGEvent tap installation requires a process restart, so we need
+            // to warn the user immediately when this happens.
+            let current = permissionManager.hasInputMonitoringPermission()
+            if current && !prevInputMonitoringState {
+                inputMonitoringJustGranted = true
             }
+            prevInputMonitoringState = current
         }
     }
 
@@ -133,7 +140,10 @@ struct OnboardingFlowView: View {
         case .welcome:
             return "A native writing assistant for text fields across macOS."
         case .permissions:
-            return permissionsReady ? "Everything required is ready." : "AutoSuggest needs both permissions before it can listen and insert."
+            if inputMonitoringJustGranted {
+                return "Relaunch AutoSuggest to apply Input Monitoring."
+            }
+            return permissionsReady ? "Both permissions are granted — tap Continue." : "AutoSuggest needs both permissions before it can listen and insert."
         case .model:
             return "Choose a runtime, then follow the matching setup path."
         case .finish:
@@ -186,37 +196,74 @@ struct OnboardingFlowView: View {
     }
 
     private var permissionsStep: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SettingsCard {
-                Text("Input Monitoring can require one full app relaunch after you enable it in System Settings.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 14) {
+            // Relaunch banner — shown when Input Monitoring was just granted
+            if inputMonitoringJustGranted {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "arrow.counterclockwise.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Relaunch required")
+                            .font(.headline)
+                        Text("Input Monitoring was granted. AutoSuggest must relaunch before it can intercept keystrokes.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Relaunch Now") {
+                        permissionManager.relaunchApp()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.orange.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+                        )
+                )
+            }
 
-                Divider()
-
-                PermissionChecklistRow(
-                    title: "Accessibility",
-                    ready: permissionManager.isAccessibilityTrusted(),
-                    buttonTitle: "Open & Prompt"
-                ) {
+            PermissionDetailRow(
+                systemImage: "accessibility",
+                title: "Accessibility",
+                description: "Lets AutoSuggest read what you're typing and insert completions into any text field. Required for core functionality.",
+                ready: permissionManager.isAccessibilityTrusted(),
+                primaryAction: ("Show Prompt", {
                     _ = permissionManager.requestAccessibilityPermission()
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
+                }),
+                secondaryAction: ("Open Settings", {
+                    permissionManager.openAccessibilitySettings()
+                })
+            )
 
-                Divider()
+            PermissionDetailRow(
+                systemImage: "keyboard",
+                title: "Input Monitoring",
+                description: "Lets AutoSuggest detect when you press Tab, Enter, or Esc to accept or dismiss suggestions. Requires a relaunch after granting.",
+                ready: permissionManager.hasInputMonitoringPermission(),
+                primaryAction: ("Register App", {
+                    permissionManager.requestInputMonitoringPermission()
+                    permissionManager.openInputMonitoringSettings()
+                }),
+                secondaryAction: ("Open Settings", {
+                    permissionManager.openInputMonitoringSettings()
+                })
+            )
 
-                PermissionChecklistRow(
-                    title: "Input Monitoring",
-                    ready: permissionManager.hasInputMonitoringPermission(),
-                    buttonTitle: "Open & Prompt"
-                ) {
-                    _ = permissionManager.requestInputMonitoringPermission()
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
-                        NSWorkspace.shared.open(url)
-                    }
+            if permissionsReady && !inputMonitoringJustGranted {
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("All permissions granted — you're ready to continue.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
+                .padding(.top, 4)
             }
         }
     }
@@ -455,24 +502,72 @@ struct OnboardingFlowView: View {
     }
 }
 
-private struct PermissionChecklistRow: View {
+private struct PermissionDetailRow: View {
+    let systemImage: String
     let title: String
+    let description: String
     let ready: Bool
-    let buttonTitle: String
-    let action: () -> Void
+    let primaryAction: (String, () -> Void)
+    let secondaryAction: (String, () -> Void)
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.headline)
-                Text(ready ? "Granted" : "Needs action")
-                    .font(.footnote)
+        HStack(alignment: .top, spacing: 14) {
+            // Status icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(ready ? Color.green.opacity(0.12) : Color.orange.opacity(0.10))
+                    .frame(width: 44, height: 44)
+                Image(systemName: ready ? "checkmark.shield.fill" : systemImage)
+                    .font(.system(size: 20))
                     .foregroundStyle(ready ? .green : .orange)
             }
-            Spacer()
-            Button(buttonTitle, action: action)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                    Spacer()
+                    Text(ready ? "Granted" : "Required")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(ready ? Color.green.opacity(0.12) : Color.orange.opacity(0.12))
+                        )
+                        .foregroundStyle(ready ? .green : .orange)
+                }
+
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !ready {
+                    HStack(spacing: 8) {
+                        Button(primaryAction.0, action: primaryAction.1)
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        Button(secondaryAction.0, action: secondaryAction.1)
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    }
+                    .padding(.top, 2)
+                }
+            }
         }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(
+                            ready ? Color.green.opacity(0.2) : Color(nsColor: .separatorColor),
+                            lineWidth: 1
+                        )
+                )
+        )
     }
 }
 

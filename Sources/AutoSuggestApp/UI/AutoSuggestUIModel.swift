@@ -304,6 +304,7 @@ final class AutoSuggestUIModel: ObservableObject {
     var onOpenAccessibilitySettings: (() -> Void)?
     var onOpenInputMonitoringSettings: (() -> Void)?
     var onRefreshPermissions: (() -> Void)?
+    var onRelaunchApp: (() -> Void)?
     var onUpdateBatteryMode: ((BatteryMode) -> Void)?
     var onUpdateStrictUndo: ((Bool) -> Void)?
     var onUpdatePIIFiltering: ((Bool) -> Void)?
@@ -367,6 +368,10 @@ final class AutoSuggestUIModel: ObservableObject {
 
     func refreshPermissions() {
         onRefreshPermissions?()
+    }
+
+    func relaunchApp() {
+        onRelaunchApp?()
     }
 
     func updateBatteryMode(_ mode: BatteryMode) {

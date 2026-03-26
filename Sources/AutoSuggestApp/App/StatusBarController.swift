@@ -86,6 +86,10 @@ final class StatusBarController: NSObject {
 
         overflowMenu.addItem(.separator())
 
+        let aboutItem = NSMenuItem(title: "About AutoSuggest", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        overflowMenu.addItem(aboutItem)
+
         let quitItem = NSMenuItem(title: "Quit AutoSuggest", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         overflowMenu.addItem(quitItem)
@@ -97,6 +101,10 @@ final class StatusBarController: NSObject {
 
     @objc private func exportDiagnostics() {
         uiModel?.exportDiagnostics()
+    }
+
+    @objc private func showAbout() {
+        AboutWindowController.shared.showWindow()
     }
 
     @objc private func quitApp() {

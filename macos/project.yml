@@ -29,9 +29,10 @@ targets:
         PRODUCT_NAME: AutoSuggest
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: ""
-        ENABLE_HARDENED_RUNTIME: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: AutoSuggestDesktop/AutoSuggest.entitlements
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
-        SWIFT_EMIT_LOC_STRINGS: NO
+        SWIFT_EMIT_LOC_STRINGS: YES
     scheme:
       shared: true

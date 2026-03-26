@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoSuggest — System-wide autocomplete powered by local LLMs</title>
+    <meta name="description" content="Free, open-source, privacy-first autocomplete for macOS. Powered by local LLMs. No cloud. No telemetry. Just fast suggestions.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ═══════════════════════════════════════
+           CSS Variables — AutoSuggest Palette
+           ═══════════════════════════════════════ */
+        :root {
+            --bg:           #FAFAF8;
+            --bg-warm:      #F5F4F0;
+            --bg-card:      #FFFFFF;
+            --text:         #1A1A1A;
+            --text-secondary: #6B6B6B;
+            --text-tertiary: #9A9A9A;
+            --accent:       #0A9396;
+            --accent-hover: #088284;
+            --accent-light: #E0F5F5;
+            --accent-glow:  rgba(10, 147, 150, 0.15);
+            --coral:        #E76F51;
+            --green:        #2D9F4F;
+            --border:       #E8E7E3;
+            --border-hover: #D0CFC9;
+            --shadow-sm:    0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+            --shadow-md:    0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+            --shadow-lg:    0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+            --radius:       12px;
+            --radius-lg:    20px;
+            --font-display: 'Instrument Serif', Georgia, serif;
+            --font-body:    'DM Sans', system-ui, sans-serif;
+            --font-mono:    'JetBrains Mono', 'SF Mono', monospace;
+            --max-width:    1120px;
+            --nav-height:   64px;
+        }
+
+        /* ═══════════════════════════════════════
+           Reset & Base
+           ═══════════════════════════════════════ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        img { max-width: 100%; display: block; }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
+        /* ═══════════════════════════════════════
+           Grain Overlay
+           ═══════════════════════════════════════ */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.022;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 200px;
+        }
+
+        /* ═══════════════════════════════════════
+           Navigation
+           ═══════════════════════════════════════ */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-height);
+            z-index: 100;
+            backdrop-filter: blur(20px) saturate(1.6);
+            -webkit-backdrop-filter: blur(20px) saturate(1.6);
+            background: rgba(250, 250, 248, 0.82);
+            border-bottom: 1px solid var(--border);
+            transition: box-shadow 0.3s ease;
+        }
+
+        nav.scrolled {
+            box-shadow: var(--shadow-sm);
+        }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-logo .cursor-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-family: var(--font-mono);
+            font-weight: 500;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 450;
+            color: var(--text-secondary);
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+            background: rgba(0,0,0,0.04);
+        }
+
+        .nav-links .btn-nav {
+            background: var(--text);
+            color: var(--bg);
+            padding: 7px 18px;
+            border-radius: 9px;
+            font-weight: 500;
+            margin-left: 6px;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .nav-links .btn-nav:hover {
+            opacity: 0.85;
+            background: var(--text);
+            color: var(--bg);
+            transform: translateY(-1px);
+        }
+
+        /* ═══════════════════════════════════════
+           Hero
+           ═══════════════════════════════════════ */
+        .hero {
+            padding: calc(var(--nav-height) + 80px) 0 100px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: var(--nav-height);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero > * { position: relative; z-index: 1; }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px 6px 8px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .hero-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(45, 159, 79, 0.4);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(45, 159, 79, 0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 16px rgba(45, 159, 79, 0.6); }
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 7vw, 4.8rem);
+            line-height: 1.08;
+            letter-spacing: -0.025em;
+            max-width: 740px;
+            margin: 0 auto 24px;
+            font-weight: 400;
+        }
+
+        .hero h1 .accent {
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .hero h1 .cursor-blink {
+            display: inline-block;
+            width: 3px;
+            height: 0.75em;
+            background: var(--accent);
+            margin-left: 4px;
+            border-radius: 2px;
+            animation: blink 1s step-end infinite;
+            vertical-align: baseline;
+            position: relative;
+            top: 0.04em;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .hero-sub {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto 44px;
+            line-height: 1.65;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 30px;
+            background: var(--accent);
+            color: white;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 550;
+            font-family: var(--font-body);
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 2px 12px rgba(10, 147, 150, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(10, 147, 150, 0.3);
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 26px;
+            background: transparent;
+            color: var(--text);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            font-family: var(--font-body);
+            border: 1.5px solid var(--border);
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.15s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card);
+            transform: translateY(-1px);
+        }
+
+        .hero-note {
+            margin-top: 24px;
+            font-size: 0.82rem;
+            color: var(--text-tertiary);
+        }
+
+        .hero-note code {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            background: rgba(0,0,0,0.04);
+            padding: 2px 8px;
+            border-radius: 5px;
+        }
+
+        /* ═══════════════════════════════════════
+           Demo Window
+           ═══════════════════════════════════════ */
+        .demo-section {
+            padding: 0 0 120px;
+        }
+
+        .demo-window {
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            background: #1E1E1E;
+        }
+
+        .demo-titlebar {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            background: #2A2A2A;
+            gap: 8px;
+        }
+
+        .demo-titlebar .traffic-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .demo-titlebar .traffic-dot.red { background: #FF5F57; }
+        .demo-titlebar .traffic-dot.yellow { background: #FEBC2E; }
+        .demo-titlebar .traffic-dot.green { background: #28C840; }
+
+        .demo-titlebar .title {
+            flex: 1;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #888;
+            font-family: var(--font-body);
+            margin-right: 44px;
+        }
+
+        .demo-body {
+            padding: 32px 28px 40px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: #D4D4D4;
+            min-height: 220px;
+        }
+
+        .demo-body .line {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        .demo-body .line.visible {
+            animation: line-in 0.5s ease forwards;
+        }
+
+        @keyframes line-in {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .demo-body .prompt {
+            color: var(--accent);
+        }
+
+        .demo-body .dim { color: #666; }
+        .demo-body .suggestion {
+            color: #888;
+            opacity: 0.7;
+            border-left: 2px solid var(--accent);
+            padding-left: 10px;
+            margin-left: 2px;
+            display: inline-block;
+        }
+
+        .demo-body .typed {
+            color: #E8E8E8;
+        }
+
+        .demo-body .tab-hint {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1px 8px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            font-size: 0.7rem;
+            color: #888;
+            margin-left: 12px;
+            vertical-align: middle;
+        }
+
+        /* ═══════════════════════════════════════
+           Features
+           ═══════════════════════════════════════ */
+        .features {
+            padding: 0 0 120px;
+        }
+
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            margin-bottom: 56px;
+            max-width: 560px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            padding: 28px 24px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
+        }
+
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 18px;
+        }
+
+        .feature-icon.teal { background: var(--accent-light); color: var(--accent); }
+        .feature-icon.coral { background: #FDE8E2; color: var(--coral); }
+        .feature-icon.green { background: #E2F5E8; color: var(--green); }
+        .feature-icon.warm { background: #FFF3E0; color: #E8971E; }
+
+        .feature-card h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-card p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* ═══════════════════════════════════════
+           How It Works
+           ═══════════════════════════════════════ */
+        .how-it-works {
+            padding: 100px 0 120px;
+            background: var(--bg-warm);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 0;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            color: var(--accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .step h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .step-connector {
+            position: absolute;
+            top: 26px;
+            right: -24px;
+            width: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--border-hover);
+        }
+
+        .step:last-child .step-connector { display: none; }
+
+        /* ═══════════════════════════════════════
+           Runtimes
+           ═══════════════════════════════════════ */
+        .runtimes {
+            padding: 120px 0;
+        }
+
+        .runtimes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .runtime-card {
+            padding: 32px 28px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .runtime-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent), var(--shadow-md);
+        }
+
+        .runtime-card h3 {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .runtime-card h3 .tag {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+
+        .runtime-card p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            margin-bottom: 16px;
+        }
+
+        .runtime-card code {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            background: #F5F4F0;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        /* ═══════════════════════════════════════
+           CTA / Download
+           ═══════════════════════════════════════ */
+        .cta {
+            padding: 100px 0 120px;
+            text-align: center;
+            background: var(--bg-warm);
+            border-top: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 700px;
+            height: 500px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 65%);
+            pointer-events: none;
+        }
+
+        .cta > * { position: relative; z-index: 1; }
+
+        .cta h2 {
+            font-family: var(--font-display);
+            font-size: clamp(2.2rem, 5vw, 3.2rem);
+            letter-spacing: -0.025em;
+            margin-bottom: 16px;
+        }
+
+        .cta p {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 440px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-install {
+            margin-top: 32px;
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .cta-install:hover {
+            border-color: var(--border-hover);
+        }
+
+        .cta-install span { color: var(--accent); }
+
+        /* ═══════════════════════════════════════
+           Footer
+           ═══════════════════════════════════════ */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        footer .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .footer-left {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .footer-left span {
+            font-family: var(--font-display);
+            color: var(--text-secondary);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        /* ═══════════════════════════════════════
+           Scroll Animations
+           ═══════════════════════════════════════ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.35s; }
+
+        /* Hero entrance */
+        .hero .hero-badge { animation: hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+        .hero h1 { animation: hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+        .hero .hero-sub { animation: hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
+        .hero .hero-actions { animation: hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both; }
+        .hero .hero-note { animation: hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both; }
+
+        @keyframes hero-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ═══════════════════════════════════════
+           Responsive
+           ═══════════════════════════════════════ */
+        @media (max-width: 900px) {
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { grid-template-columns: 1fr; gap: 32px; }
+            .step-connector { display: none !important; }
+            .runtimes-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 0 20px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .hero { padding: calc(var(--nav-height) + 48px) 0 64px; }
+            .hero-actions { flex-direction: column; }
+            .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+            .nav-links a:not(.btn-nav) { display: none; }
+            footer .container { flex-direction: column; gap: 20px; text-align: center; }
+            .footer-links { flex-wrap: wrap; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════ Navigation ═══════════ -->
+    <nav id="navbar">
+        <div class="container">
+            <a href="#" class="nav-logo">
+                <div class="cursor-icon">&#x258C;</div>
+                AutoSuggest
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">Setup</a>
+                <a href="#runtimes">Runtimes</a>
+                <a href="https://github.com/nicebiswa/autosuggest" target="_blank" rel="noopener">GitHub</a>
+                <a href="#download" class="btn-nav">Download</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════ Hero ═══════════ -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <div class="dot"></div>
+                v0.1.0 &mdash; Open Source &amp; Free
+            </div>
+
+            <h1>
+                type less,<br>
+                say <span class="accent">more</span><span class="cursor-blink"></span>
+            </h1>
+
+            <p class="hero-sub">
+                System-wide autocomplete for macOS, powered by local LLMs.
+                Private. Fast. No cloud required.
+            </p>
+
+            <div class="hero-actions">
+                <a href="#download" class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download for macOS
+                </a>
+                <a href="https://github.com/nicebiswa/autosuggest" target="_blank" rel="noopener" class="btn-secondary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                    View Source
+                </a>
+            </div>
+
+            <p class="hero-note">
+                macOS 13+ &middot; Apple Silicon &amp; Intel &middot; GPL v3 &middot; <code>brew install ollama</code> recommended
+            </p>
+        </div>
+    </section>
+
+    <!-- ═══════════ Demo Window ═══════════ -->
+    <section class="demo-section">
+        <div class="container">
+            <div class="demo-window reveal">
+                <div class="demo-titlebar">
+                    <div class="traffic-dot red"></div>
+                    <div class="traffic-dot yellow"></div>
+                    <div class="traffic-dot green"></div>
+                    <div class="title">Notes.app</div>
+                </div>
+                <div class="demo-body" id="demo">
+                    <div class="line" data-delay="0">
+                        <span class="typed">Dear team,</span>
+                    </div>
+                    <div class="line" data-delay="400">
+                        <span class="typed">I wanted to follow up on</span>
+                        <span class="suggestion"> the discussion from yesterday's standup</span>
+                        <span class="tab-hint">tab</span>
+                    </div>
+                    <div class="line" data-delay="1200">
+                        <span class="typed">regarding the migration timeline.</span>
+                    </div>
+                    <div class="line" data-delay="1800"><br></div>
+                    <div class="line" data-delay="2200">
+                        <span class="typed">The current ETA is</span>
+                        <span class="suggestion"> end of Q2, pending the infrastructure review</span>
+                        <span class="tab-hint">tab</span>
+                    </div>
+                    <div class="line" data-delay="3000">
+                        <span class="dim">// Suggestions appear inline, press Tab to accept</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ Features ═══════════ -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-label reveal">Features</div>
+            <h2 class="section-title reveal reveal-delay-1">
+                Autocomplete that respects your privacy
+            </h2>
+
+            <div class="features-grid">
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon teal">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <h3>Private</h3>
+                    <p>Everything runs locally on your Mac. No data leaves your device. No accounts, no cloud, no telemetry.</p>
+                </div>
+
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon coral">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    </div>
+                    <h3>Fast</h3>
+                    <p>Sub-second suggestions via Ollama, llama.cpp, or CoreML. Optimized for Apple Silicon with smart debouncing.</p>
+                </div>
+
+                <div class="feature-card reveal reveal-delay-3">
+                    <div class="feature-icon green">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                    </div>
+                    <h3>Open Source</h3>
+                    <p>GPL v3 licensed. Read every line, fork it, extend it. Built in Swift 6.2 with full strict concurrency.</p>
+                </div>
+
+                <div class="feature-card reveal reveal-delay-4">
+                    <div class="feature-icon warm">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    </div>
+                    <h3>Smart</h3>
+                    <p>Context-aware completions with PII filtering, per-app exclusion rules, and personalization that learns your style.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ How It Works ═══════════ -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-label reveal">Get started in 60 seconds</div>
+            <h2 class="section-title reveal reveal-delay-1">
+                Three steps. No sign-up.
+            </h2>
+
+            <div class="steps">
+                <div class="step reveal reveal-delay-1">
+                    <div class="step-number">1</div>
+                    <h3>Install a runtime</h3>
+                    <p>Install Ollama with Homebrew and pull a small model. That's your inference engine.</p>
+                    <div class="step-connector">
+                        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+                    </div>
+                </div>
+
+                <div class="step reveal reveal-delay-2">
+                    <div class="step-number">2</div>
+                    <h3>Launch AutoSuggest</h3>
+                    <p>It lives in your menu bar. Grant Accessibility permission when prompted.</p>
+                    <div class="step-connector">
+                        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+                    </div>
+                </div>
+
+                <div class="step reveal reveal-delay-3">
+                    <div class="step-number">3</div>
+                    <h3>Start typing</h3>
+                    <p>Suggestions appear inline in any text field. Press Tab to accept, Esc to dismiss.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ Runtimes ═══════════ -->
+    <section class="runtimes" id="runtimes">
+        <div class="container">
+            <div class="section-label reveal">Runtimes</div>
+            <h2 class="section-title reveal reveal-delay-1">
+                Choose your inference engine
+            </h2>
+
+            <div class="runtimes-grid">
+                <div class="runtime-card reveal reveal-delay-1">
+                    <h3>Ollama <span class="tag">Recommended</span></h3>
+                    <p>Easiest setup. Manages models for you. Great performance on Apple Silicon.</p>
+                    <code>brew install ollama<br>ollama pull qwen2.5:1.5b</code>
+                </div>
+
+                <div class="runtime-card reveal reveal-delay-2">
+                    <h3>llama.cpp</h3>
+                    <p>Direct GGUF model loading. Maximum control over quantization and parameters.</p>
+                    <code>brew install llama.cpp<br>llama-server -m model.gguf</code>
+                </div>
+
+                <div class="runtime-card reveal reveal-delay-3">
+                    <h3>CoreML</h3>
+                    <p>Native Apple Neural Engine acceleration. Best battery efficiency. Requires converted model.</p>
+                    <code>// Place .mlmodelc + tokenizer.json<br>// in ~/Library/AutoSuggest/Models/</code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ CTA ═══════════ -->
+    <section class="cta" id="download">
+        <div class="container">
+            <h2 class="reveal">Ready to type less?</h2>
+            <p class="reveal reveal-delay-1">
+                Free, open source, and runs entirely on your machine.
+                No account needed. No internet required.
+            </p>
+            <div class="reveal reveal-delay-2">
+                <a href="https://github.com/nicebiswa/autosuggest/releases" target="_blank" rel="noopener" class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download Latest Release
+                </a>
+            </div>
+            <div class="reveal reveal-delay-3">
+                <div class="cta-install" onclick="copyInstall(this)">
+                    <span>$</span> git clone https://github.com/nicebiswa/autosuggest && cd autosuggest && ./scripts/build.sh
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ Footer ═══════════ -->
+    <footer>
+        <div class="container">
+            <div class="footer-left">
+                <span>AutoSuggest</span> &middot; GPL v3 &middot; Made for macOS
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/nicebiswa/autosuggest" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/nicebiswa/autosuggest/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Docs</a>
+                <a href="https://github.com/nicebiswa/autosuggest/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute</a>
+                <a href="https://github.com/nicebiswa/autosuggest/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ═══════════ Scripts ═══════════ -->
+    <script>
+        // Nav scroll effect
+        const nav = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 10);
+        }, { passive: true });
+
+        // Scroll reveal
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // Demo typing animation
+        const demoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateDemo();
+                    demoObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        const demoEl = document.getElementById('demo');
+        if (demoEl) demoObserver.observe(demoEl);
+
+        function animateDemo() {
+            const lines = document.querySelectorAll('#demo .line');
+            lines.forEach((line, i) => {
+                const delay = parseInt(line.dataset.delay) || 0;
+                setTimeout(() => line.classList.add('visible'), delay);
+            });
+        }
+
+        // Copy install command
+        function copyInstall(el) {
+            const text = 'git clone https://github.com/nicebiswa/autosuggest && cd autosuggest && ./scripts/build.sh';
+            navigator.clipboard.writeText(text).then(() => {
+                const original = el.innerHTML;
+                el.innerHTML = '<span style="color: var(--green);">Copied to clipboard!</span>';
+                setTimeout(() => { el.innerHTML = original; }, 1800);
+            });
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', (e) => {
+                const target = document.querySelector(a.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

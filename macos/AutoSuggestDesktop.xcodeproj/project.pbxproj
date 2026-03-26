@@ -13,6 +13,7 @@
 
 /* Begin PBXFileReference section */
 		5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSuggestDesktopApp.swift; sourceTree = "<group>"; };
+		611527A03C860AE957A05D05 /* AutoSuggest.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AutoSuggest.entitlements; sourceTree = "<group>"; };
 		66336980298A0B9E153FE6CB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8ADC06CF1F0B1059038BB5EA /* AutoSuggestDesktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AutoSuggestDesktop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED5E7049E3196A333B5BAC9A /* autosuggest */ = {isa = PBXFileReference; lastKnownFileType = folder; name = autosuggest; path = ..; sourceTree = SOURCE_ROOT; };
@@ -42,6 +43,7 @@
 		431D6FA8D3A4CD9A2887AE23 /* AutoSuggestDesktop */ = {
 			isa = PBXGroup;
 			children = (
+				611527A03C860AE957A05D05 /* AutoSuggest.entitlements */,
 				5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */,
 				66336980298A0B9E153FE6CB /* Info.plist */,
 			);
@@ -139,11 +141,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AutoSuggestDesktop/AutoSuggest.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = AutoSuggestDesktop/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -153,7 +156,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = dev.autosuggest.desktop;
 				PRODUCT_NAME = AutoSuggest;
 				SDKROOT = macosx;
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Debug;
 		};
@@ -161,11 +164,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AutoSuggestDesktop/AutoSuggest.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = AutoSuggestDesktop/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -175,7 +179,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = dev.autosuggest.desktop;
 				PRODUCT_NAME = AutoSuggest;
 				SDKROOT = macosx;
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};

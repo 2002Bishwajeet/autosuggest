@@ -8,6 +8,8 @@ final class CGEventShortcutMonitor: SuggestionShortcutMonitor {
     private var handler: ((SuggestionCommand) -> Bool)?
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var acceptKeyCodes: Set<UInt16> = [48, 36, 76]
+    private var dismissKeyCodes: Set<UInt16> = [53]
 
     func start(handler: @escaping (SuggestionCommand) -> Bool) {
         guard !isStarted else { return }
@@ -88,14 +90,18 @@ final class CGEventShortcutMonitor: SuggestionShortcutMonitor {
         return handler?(command) ?? false
     }
 
+    func updateKeyCodes(accept: [UInt16], dismiss: [UInt16]) {
+        acceptKeyCodes = Set(accept)
+        dismissKeyCodes = Set(dismiss)
+    }
+
     private func mapKeyCodeToCommand(_ keyCode: UInt16) -> SuggestionCommand? {
-        switch keyCode {
-        case 48, 36, 76:
+        if acceptKeyCodes.contains(keyCode) {
             return .accept
-        case 53:
-            return .dismiss
-        default:
-            return nil
         }
+        if dismissKeyCodes.contains(keyCode) {
+            return .dismiss
+        }
+        return nil
     }
 }
