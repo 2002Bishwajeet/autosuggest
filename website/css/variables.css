@@ -1,0 +1,29 @@
+/* ═══════════════════════════════════════
+   Design Tokens — AutoSuggest Palette
+   ═══════════════════════════════════════ */
+:root {
+    --bg:           #FAFAF8;
+    --bg-warm:      #F5F4F0;
+    --bg-card:      #FFFFFF;
+    --text:         #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --text-tertiary: #9A9A9A;
+    --accent:       #0A9396;
+    --accent-hover: #088284;
+    --accent-light: #E0F5F5;
+    --accent-glow:  rgba(10, 147, 150, 0.15);
+    --coral:        #E76F51;
+    --green:        #2D9F4F;
+    --border:       #E8E7E3;
+    --border-hover: #D0CFC9;
+    --shadow-sm:    0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-md:    0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    --shadow-lg:    0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --radius:       12px;
+    --radius-lg:    20px;
+    --font-display: 'Instrument Serif', Georgia, serif;
+    --font-body:    'DM Sans', system-ui, sans-serif;
+    --font-mono:    'JetBrains Mono', 'SF Mono', monospace;
+    --max-width:    1120px;
+    --nav-height:   64px;
+}
