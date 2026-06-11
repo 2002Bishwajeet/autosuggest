@@ -160,8 +160,19 @@ final class TestMetricsObserver {
 // MARK: - Integration Tests
 
 final class TypingPipelineIntegrationTests: XCTestCase {
+    /// Polls on the main actor until `condition()` holds or `timeout` elapses,
+    /// instead of a fixed Task.sleep that races the async pipeline (debounce +
+    /// inference) and flakes on slow/loaded CI runners.
     @MainActor
-    func testFullAcceptFlow() async throws {
+    private func waitUntil(timeout: TimeInterval = 3.0, _ condition: () -> Bool) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition(), Date() < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+    }
+
+    @MainActor
+    func testFullAcceptFlow() async {
         // Setup all mocks
         let inputMonitor = MockInputMonitor()
         let shortcutMonitor = MockShortcutMonitor()
@@ -209,7 +220,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
         inputMonitor.simulateKeyPress(keyCode: 0)
 
         // Wait for debounce (150ms) + inference
-        try await Task.sleep(nanoseconds: 300_000_000)
+        await waitUntil { overlayRenderer.currentSuggestionText != nil }
 
         // Suggestion should be shown
         XCTAssertEqual(overlayRenderer.currentSuggestionText, " world!")
@@ -230,7 +241,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testDismissFlow() async throws {
+    func testDismissFlow() async {
         let inputMonitor = MockInputMonitor()
         let shortcutMonitor = MockShortcutMonitor()
         let contextProvider = MockTextContextProvider()
@@ -267,7 +278,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
         // Trigger suggestion
         contextProvider.setContext(text: "Hello")
         inputMonitor.simulateKeyPress()
-        try await Task.sleep(nanoseconds: 300_000_000)
+        await waitUntil { overlayRenderer.currentSuggestionText != nil }
         XCTAssertNotNil(overlayRenderer.currentSuggestionText)
 
         // Dismiss
@@ -332,7 +343,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testInsertionFailureDoesNotCrash() async throws {
+    func testInsertionFailureDoesNotCrash() async {
         let inputMonitor = MockInputMonitor()
         let shortcutMonitor = MockShortcutMonitor()
         let contextProvider = MockTextContextProvider()
@@ -369,7 +380,7 @@ final class TypingPipelineIntegrationTests: XCTestCase {
 
         contextProvider.setContext(text: "test")
         inputMonitor.simulateKeyPress()
-        try await Task.sleep(nanoseconds: 300_000_000)
+        await waitUntil { overlayRenderer.currentSuggestionText != nil }
 
         // Accept should not crash even if insertion fails
         let consumed = shortcutMonitor.simulateCommand(.accept)
