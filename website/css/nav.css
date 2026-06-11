@@ -1,23 +1,24 @@
 /* ═══════════════════════════════════════
-   Navigation
+   Navigation — fixed glass bar, ghost-glyph logo, hamburger
    ═══════════════════════════════════════ */
-nav {
+.navbar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     height: var(--nav-height);
     z-index: 100;
-    backdrop-filter: blur(20px) saturate(1.6);
-    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: var(--blur-nav);
+    -webkit-backdrop-filter: var(--blur-nav);
     background: var(--nav-bg);
     border-bottom: 1px solid var(--border);
+    box-shadow: none;
     transition: box-shadow 0.3s ease;
 }
 
-nav.scrolled { box-shadow: var(--shadow-sm); }
+.navbar.scrolled { box-shadow: var(--shadow-sm); }
 
-nav .container {
+.navbar .container {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -29,35 +30,25 @@ nav .container {
     align-items: center;
     gap: 10px;
     font-family: var(--font-display);
-    font-size: 1.25rem;
+    font-size: 1.3rem;
     letter-spacing: -0.01em;
 }
 
-.nav-logo .cursor-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: var(--accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 14px;
-    font-family: var(--font-mono);
-    font-weight: 500;
+.nav-logo .nav-glyph {
+    color: var(--accent);
+    display: inline-flex;
 }
 
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .nav-links a {
     padding: 6px 14px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
-    font-weight: 450;
     color: var(--text-secondary);
     transition: color 0.2s, background 0.2s;
 }
@@ -67,22 +58,17 @@ nav .container {
     background: var(--surface-subtle);
 }
 
-.nav-links .btn-nav {
-    background: var(--text);
-    color: var(--bg);
-    padding: 7px 18px;
-    border-radius: 9px;
-    font-weight: 500;
-    margin-left: 6px;
-    transition: opacity 0.2s, transform 0.15s;
+.nav-links a.nav-github {
+    display: inline-flex;
+    align-items: center;
 }
 
-.nav-links .btn-nav:hover {
-    opacity: 0.85;
-    background: var(--text);
+.nav-links .btn-nav {
+    margin-left: 6px;
     color: var(--bg);
-    transform: translateY(-1px);
 }
+
+.nav-links .btn-nav:hover { color: var(--bg); }
 
 /* Mobile hamburger */
 .nav-toggle {
@@ -93,10 +79,9 @@ nav .container {
     padding: 8px;
     color: var(--text);
 }
-
 .nav-toggle svg { width: 24px; height: 24px; }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
     .nav-toggle { display: block; }
 
     .nav-links {
@@ -106,10 +91,11 @@ nav .container {
         left: 0;
         right: 0;
         flex-direction: column;
+        align-items: stretch;
         padding: 16px 32px 24px;
-        background: var(--nav-bg-mobile);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        background: var(--nav-bg);
+        backdrop-filter: var(--blur-nav);
+        -webkit-backdrop-filter: var(--blur-nav);
         border-bottom: 1px solid var(--border);
         gap: 4px;
     }
@@ -121,9 +107,12 @@ nav .container {
         width: 100%;
     }
 
+    .nav-links a.nav-github { justify-content: flex-start; gap: 10px; }
+
     .nav-links .btn-nav {
         margin-left: 0;
         margin-top: 8px;
         text-align: center;
+        justify-content: center;
     }
 }

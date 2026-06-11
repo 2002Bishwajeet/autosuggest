@@ -26,10 +26,12 @@ export function initNav() {
         });
     }
 
-    // Smooth scroll for anchor links
+    // Smooth scroll for in-page anchor links
     document.querySelectorAll('a[href^="#"]').forEach(a => {
         a.addEventListener('click', (e) => {
-            const target = document.querySelector(a.getAttribute('href'));
+            const hash = a.getAttribute('href');
+            if (!hash || hash === '#') return; // bare "#" (logo) → no smooth scroll
+            const target = document.querySelector(hash);
             if (target) {
                 e.preventDefault();
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
