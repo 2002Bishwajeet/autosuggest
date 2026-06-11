@@ -19,7 +19,7 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
               let http = response as? HTTPURLResponse else {
             return false
         }
-        return (200..<500).contains(http.statusCode)
+        return (200 ..< 500).contains(http.statusCode)
     }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
@@ -62,7 +62,7 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
             throw InferenceError.runtimeUnavailable("llama-server is not running")
         }
         guard let http = response as? HTTPURLResponse else { return nil }
-        guard (200..<300).contains(http.statusCode) else { return nil }
+        guard (200 ..< 300).contains(http.statusCode) else { return nil }
         let decoded = try JSONDecoder().decode(LlamaCppCompletionResponse.self, from: data)
         let text = decoded.content.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty { return nil }
@@ -86,7 +86,7 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { return nil }
-        guard (200..<300).contains(http.statusCode) else { return nil }
+        guard (200 ..< 300).contains(http.statusCode) else { return nil }
         let decoded = try JSONDecoder().decode(OpenAICompatResponse.self, from: data)
         let text = decoded.choices.first?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if text.isEmpty { return nil }

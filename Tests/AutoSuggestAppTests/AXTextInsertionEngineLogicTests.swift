@@ -1,12 +1,11 @@
 import XCTest
 @testable import AutoSuggestApp
 
-// Characterization tests for the pure range-math helper `replacingText`.
-// These pin down CURRENT behavior (NSString / UTF-16 semantics) so plans 003
-// and 004, which rewrite parts of AXTextInsertionEngine, cannot silently regress.
+/// Characterization tests for the pure range-math helper `replacingText`.
+/// These pin down CURRENT behavior (NSString / UTF-16 semantics) so plans 003
+/// and 004, which rewrite parts of AXTextInsertionEngine, cannot silently regress.
 @MainActor
 final class AXTextInsertionEngineLogicTests: XCTestCase {
-
     func testInsertAtCaretInMiddle() {
         let engine = AXTextInsertionEngine()
         // Caret (range length 0) after "Hel": insert "XYZ".

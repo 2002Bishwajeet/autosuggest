@@ -2,7 +2,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class OnlineLLMInferenceRuntimeTests: XCTestCase {
-
     // MARK: - Runtime basics
 
     @MainActor
@@ -158,28 +157,28 @@ final class OnlineLLMInferenceRuntimeTests: XCTestCase {
 
     // MARK: - Error descriptions
 
-    func testInvalidAPIKeyErrorDescription() {
+    func testInvalidAPIKeyErrorDescription() throws {
         let error = InferenceError.invalidAPIKey
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("API key"))
+        XCTAssertTrue(try XCTUnwrap(error.errorDescription?.contains("API key")))
     }
 
-    func testRateLimitedErrorDescription() {
+    func testRateLimitedErrorDescription() throws {
         let error = InferenceError.rateLimited(retryAfterSeconds: 30)
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("30"))
+        XCTAssertTrue(try XCTUnwrap(error.errorDescription?.contains("30")))
     }
 
-    func testNetworkErrorDescription() {
+    func testNetworkErrorDescription() throws {
         let underlying = URLError(.notConnectedToInternet)
         let error = InferenceError.networkError(underlying: underlying)
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("Network"))
+        XCTAssertTrue(try XCTUnwrap(error.errorDescription?.contains("Network")))
     }
 
-    func testProviderErrorDescription() {
+    func testProviderErrorDescription() throws {
         let error = InferenceError.providerError(statusCode: 500, message: "Internal Server Error")
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("500"))
+        XCTAssertTrue(try XCTUnwrap(error.errorDescription?.contains("500")))
     }
 }

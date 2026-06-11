@@ -59,8 +59,8 @@ final class AppCoordinator {
                     self?.applyOnboardingModelChoice(choice)
                 },
                 downloadCoreML: { [weak self] in
-                    guard let self, let currentConfig = self.currentConfig else { return }
-                    try await self.ensureModelAvailable(config: currentConfig)
+                    guard let self, let currentConfig else { return }
+                    try await ensureModelAvailable(config: currentConfig)
                 },
                 onOpenSettings: { [weak self] in
                     self?.openSettings(route: .models)
@@ -314,13 +314,12 @@ final class AppCoordinator {
 
         let pauseReason = derivePauseReason(config: currentConfig, permissions: permissionHealth, report: report)
         let pauseRemedy = derivePauseRemedy(config: currentConfig, permissions: permissionHealth, report: report)
-        let headline: String
-        if !currentConfig.enabled {
-            headline = "Autocomplete is off"
+        let headline: String = if !currentConfig.enabled {
+            "Autocomplete is off"
         } else if let pauseReason {
-            headline = pauseReason
+            pauseReason
         } else {
-            headline = "Suggestions are live"
+            "Suggestions are live"
         }
 
         uiModel.config = currentConfig
@@ -393,11 +392,11 @@ final class AppCoordinator {
     }
 
     private func updatePIIFiltering(_ enabled: Bool) {
-        mutateConfig({ config in
+        mutateConfig { config in
             config.privacy.piiFilteringEnabled = enabled
-        }, persist: { [weak self] configStore in
+        } persist: { [weak self] configStore in
             await configStore.updatePrivacy(self?.currentConfig?.privacy ?? AppConfig.default.privacy)
-        })
+        }
     }
 
     private func updateTelemetryEnabled(_ enabled: Bool) {
@@ -415,11 +414,11 @@ final class AppCoordinator {
     }
 
     private func updateTelemetryLocalOnly(_ enabled: Bool) {
-        mutateConfig({ config in
+        mutateConfig { config in
             config.telemetry.localStoreOnly = enabled
-        }, persist: { [weak self] configStore in
+        } persist: { [weak self] configStore in
             await configStore.updateTelemetry(self?.currentConfig?.telemetry ?? AppConfig.default.telemetry)
-        })
+        }
     }
 
     private func moveRuntime(from source: Int, to target: Int) {
@@ -701,7 +700,7 @@ final class AppCoordinator {
             config.onlineLLM.enabled = enabled
         }, persist: { [weak self] configStore in
             guard let self else { return }
-            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+            await configStore.updateOnlineLLM(currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
         }, rebuildPipelines: true)
     }
 
@@ -712,17 +711,17 @@ final class AppCoordinator {
             config.onlineLLM.byok.endpointURL = provider.defaultEndpoint
         }, persist: { [weak self] configStore in
             guard let self else { return }
-            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+            await configStore.updateOnlineLLM(currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
         }, rebuildPipelines: true)
     }
 
     private func updateOnlineLLMModel(_ model: String) {
-        mutateConfig({ config in
+        mutateConfig { config in
             config.onlineLLM.byok.selectedModel = model
-        }, persist: { [weak self] configStore in
+        } persist: { [weak self] configStore in
             guard let self else { return }
-            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
-        })
+            await configStore.updateOnlineLLM(currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+        }
     }
 
     private func updateOnlineLLMEndpoint(_ endpoint: String) {
@@ -730,7 +729,7 @@ final class AppCoordinator {
             config.onlineLLM.byok.endpointURL = endpoint
         }, persist: { [weak self] configStore in
             guard let self else { return }
-            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+            await configStore.updateOnlineLLM(currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
         }, rebuildPipelines: true)
     }
 
@@ -739,7 +738,7 @@ final class AppCoordinator {
             config.onlineLLM.byok.priority = priority
         }, persist: { [weak self] configStore in
             guard let self else { return }
-            await configStore.updateOnlineLLM(self.currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
+            await configStore.updateOnlineLLM(currentConfig?.onlineLLM ?? AppConfig.default.onlineLLM)
         }, rebuildPipelines: true)
     }
 
@@ -758,11 +757,11 @@ final class AppCoordinator {
     }
 
     private func updateTrainingDataCollection(_ enabled: Bool) {
-        mutateConfig({ config in
+        mutateConfig { config in
             config.privacy.trainingDataCollectionEnabled = enabled
-        }, persist: { [weak self] configStore in
+        } persist: { [weak self] configStore in
             await configStore.updatePrivacy(self?.currentConfig?.privacy ?? AppConfig.default.privacy)
-        })
+        }
         trainingDataExporter = TrainingDataExporter(enabled: enabled)
         if let currentConfig {
             rebuildRuntimePipelines(using: currentConfig)
@@ -831,7 +830,7 @@ final class AppCoordinator {
         if config.battery.mode == .pauseOnLowPower, ProcessInfo.processInfo.isLowPowerModeEnabled {
             return "Paused because Low Power Mode is on"
         }
-        if !report.runtimeHealth.contains(where: { $0.ready }) {
+        if !report.runtimeHealth.contains(where: \.ready) {
             return "No local runtime is ready"
         }
         return nil
@@ -847,7 +846,7 @@ final class AppCoordinator {
             isManualPause: isManualPause,
             permissionsReady: permissions.isReady,
             lowPowerPause: config.battery.mode == .pauseOnLowPower && ProcessInfo.processInfo.isLowPowerModeEnabled,
-            runtimeReady: report.runtimeHealth.contains(where: { $0.ready })
+            runtimeReady: report.runtimeHealth.contains(where: \.ready)
         )
     }
 
@@ -949,8 +948,8 @@ final class AppCoordinator {
             await persist(configStore)
         }
         if rebuildPipelines {
-            self.rebuildRuntimePipelines(using: currentConfig)
-            self.setPipelineEnabledFromCurrentState()
+            rebuildRuntimePipelines(using: currentConfig)
+            setPipelineEnabledFromCurrentState()
         }
         refreshUIState()
     }

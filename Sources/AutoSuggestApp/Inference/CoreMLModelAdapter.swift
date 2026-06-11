@@ -79,7 +79,10 @@ final class CoreMLModelAdapter {
 
             logger.info("Loaded HuggingFace tokenizer from \(tokenizerURL.path)")
         } catch {
-            logger.warn("Failed to load tokenizer from \(folderURL.path): \(error.localizedDescription). Falling back to byte-level.")
+            logger
+                .warn(
+                    "Failed to load tokenizer from \(folderURL.path): \(error.localizedDescription). Falling back to byte-level."
+                )
             tokenizerStrategy = .byteLevel
         }
     }
@@ -90,7 +93,8 @@ final class CoreMLModelAdapter {
             let parentDir = modelURL.deletingLastPathComponent()
             candidates = [
                 parentDir.appendingPathComponent("tokenizer.json"),
-                modelURL.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("tokenizer.json"),
+                modelURL.deletingLastPathComponent().deletingLastPathComponent()
+                    .appendingPathComponent("tokenizer.json"),
             ]
         } else {
             candidates = [
@@ -213,7 +217,7 @@ final class CoreMLModelAdapter {
         tokens = Array(tokens.suffix(maxContextTokens))
         var generated: [Int32] = []
 
-        for _ in 0..<maxNewTokens {
+        for _ in 0 ..< maxNewTokens {
             let inputArray = try makeTokenArray(tokens)
             var features: [String: MLFeatureValue] = [
                 inputIDsName: MLFeatureValue(multiArray: inputArray),
@@ -264,7 +268,7 @@ final class CoreMLModelAdapter {
 
     private func makeAttentionMask(count: Int) throws -> MLMultiArray {
         let array = try MLMultiArray(shape: [1, NSNumber(value: count)], dataType: .int32)
-        for i in 0..<count {
+        for i in 0 ..< count {
             array[i] = 1
         }
         return array
@@ -285,7 +289,7 @@ final class CoreMLModelAdapter {
         let base = logits.count - lastDim
         var bestIndex = 0
         var bestValue = Double.leastNormalMagnitude
-        for i in 0..<lastDim {
+        for i in 0 ..< lastDim {
             let value = Double(truncating: logits[base + i])
             if value > bestValue {
                 bestValue = value
@@ -303,7 +307,7 @@ final class CoreMLModelAdapter {
 
     private func decodeByteTokens(_ tokens: [Int32]) -> String {
         let bytes: [UInt8] = tokens.compactMap {
-            guard (0...255).contains($0) else { return nil }
+            guard (0 ... 255).contains($0) else { return nil }
             return UInt8($0)
         }
         return String(data: Data(bytes), encoding: .utf8) ?? ""
@@ -311,7 +315,7 @@ final class CoreMLModelAdapter {
 
     // MARK: - Name Resolution Helpers
 
-    private func dictionaryByLowercasedKey<T>(_ input: [String: T]) -> [String: String] {
+    private func dictionaryByLowercasedKey(_ input: [String: some Any]) -> [String: String] {
         var map: [String: String] = [:]
         for key in input.keys {
             map[key.lowercased()] = key

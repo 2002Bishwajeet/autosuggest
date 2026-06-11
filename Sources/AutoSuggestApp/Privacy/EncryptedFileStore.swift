@@ -5,7 +5,7 @@ actor EncryptedFileStore {
     private let keyStore = KeychainKeyStore()
     private let logger = Logger(scope: "EncryptedFileStore")
 
-    func save<T: Encodable>(_ value: T, to fileName: String) {
+    func save(_ value: some Encodable, to fileName: String) {
         do {
             let key = try keyStore.getOrCreateKeyData()
             let symmetricKey = SymmetricKey(data: key)

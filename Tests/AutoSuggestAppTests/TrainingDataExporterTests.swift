@@ -2,7 +2,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class TrainingDataExporterTests: XCTestCase {
-
     func testDisabledExporterDoesNotRecord() async {
         let exporter = TrainingDataExporter(enabled: false)
         await exporter.recordTrainingPair(prompt: "Hello", completion: " world")
@@ -26,10 +25,10 @@ final class TrainingDataExporterTests: XCTestCase {
         XCTAssertEqual(decoded.completion, " world")
     }
 
-    func testTrainingDataErrorDescriptions() {
+    func testTrainingDataErrorDescriptions() throws {
         let exportDisabled = TrainingDataError.exportDisabled
         XCTAssertNotNil(exportDisabled.errorDescription)
-        XCTAssertTrue(exportDisabled.errorDescription!.contains("disabled"))
+        XCTAssertTrue(try XCTUnwrap(exportDisabled.errorDescription?.contains("disabled")))
 
         let fileError = TrainingDataError.fileSystemError(
             underlying: NSError(domain: "test", code: 1, userInfo: nil)

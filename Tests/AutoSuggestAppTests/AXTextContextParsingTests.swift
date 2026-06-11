@@ -1,11 +1,10 @@
 import XCTest
 @testable import AutoSuggestApp
 
-// Characterization tests for the pure AX context-parsing helpers that feed the
-// policy engine (which decides whether to suggest in secure fields). Pins down
-// current caret-extraction and value-coercion behavior ahead of plan 004.
+/// Characterization tests for the pure AX context-parsing helpers that feed the
+/// policy engine (which decides whether to suggest in secure fields). Pins down
+/// current caret-extraction and value-coercion behavior ahead of plan 004.
 final class AXTextContextParsingTests: XCTestCase {
-
     // MARK: - extractTextBeforeCaret
 
     func testExtractTextBeforeCaretMidText() {

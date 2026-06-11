@@ -1,9 +1,8 @@
-import XCTest
 import CoreGraphics
+import XCTest
 @testable import AutoSuggestApp
 
 final class TextContextTests: XCTestCase {
-
     // MARK: - ExclusionRule Equality
 
     func testExclusionRuleEquality() {

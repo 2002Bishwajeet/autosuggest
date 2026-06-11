@@ -24,9 +24,9 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
     func generateSuggestion(context: String) async throws -> Suggestion {
         switch provider {
         case .anthropic:
-            return try await requestAnthropic(context: context)
+            try await requestAnthropic(context: context)
         case .openAICompatible, .openRouter, .custom:
-            return try await requestOpenAICompatible(context: context)
+            try await requestOpenAICompatible(context: context)
         }
     }
 
@@ -140,7 +140,7 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
 
     private func checkHTTPStatus(_ http: HTTPURLResponse, data: Data) throws {
         switch http.statusCode {
-        case 200..<300:
+        case 200 ..< 300:
             return
         case 401:
             throw InferenceError.invalidAPIKey

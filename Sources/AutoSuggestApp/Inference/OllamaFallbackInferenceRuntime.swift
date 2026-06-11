@@ -54,7 +54,7 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
         } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
             throw InferenceError.runtimeUnavailable("Ollama is not running. Start it with: ollama serve")
         }
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+        guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
 

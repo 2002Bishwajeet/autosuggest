@@ -3,7 +3,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class ModelDownloadIntegrityTests: XCTestCase {
-
     private func makeManifest(
         sha256: String,
         downloadURL: URL,
@@ -49,9 +48,9 @@ final class ModelDownloadIntegrityTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
         let expected = SHA256.hash(data: payload).map { String(format: "%02x", $0) }.joined()
-        let manifest = makeManifest(
+        let manifest = try makeManifest(
             sha256: expected,
-            downloadURL: URL(string: "https://example.com/test-model.zip")!
+            downloadURL: XCTUnwrap(URL(string: "https://example.com/test-model.zip"))
         )
         XCTAssertNoThrow(try manager.validateArtifactIntegrity(fileURL: fileURL, manifest: manifest))
     }
@@ -61,9 +60,9 @@ final class ModelDownloadIntegrityTests: XCTestCase {
         let fileURL = try writeTempFile(Data("verifiable-bytes".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        let manifest = makeManifest(
+        let manifest = try makeManifest(
             sha256: String(repeating: "0", count: 64),
-            downloadURL: URL(string: "https://example.com/test-model.zip")!
+            downloadURL: XCTUnwrap(URL(string: "https://example.com/test-model.zip"))
         )
         XCTAssertThrowsError(try manager.validateArtifactIntegrity(fileURL: fileURL, manifest: manifest)) { error in
             guard case ModelDownloadError.checksumMismatch = error else {

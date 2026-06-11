@@ -2,7 +2,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class PersonalizationEngineTests: XCTestCase {
-
     func testRecordAcceptedSuggestionDoesNotThrow() async {
         let engine = PersonalizationEngine(store: EncryptedFileStore())
         // Recording should not throw or crash

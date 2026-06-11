@@ -19,7 +19,7 @@ enum AppDirectoryError: Error, CustomStringConvertible {
     var description: String {
         switch self {
         case .missingApplicationSupportDirectory:
-            return "Could not locate Application Support directory"
+            "Could not locate Application Support directory"
         }
     }
 }

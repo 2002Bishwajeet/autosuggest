@@ -1,16 +1,15 @@
-import XCTest
 import CoreGraphics
+import XCTest
 @testable import AutoSuggestApp
 
-// Characterization tests for the two TypingPipeline staleness/continuation
-// guards (`isSuggestion(_:validFor:)` and `adjustSuggestionForSmartContinuation`)
-// that protect against inserting a suggestion into the wrong field. Pins down
-// current behavior ahead of plans 003/004. Reuses the mock construction pattern
-// from IntegrationTestHarness.swift (mocks are in the same test target).
+/// Characterization tests for the two TypingPipeline staleness/continuation
+/// guards (`isSuggestion(_:validFor:)` and `adjustSuggestionForSmartContinuation`)
+/// that protect against inserting a suggestion into the wrong field. Pins down
+/// current behavior ahead of plans 003/004. Reuses the mock construction pattern
+/// from IntegrationTestHarness.swift (mocks are in the same test target).
 @MainActor
 final class TypingPipelineGuardTests: XCTestCase {
-
-    // Builds a TypingPipeline with mocks, mirroring IntegrationTestHarness.swift.
+    /// Builds a TypingPipeline with mocks, mirroring IntegrationTestHarness.swift.
     private func makePipeline() -> TypingPipeline {
         let mockRuntime = MockInferenceRuntime()
         let inferenceEngine = InferenceEngine(runtimes: [mockRuntime])

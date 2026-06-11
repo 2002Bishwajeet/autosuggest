@@ -10,43 +10,45 @@ enum SettingsRoute: String, CaseIterable, Identifiable {
     case onlineLLM
     case diagnostics
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var title: String {
         switch self {
         case .general:
-            return "General"
+            "General"
         case .models:
-            return "Models"
+            "Models"
         case .onlineLLM:
-            return "Online LLM"
+            "Online LLM"
         case .permissionsPrivacy:
-            return "Permissions & Privacy"
+            "Permissions & Privacy"
         case .exclusions:
-            return "Exclusions"
+            "Exclusions"
         case .accessibility:
-            return "Accessibility"
+            "Accessibility"
         case .diagnostics:
-            return "Diagnostics"
+            "Diagnostics"
         }
     }
 
     var systemImage: String {
         switch self {
         case .general:
-            return "switch.2"
+            "switch.2"
         case .models:
-            return "cpu"
+            "cpu"
         case .onlineLLM:
-            return "cloud"
+            "cloud"
         case .permissionsPrivacy:
-            return "hand.raised"
+            "hand.raised"
         case .exclusions:
-            return "line.3.horizontal.decrease.circle"
+            "line.3.horizontal.decrease.circle"
         case .accessibility:
-            return "figure.wave"
+            "figure.wave"
         case .diagnostics:
-            return "stethoscope"
+            "stethoscope"
         }
     }
 }
@@ -265,7 +267,8 @@ struct ModelSourceDraft: Equatable, Identifiable {
             directURL: directURL.trimmingCharacters(in: .whitespacesAndNewlines),
             huggingFace: HuggingFaceModelSourceConfig(
                 repoID: huggingFaceRepoID.trimmingCharacters(in: .whitespacesAndNewlines),
-                revision: huggingFaceRevision.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "main" : huggingFaceRevision.trimmingCharacters(in: .whitespacesAndNewlines),
+                revision: huggingFaceRevision.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .isEmpty ? "main" : huggingFaceRevision.trimmingCharacters(in: .whitespacesAndNewlines),
                 filePath: huggingFaceFilePath.trimmingCharacters(in: .whitespacesAndNewlines),
                 tokenKeychainAccount: existing.huggingFace.tokenKeychainAccount
             )

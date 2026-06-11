@@ -1,7 +1,7 @@
-import ApplicationServices
-import Foundation
-import CoreGraphics
 import AppKit
+import ApplicationServices
+import CoreGraphics
+import Foundation
 
 struct PermissionManager {
     func isAccessibilityTrusted() -> Bool {

@@ -2,7 +2,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class SystemUtilityTests: XCTestCase {
-
     // MARK: - AppDirectories
 
     func testApplicationSupportURLDoesNotThrow() throws {
@@ -29,12 +28,12 @@ final class SystemUtilityTests: XCTestCase {
         XCTAssertEqual(snapshot.totalGB, 8.0, accuracy: 0.001)
     }
 
-    func testMemorySnapshotAvailableGB() {
+    func testMemorySnapshotAvailableGB() throws {
         let snapshot = MemorySnapshot(
             totalBytes: 17_179_869_184,
             availableBytes: 4_294_967_296
         )
-        XCTAssertEqual(snapshot.availableGB!, 4.0, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(snapshot.availableGB), 4.0, accuracy: 0.001)
     }
 
     func testMemorySnapshotNilAvailable() {

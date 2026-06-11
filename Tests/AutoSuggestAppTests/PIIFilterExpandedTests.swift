@@ -24,8 +24,11 @@ final class PIIFilterExpandedTests: XCTestCase {
         let output = filter.sanitize(input)
         XCTAssertFalse(output.contains("alice@test.com"))
         XCTAssertFalse(output.contains("bob@domain.org"))
-        XCTAssertEqual(output.components(separatedBy: "<email>").count - 1, 2,
-                        "Expected exactly two <email> replacements")
+        XCTAssertEqual(
+            output.components(separatedBy: "<email>").count - 1,
+            2,
+            "Expected exactly two <email> replacements"
+        )
     }
 
     func testSanitizesUSPhoneNumber() {

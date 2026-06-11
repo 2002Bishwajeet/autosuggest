@@ -1,5 +1,5 @@
-import ApplicationServices
 import AppKit
+import ApplicationServices
 import Foundation
 
 @MainActor
@@ -49,7 +49,10 @@ final class AXTextInsertionEngine: TextInsertionEngine {
             return insertByCGEventTyping(suggestion)
         }
 
-        let cursorLocation = min(selectedRange.location + (suggestion as NSString).length, (updatedText as NSString).length)
+        let cursorLocation = min(
+            selectedRange.location + (suggestion as NSString).length,
+            (updatedText as NSString).length
+        )
         if let newRange = makeAXRange(location: cursorLocation, length: 0) {
             _ = AXUIElementSetAttributeValue(focusedElement, "AXSelectedTextRange" as CFString, newRange)
         }
@@ -173,8 +176,8 @@ final class AXTextInsertionEngine: TextInsertionEngine {
     }
 
     private func sendCommandV() -> Bool {
-        guard let commandDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x37, keyDown: true),  // command
-              let vDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x09, keyDown: true),       // v
+        guard let commandDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x37, keyDown: true), // command
+              let vDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x09, keyDown: true), // v
               let vUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x09, keyDown: false),
               let commandUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x37, keyDown: false) else {
             return false

@@ -98,7 +98,10 @@ final class TypingPipeline {
         }
 
         if let activeSuggestion, activeSuggestion.sourceContext != context.textBeforeCaret {
-            if let adjusted = adjustSuggestionForSmartContinuation(activeSuggestion: activeSuggestion, newContext: context.textBeforeCaret) {
+            if let adjusted = adjustSuggestionForSmartContinuation(
+                activeSuggestion: activeSuggestion,
+                newContext: context.textBeforeCaret
+            ) {
                 presentSuggestion(adjusted)
             } else {
                 clearSuggestion()

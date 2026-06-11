@@ -252,36 +252,38 @@ struct OnlineLLMConfig: Codable {
 
 enum OnlineLLMProvider: String, Codable, CaseIterable, Identifiable, Hashable {
     case openAICompatible = "openai-compatible"
-    case anthropic = "anthropic"
+    case anthropic
     case openRouter = "openrouter"
-    case custom = "custom"
+    case custom
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var displayName: String {
         switch self {
-        case .openAICompatible: return "OpenAI-Compatible"
-        case .anthropic: return "Anthropic"
-        case .openRouter: return "OpenRouter"
-        case .custom: return "Custom Endpoint"
+        case .openAICompatible: "OpenAI-Compatible"
+        case .anthropic: "Anthropic"
+        case .openRouter: "OpenRouter"
+        case .custom: "Custom Endpoint"
         }
     }
 
     var defaultEndpoint: String {
         switch self {
-        case .openAICompatible: return "https://api.openai.com"
-        case .anthropic: return "https://api.anthropic.com"
-        case .openRouter: return "https://openrouter.ai/api"
-        case .custom: return ""
+        case .openAICompatible: "https://api.openai.com"
+        case .anthropic: "https://api.anthropic.com"
+        case .openRouter: "https://openrouter.ai/api"
+        case .custom: ""
         }
     }
 
     var defaultModel: String {
         switch self {
-        case .openAICompatible: return "gpt-4o-mini"
-        case .anthropic: return "claude-3-haiku-20240307"
-        case .openRouter: return "openai/gpt-4o-mini"
-        case .custom: return "default"
+        case .openAICompatible: "gpt-4o-mini"
+        case .anthropic: "claude-3-haiku-20240307"
+        case .openRouter: "openai/gpt-4o-mini"
+        case .custom: "default"
         }
     }
 
@@ -393,7 +395,10 @@ struct PrivacyConfig: Codable {
         encryptedStorageEnabled = try container.decode(Bool.self, forKey: .encryptedStorageEnabled)
         piiFilteringEnabled = try container.decode(Bool.self, forKey: .piiFilteringEnabled)
         trainingAllowlistBundleIDs = try container.decode([String].self, forKey: .trainingAllowlistBundleIDs)
-        trainingDataCollectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .trainingDataCollectionEnabled) ?? false
+        trainingDataCollectionEnabled = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .trainingDataCollectionEnabled
+        ) ?? false
     }
 }
 
@@ -431,8 +436,9 @@ struct ExclusionRule: Codable, Equatable {
     var contentPattern: String?
 }
 
-private let defaultManifestURL = URL(string: "https://raw.githubusercontent.com/autosuggest/models/main/manifest/stable.json")
-    ?? URL(fileURLWithPath: "/dev/null")
+private let defaultManifestURL =
+    URL(string: "https://raw.githubusercontent.com/autosuggest/models/main/manifest/stable.json")
+        ?? URL(fileURLWithPath: "/dev/null")
 
 extension AppConfig {
     static let `default` = AppConfig(

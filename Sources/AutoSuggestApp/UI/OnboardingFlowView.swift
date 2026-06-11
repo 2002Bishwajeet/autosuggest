@@ -125,13 +125,13 @@ struct OnboardingFlowView: View {
     private var stepTitle: String {
         switch currentStep {
         case .welcome:
-            return "Welcome to AutoSuggest"
+            "Welcome to AutoSuggest"
         case .permissions:
-            return "Grant Permissions"
+            "Grant Permissions"
         case .model:
-            return "Choose a Model Path"
+            "Choose a Model Path"
         case .finish:
-            return "First Use"
+            "First Use"
         }
     }
 
@@ -178,8 +178,10 @@ struct OnboardingFlowView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Permissions already granted")
                                 .font(.headline)
-                            Text("Accessibility and Input Monitoring are already enabled, so onboarding will skip the permission step.")
-                                .foregroundStyle(.secondary)
+                            Text(
+                                "Accessibility and Input Monitoring are already enabled, so onboarding will skip the permission step."
+                            )
+                            .foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -187,9 +189,13 @@ struct OnboardingFlowView: View {
 
             SettingsCard {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("AutoSuggest stays lightweight in the menu bar and keeps advanced controls in a dedicated settings window.")
-                    Text("Suggestions appear inline, accept with Tab or Enter, dismiss with Esc, and exclusions keep it out of editors and other sensitive contexts.")
-                        .foregroundStyle(.secondary)
+                    Text(
+                        "AutoSuggest stays lightweight in the menu bar and keeps advanced controls in a dedicated settings window."
+                    )
+                    Text(
+                        "Suggestions appear inline, accept with Tab or Enter, dismiss with Esc, and exclusions keep it out of editors and other sensitive contexts."
+                    )
+                    .foregroundStyle(.secondary)
                 }
             }
         }
@@ -206,9 +212,11 @@ struct OnboardingFlowView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Relaunch required")
                             .font(.headline)
-                        Text("Input Monitoring was granted. AutoSuggest must relaunch before it can intercept keystrokes.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        Text(
+                            "Input Monitoring was granted. AutoSuggest must relaunch before it can intercept keystrokes."
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button("Relaunch Now") {
@@ -348,15 +356,16 @@ struct OnboardingFlowView: View {
                             .font(.headline)
                         Text(selectedChoice.finishSummary(config: localModelConfig))
                             .foregroundStyle(.secondary)
-                        Text("Open Settings any time to manage models, permissions, exclusions, accessibility, and diagnostics.")
-                            .foregroundStyle(.secondary)
+                        Text(
+                            "Open Settings any time to manage models, permissions, exclusions, accessibility, and diagnostics."
+                        )
+                        .foregroundStyle(.secondary)
                     }
                 }
             }
         }
     }
 
-    @ViewBuilder
     private var selectedModelSetupSection: some View {
         SettingsCard {
             VStack(alignment: .leading, spacing: 14) {
@@ -428,8 +437,8 @@ struct OnboardingFlowView: View {
                         ProgressView("Downloading CoreML model…")
                     } else {
                         Text(isCoreMLInstalled
-                             ? "A local CoreML package is already available."
-                             : "Download the default CoreML package now or open model settings to use a custom source.")
+                            ? "A local CoreML package is already available."
+                            : "Download the default CoreML package now or open model settings to use a custom source.")
                             .foregroundStyle(.secondary)
                     }
 
@@ -599,7 +608,10 @@ private struct OnboardingChoiceCard: View {
                     .fill(Color(nsColor: .controlBackgroundColor))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(selected ? Color.blue : Color(nsColor: .separatorColor), lineWidth: selected ? 1.5 : 0.5)
+                            .stroke(
+                                selected ? Color.blue : Color(nsColor: .separatorColor),
+                                lineWidth: selected ? 1.5 : 0.5
+                            )
                     )
             )
         }
@@ -652,8 +664,10 @@ private struct SuggestionPreviewCard: View {
                     .font(.headline)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("When AutoSuggest has a completion, the suggested text appears inline and stays visually separate from what you already typed.")
-                        .foregroundStyle(.secondary)
+                    Text(
+                        "When AutoSuggest has a completion, the suggested text appears inline and stays visually separate from what you already typed."
+                    )
+                    .foregroundStyle(.secondary)
 
                     HStack(alignment: .firstTextBaseline, spacing: 0) {
                         Text("Thanks for the")
@@ -843,77 +857,77 @@ private extension OnboardingModelChoice {
     var displayTitle: String {
         switch self {
         case .ollama:
-            return "Ollama"
+            "Ollama"
         case .llamaCpp:
-            return "llama.cpp"
+            "llama.cpp"
         case .coreML:
-            return "CoreML"
+            "CoreML"
         }
     }
 
     var systemImage: String {
         switch self {
         case .ollama:
-            return "shippingbox"
+            "shippingbox"
         case .llamaCpp:
-            return "server.rack"
+            "server.rack"
         case .coreML:
-            return "cube.transparent"
+            "cube.transparent"
         }
     }
 
     var setupTitle: String {
         switch self {
         case .ollama:
-            return "Set up Ollama"
+            "Set up Ollama"
         case .llamaCpp:
-            return "Set up llama.cpp"
+            "Set up llama.cpp"
         case .coreML:
-            return "Set up CoreML"
+            "Set up CoreML"
         }
     }
 
     func setupSummary(config: LocalModelConfig) -> String {
         switch self {
         case .ollama:
-            return "AutoSuggest will use \(config.ollama.modelName) from \(config.ollama.baseURL) once the Ollama service is running."
+            "AutoSuggest will use \(config.ollama.modelName) from \(config.ollama.baseURL) once the Ollama service is running."
         case .llamaCpp:
-            return "Point AutoSuggest at a running llama.cpp server on \(config.llamaCpp.baseURL) and keep your GGUF model loaded there."
+            "Point AutoSuggest at a running llama.cpp server on \(config.llamaCpp.baseURL) and keep your GGUF model loaded there."
         case .coreML:
-            return "AutoSuggest can download the default CoreML package or use a custom local source from Settings."
+            "AutoSuggest can download the default CoreML package or use a custom local source from Settings."
         }
     }
 
     func setupCommands(config: LocalModelConfig) -> String {
         switch self {
         case .ollama:
-            return "ollama serve\nollama pull \(config.ollama.modelName)"
+            "ollama serve\nollama pull \(config.ollama.modelName)"
         case .llamaCpp:
-            return "llama-server -m /path/to/model.gguf --port 8080"
+            "llama-server -m /path/to/model.gguf --port 8080"
         case .coreML:
-            return "CoreML setup happens inside AutoSuggest."
+            "CoreML setup happens inside AutoSuggest."
         }
     }
 
     func isReady(config: LocalModelConfig, isCoreMLInstalled: Bool) -> Bool {
         switch self {
         case .ollama:
-            return isProcessRunning("ollama")
+            isProcessRunning("ollama")
         case .llamaCpp:
-            return isProcessRunning("llama-server") || isProcessRunning("llama.cpp")
+            isProcessRunning("llama-server") || isProcessRunning("llama.cpp")
         case .coreML:
-            return isCoreMLInstalled || config.isModelPresent
+            isCoreMLInstalled || config.isModelPresent
         }
     }
 
     func finishSummary(config: LocalModelConfig) -> String {
         switch self {
         case .ollama:
-            return "Keep \(config.ollama.modelName) available in Ollama and AutoSuggest will prefer that path first."
+            "Keep \(config.ollama.modelName) available in Ollama and AutoSuggest will prefer that path first."
         case .llamaCpp:
-            return "Keep your llama.cpp server running on \(config.llamaCpp.baseURL) when you want suggestions."
+            "Keep your llama.cpp server running on \(config.llamaCpp.baseURL) when you want suggestions."
         case .coreML:
-            return "AutoSuggest will use the local CoreML package you downloaded or configured in Settings."
+            "AutoSuggest will use the local CoreML package you downloaded or configured in Settings."
         }
     }
 

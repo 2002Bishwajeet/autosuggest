@@ -54,9 +54,12 @@ struct StatusPopoverView: View {
                         statusRow("Runtime", value: uiModel.quickPanelState.activeRuntimeLabel)
                         statusRow("Model", value: uiModel.quickPanelState.activeModelLabel)
                         statusRow("Permissions", value: uiModel.permissionHealth.summary)
-                        statusRow("Latency", value: uiModel.metrics.avgLatencyMs > 0
-                            ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms"
-                            : "No samples")
+                        statusRow(
+                            "Latency",
+                            value: uiModel.metrics.avgLatencyMs > 0
+                                ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms"
+                                : "No samples"
+                        )
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } label: {
@@ -158,7 +161,9 @@ struct SettingsRootView: View {
                             .padding(.vertical, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(route == uiModel.selectedSettingsRoute ? Color(nsColor: .selectedContentBackgroundColor) : .clear)
+                                    .fill(route == uiModel
+                                        .selectedSettingsRoute ? Color(nsColor: .selectedContentBackgroundColor) :
+                                        .clear)
                             )
                         }
                         .buttonStyle(.plain)
@@ -267,8 +272,10 @@ private struct SettingsDetailContent: View {
 
             SimplePanel {
                 SectionHeader("Shortcuts", systemImage: "keyboard")
-                Text("Accept suggestions with Tab or Enter. Dismiss with Esc. Left-click the status item for quick controls and right-click for overflow actions.")
-                    .foregroundStyle(.secondary)
+                Text(
+                    "Accept suggestions with Tab or Enter. Dismiss with Esc. Left-click the status item for quick controls and right-click for overflow actions."
+                )
+                .foregroundStyle(.secondary)
             }
         }
     }
@@ -460,9 +467,11 @@ private struct SettingsDetailContent: View {
                     get: { uiModel.config.privacy.trainingDataCollectionEnabled },
                     set: { uiModel.onUpdateTrainingDataCollection?($0) }
                 ))
-                Text("When enabled, accepted suggestions are recorded locally for fine-tuning. PII is filtered automatically.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "When enabled, accepted suggestions are recorded locally for fine-tuning. PII is filtered automatically."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
                 HStack {
                     Button("Export Training Data") {
@@ -512,10 +521,12 @@ private struct SettingsDetailContent: View {
                             .foregroundStyle(.tertiary)
                         Text("No exclusion rules")
                             .foregroundStyle(.secondary)
-                        Text("Add rules to prevent suggestions in specific apps, windows, or when certain content is detected.")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                            .multilineTextAlignment(.center)
+                        Text(
+                            "Add rules to prevent suggestions in specific apps, windows, or when certain content is detected."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -569,8 +580,12 @@ private struct SettingsDetailContent: View {
                 .font(.headline)
             Text("Suggestions are announced once and stay keyboard-first.")
                 .foregroundStyle(.secondary)
-            Text("Reduce Transparency: \(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency ? "Enabled" : "Disabled")")
-            Text("Increase Contrast: \(NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast ? "Enabled" : "Disabled")")
+            Text(
+                "Reduce Transparency: \(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency ? "Enabled" : "Disabled")"
+            )
+            Text(
+                "Increase Contrast: \(NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast ? "Enabled" : "Disabled")"
+            )
             Button("Preview VoiceOver Announcement") {
                 uiModel.previewAnnouncement()
             }
@@ -645,7 +660,9 @@ private struct SettingsDetailContent: View {
                     .font(.headline)
                 Text("Shown: \(uiModel.metrics.suggestionsShown)")
                 Text("Accepted: \(uiModel.metrics.suggestionsAccepted)")
-                Text("Latency: \(uiModel.metrics.avgLatencyMs > 0 ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms" : "No samples")")
+                Text(
+                    "Latency: \(uiModel.metrics.avgLatencyMs > 0 ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms" : "No samples")"
+                )
                 if let error = uiModel.diagnostics.lastModelError {
                     Text(error)
                         .foregroundStyle(.orange)
@@ -687,7 +704,6 @@ private struct SettingsDetailContent: View {
             ].contains(where: { $0.localizedStandardContains(query) })
         }
     }
-
 }
 
 private struct PermissionSettingsRow: View {
@@ -811,26 +827,26 @@ private struct BannerView: View {
     private var symbolName: String {
         switch banner.kind {
         case .info:
-            return "info.circle.fill"
+            "info.circle.fill"
         case .success:
-            return "checkmark.circle.fill"
+            "checkmark.circle.fill"
         case .warning:
-            return "exclamationmark.triangle.fill"
+            "exclamationmark.triangle.fill"
         case .error:
-            return "xmark.octagon.fill"
+            "xmark.octagon.fill"
         }
     }
 
     private var symbolColor: Color {
         switch banner.kind {
         case .info:
-            return .blue
+            .blue
         case .success:
-            return .green
+            .green
         case .warning:
-            return .orange
+            .orange
         case .error:
-            return .red
+            .red
         }
     }
 }
