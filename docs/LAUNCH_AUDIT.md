@@ -34,22 +34,28 @@ some claims don't match the shipped binary. Fix those two things and it goes fro
 Severity: **P0** = blocks launch / breaks trust · **P1** = major professionalism gap ·
 **P2** = polish that separates good from great · **P3** = nice-to-have / housekeeping.
 
-| # | P | Item | Effort | Where |
-|---|---|------|--------|-------|
-| 1 | P0 | No GitHub release/tag — Download buttons dead-end | M | `release.yml`, repo |
-| 2 | P0 | Build is unsigned & un-notarized | M | `release.yml:33-35` |
-| 3 | P0 | ✅ ~~Site oversells online-LLM (not shipped)~~ — **done** | S | `index.html` hero/features/runtimes |
-| 4 | P1 | No real product screenshots or demo video | M | `website/` (fake CSS demo) |
-| 5 | P1 | Designed OG/social image (current is placeholder) | S | `website/og-image.png` |
-| 6 | P1 | No FAQ / privacy / security trust section | M | `index.html` |
-| 7 | P1 | `install.sh` runs unsigned app; no quarantine note | S | `scripts/install.sh`, README |
-| 8 | P2 | No dark mode (Mac dev-tool audience expects it) | M | `css/variables.css` |
-| 9 | P2 | Google Fonts = perf + privacy leak; self-host | S | `index.html:27-29` |
-| 10 | P2 | Accessibility pass on the site itself | S | `index.html`, CSS |
-| 11 | P2 | `prefers-reduced-motion` not honored | S | `css/base.css`, JS |
-| 12 | P2 | SEO: no canonical, JSON-LD, sitemap, robots | S | `website/` |
-| 13 | P3 | Roadmap/changelog link, version sourced once | S | site + `CHANGELOG.md` |
-| 14 | P3 | Repo housekeeping (uncommitted files, `.build` tracked?) | S | repo root |
+Status as of the 2026-06-11 launch-hardening pass (branch `launch-hardening`):
+
+| # | P | Item | Effort | Status |
+|---|---|------|--------|--------|
+| 1 | P0 | No GitHub release/tag — Download buttons dead-end | M | 🟡 Pipeline wired (plan 008) — **maintainer must push the `v0.1.0` tag** |
+| 2 | P0 | Build is unsigned & un-notarized | M | 🟡 Signing + notarization wired (plan 008) — **maintainer must add the 5 Apple secrets** |
+| 3 | P0 | ~~Site oversells online-LLM (not shipped)~~ | S | ✅ Done (commit b3e1188) |
+| 4 | P1 | No real product screenshots or demo video | M | ⏳ **Needs assets from you** (5–10s capture + 2–3 screenshots) |
+| 5 | P1 | Designed OG/social image (current is placeholder) | S | ⏳ **Needs a designed 1200×630 asset** |
+| 6 | P1 | No FAQ / privacy / security trust section | M | ✅ Done — FAQ + privacy card |
+| 7 | P1 | `install.sh` runs unsigned app; no quarantine note | S | ✅ Done — first-launch note added |
+| 8 | P2 | No dark mode (Mac dev-tool audience expects it) | M | ✅ Done — `prefers-color-scheme` token block |
+| 9 | P2 | Google Fonts = perf + privacy leak; self-host | S | ✅ Done — self-hosted woff2, no Google calls |
+| 10 | P2 | Accessibility pass on the site itself | S | ✅ Done — focus rings, aria, `aria-hidden` SVGs |
+| 11 | P2 | `prefers-reduced-motion` not honored | S | ✅ Done — CSS + JS bail-outs |
+| 12 | P2 | SEO: no canonical, JSON-LD, sitemap, robots | S | ✅ Done |
+| 13 | P3 | Roadmap/changelog link, version sourced once | S | ✅ Done — footer link + CHANGELOG Unreleased |
+| 14 | P3 | Repo housekeeping (uncommitted files, `.build` tracked?) | S | ✅ Done — `.gitignore` updated |
+
+**Remaining before tag:** maintainer actions on #1/#2 (secrets + tag), and the
+two asset-dependent items #4/#5 (screenshots/video + OG image) which the agent
+can wire once you provide the captures.
 
 ---
 
