@@ -167,7 +167,7 @@ final class TypingPipeline {
                     await personalizationEngine.recordAcceptedSuggestion(completionText)
                     await telemetryManager.record(
                         event: "suggestion_accepted",
-                        payload: ["completion": completionText]
+                        payload: ["completion_length": String(completionText.count)]
                     )
                     await trainingDataExporter.recordTrainingPair(
                         prompt: sourceContext,

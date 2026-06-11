@@ -49,7 +49,7 @@ final class SuggestionOrchestrator {
                     return
                 }
                 guard requestID == latestRequestID else { return }
-                logger.info("Suggestion ready: \(completion)")
+                logger.info("Suggestion ready (\(completion.count) chars, confidence \(suggestion.confidence)).")
                 onSuggestion?(
                     SuggestionCandidate(
                         requestID: requestID,

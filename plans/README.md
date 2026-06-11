@@ -14,7 +14,7 @@ plan 008. Its item #3 is already done.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001 | Characterization tests: insertion, context parsing, pipeline guards | P1 | M | — | DONE |
-| 002 | Stop user text leaking into system log + telemetry | P1 | S | — | TODO |
+| 002 | Stop user text leaking into system log + telemetry | P1 | S | — | DONE |
 | 003 | Preserve full clipboard contents on accept | P1 | M | 001 | TODO |
 | 004 | Remove main-thread blocking from the suggestion hot path | P1 | M | 001, 003 | TODO |
 | 005 | Overlay contrast + animation race; actionable runtime-down state | P2 | S | — | TODO |

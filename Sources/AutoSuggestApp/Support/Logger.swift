@@ -9,14 +9,14 @@ struct Logger {
     }
 
     func info(_ message: String) {
-        logger.info("\(message, privacy: .public)")
+        logger.info("\(message, privacy: .private)")
     }
 
     func warn(_ message: String) {
-        logger.warning("\(message, privacy: .public)")
+        logger.warning("\(message, privacy: .private)")
     }
 
     func error(_ message: String) {
-        logger.error("\(message, privacy: .public)")
+        logger.error("\(message, privacy: .private)")
     }
 }

@@ -148,7 +148,8 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
             let retryAfter = http.value(forHTTPHeaderField: "Retry-After").flatMap(Int.init)
             throw InferenceError.rateLimited(retryAfterSeconds: retryAfter)
         default:
-            let body = String(data: data, encoding: .utf8) ?? "No response body"
+            let rawBody = String(data: data, encoding: .utf8) ?? "No response body"
+            let body = String(rawBody.prefix(200))
             throw InferenceError.providerError(statusCode: http.statusCode, message: body)
         }
     }
