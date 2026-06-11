@@ -34,7 +34,7 @@ jobs:
         run: |
           for v in CERT CERT_PW TEAM AID APW; do
             if [ -z "${!v}" ]; then
-              echo "::error::Missing release secret for $v — see plans/008-signed-notarized-release-pipeline.md 'Current state' for the full list"
+              echo "::error::Missing release secret: $v. Required: MACOS_CERT_P12_BASE64, MACOS_CERT_PASSWORD, APPLE_TEAM_ID, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD"
               exit 1
             fi
           done

@@ -75,5 +75,3 @@ with versioned migrations in `Sources/AutoSuggestApp/Config/ConfigMigrationManag
 - Permission-dependent behavior (Accessibility/Input Monitoring grants) must be
   tested through the Xcode app target (`macos/`), not the SwiftPM
   `AutoSuggestRunner`.
-- `plans/` holds advisor-generated implementation plans with their own index
-  (`plans/README.md`); check it for status and dependencies before starting work.

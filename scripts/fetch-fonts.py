@@ -95,7 +95,7 @@ for family, (spec, wanted) in JOBS.items():
 header = [
     "/* ═══════════════════════════════════════",
     "   Self-hosted fonts (latin subset)",
-    "   No third-party (Google) requests — see docs/LAUNCH_AUDIT.md #9.",
+    "   No third-party (Google) requests — privacy/perf for a privacy-first app.",
     "   Variable faces use a weight range + a single file.",
     "   Regenerate with scripts/fetch-fonts.py.",
     "   ═══════════════════════════════════════ */",

@@ -64,3 +64,9 @@ fastlane/test_output
 # Local agent / tooling config (not part of the project)
 .claude/
 .agents/
+skills-lock.json
+.agent/
+
+# Agent-generated planning artifacts (kept locally, not committed)
+plans/
+docs/LAUNCH_AUDIT.md
