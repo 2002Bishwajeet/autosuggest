@@ -13,7 +13,7 @@ struct CoreMLInferenceRuntime: InferenceRuntime {
         self.modelAdapter = modelAdapter
     }
 
-    func isAvailable() -> Bool {
+    func isAvailable() async -> Bool {
         resourceMonitor.hasSufficientMemoryForPrimaryRuntime()
     }
 

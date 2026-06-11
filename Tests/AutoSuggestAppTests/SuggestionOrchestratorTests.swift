@@ -134,7 +134,7 @@ private struct TestRuntime: InferenceRuntime {
     let available: Bool
     let result: String
 
-    func isAvailable() -> Bool { available }
+    func isAvailable() async -> Bool { available }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
         Suggestion(completion: result, confidence: 0.5)
@@ -144,7 +144,7 @@ private struct TestRuntime: InferenceRuntime {
 private struct ThrowingRuntime: InferenceRuntime {
     let name: String
 
-    func isAvailable() -> Bool { true }
+    func isAvailable() async -> Bool { true }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
         throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated failure"])

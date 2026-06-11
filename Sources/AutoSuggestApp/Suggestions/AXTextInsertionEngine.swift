@@ -146,11 +146,14 @@ final class AXTextInsertionEngine: TextInsertionEngine {
             return false
         }
 
-        // Brief delay so paste event can be processed before clipboard restore
-        Thread.sleep(forTimeInterval: 0.05)
-
-        snapshot.restore(to: pasteboard)
-        defaults.removeObject(forKey: Self.clipboardBackupKey)
+        // Defer restore so the paste event can be processed before the clipboard
+        // is restored, without blocking the main thread. The crash-backup key is
+        // cleared inside the deferred block so a crash in the 50ms window still
+        // restores the user's clipboard on next launch.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            snapshot.restore(to: pasteboard)
+            defaults.removeObject(forKey: Self.clipboardBackupKey)
+        }
         return true
     }
 

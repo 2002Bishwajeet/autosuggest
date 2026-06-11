@@ -129,7 +129,7 @@ final class MockInferenceRuntime: InferenceRuntime {
         self.available = available
     }
 
-    func isAvailable() -> Bool { available }
+    func isAvailable() async -> Bool { available }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
         generateCallCount += 1

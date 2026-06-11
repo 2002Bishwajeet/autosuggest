@@ -4,7 +4,7 @@ protocol InferenceRuntime {
     @MainActor
     var name: String { get }
     @MainActor
-    func isAvailable() -> Bool
+    func isAvailable() async -> Bool
     @MainActor
     func generateSuggestion(context: String) async throws -> Suggestion
 }

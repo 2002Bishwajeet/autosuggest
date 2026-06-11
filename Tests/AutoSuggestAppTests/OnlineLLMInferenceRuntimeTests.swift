@@ -17,25 +17,27 @@ final class OnlineLLMInferenceRuntimeTests: XCTestCase {
     }
 
     @MainActor
-    func testIsAvailableWithAPIKey() {
+    func testIsAvailableWithAPIKey() async {
         let runtime = OnlineLLMInferenceRuntime(
             provider: .openAICompatible,
             model: "gpt-4o-mini",
             endpointURL: nil,
             apiKey: "sk-test"
         )
-        XCTAssertTrue(runtime.isAvailable())
+        let available = await runtime.isAvailable()
+        XCTAssertTrue(available)
     }
 
     @MainActor
-    func testIsNotAvailableWithoutAPIKey() {
+    func testIsNotAvailableWithoutAPIKey() async {
         let runtime = OnlineLLMInferenceRuntime(
             provider: .openAICompatible,
             model: "gpt-4o-mini",
             endpointURL: nil,
             apiKey: ""
         )
-        XCTAssertFalse(runtime.isAvailable())
+        let available = await runtime.isAvailable()
+        XCTAssertFalse(available)
     }
 
     // MARK: - Provider configs

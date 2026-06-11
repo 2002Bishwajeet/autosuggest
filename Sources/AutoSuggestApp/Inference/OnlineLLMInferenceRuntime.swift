@@ -17,7 +17,7 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
         self.apiKey = apiKey
     }
 
-    func isAvailable() -> Bool {
+    func isAvailable() async -> Bool {
         !apiKey.isEmpty
     }
 
