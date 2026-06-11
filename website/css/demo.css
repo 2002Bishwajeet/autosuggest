@@ -19,3 +19,15 @@
     opacity: 1;
     transform: none;
 }
+
+/* ── Phones: shrink the mono demo so ghost lines never overflow the window ── */
+@media (max-width: 560px) {
+    .hero-demo .ghost-text { font-size: 0.74rem; line-height: 1.7; }
+    .hero-demo .ghost-tab { margin-left: 8px; padding: 1px 6px; font-size: 0.62rem; }
+    .hero-demo .ghost-suggestion { padding-left: 7px; }
+    .hero-demo .ghost-comment { font-size: 0.66rem; }
+}
+
+@media (max-width: 400px) {
+    .hero-demo .ghost-text { font-size: 0.68rem; }
+}

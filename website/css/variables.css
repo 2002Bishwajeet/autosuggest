@@ -110,8 +110,10 @@
     --font-mono:    'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
     /* ── Type scale (fluid where it matters) ── */
-    --text-hero:    clamp(3.2rem, 7.5vw, 5.6rem);  /* display serif, 400 */
-    --text-display: clamp(2.2rem, 4.5vw, 3.2rem);  /* section titles */
+    /* Mins kept small enough that the hero <h1> and every .section-title fit
+       a ~330px content column on phones without clipping. */
+    --text-hero:    clamp(2.3rem, 8.5vw, 5.6rem);  /* display serif, 400 */
+    --text-display: clamp(1.8rem, 5.5vw, 3.2rem);  /* section titles */
     --text-title:   1.45rem;                        /* card/window titles */
     --text-lead:    1.18rem;                        /* hero subcopy */
     --text-body:    1rem;

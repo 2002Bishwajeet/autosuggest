@@ -59,6 +59,13 @@
     right: 100px;
     top: 38px;
 }
+/* The card is narrower than the hero — trim the app-menu list so it can
+   never crowd the right-side status cluster (clear gap between app menus
+   and the ghost glyph). Keep File / Edit / View / Help. */
+.menubar-mockup .menu-bar-menus span:nth-child(3),
+.menubar-mockup .menu-bar-menus span:nth-child(5) {
+    display: none;
+}
 
 /* ── Steps / how it works ── */
 .how-it-works {
@@ -139,6 +146,7 @@
     gap: 18px;
 }
 .runtime-card {
+    height: 100%;
     padding: 28px 24px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
@@ -175,7 +183,7 @@
     left: 50%;
     top: -260px;
     transform: translateX(-50%);
-    width: 760px;
+    width: min(760px, 100%);
     height: 600px;
     background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
     pointer-events: none;
@@ -244,6 +252,7 @@
     gap: 18px;
 }
 .ft-card {
+    height: 100%;
     padding: 26px 24px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
@@ -380,4 +389,24 @@
 @media (max-width: 560px) {
     .features-grid { grid-template-columns: 1fr; }
     .footer .container { flex-direction: column; align-items: flex-start; }
+
+    /* Tighten section rhythm + ensure nothing overflows the phone viewport. */
+    .section-title { margin-bottom: 32px; }
+
+    /* Menu-bar section: copy stacks above the mockup; keep the mockup +
+       dropdown inside the viewport. */
+    .menubar-mockup { min-height: 300px; }
+    .menubar-copy p { max-width: 100%; }
+    .menu-dropdown { width: min(262px, calc(100vw - 96px)); }
+    .menubar-mockup .menu-dropdown { top: 30px; }
+
+    /* Shrink mono demos so terminal / code blocks don't overflow. */
+    .terminal-body { padding: 16px 16px 20px; font-size: 0.74rem; }
+    .terminal-body .comment { font-size: 0.68rem; }
+    .code-block { font-size: 0.76rem; }
+}
+
+@media (max-width: 400px) {
+    .menubar-mockup { min-height: 280px; }
+    .terminal-body { font-size: 0.7rem; }
 }

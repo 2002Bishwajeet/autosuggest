@@ -26,6 +26,11 @@ img { max-width: 100%; display: block; }
     padding: 0 var(--gutter);
 }
 
+/* Tighter side gutter on phones → more room for titles + mockups. */
+@media (max-width: 560px) {
+    .container { padding: 0 20px; }
+}
+
 /* Film-grain overlay */
 body::after {
     content: '';
