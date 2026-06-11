@@ -76,3 +76,24 @@ body::after {
 .reveal-delay-2 { transition-delay: 0.16s; }
 .reveal-delay-3 { transition-delay: 0.24s; }
 .reveal-delay-4 { transition-delay: 0.32s; }
+
+/* Keyboard focus — visible ring on every interactive element */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 5px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* Respect reduced-motion: kill scroll-reveal, the typing demo timers' visual
+   motion, the blinking cursor, and the pulsing badge. JS also bails early. */
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .demo-body .line { opacity: 1 !important; transform: none !important; }
+}

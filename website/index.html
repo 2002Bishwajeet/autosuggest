@@ -46,10 +46,10 @@
                 <div class="cursor-icon">&#x258C;</div>
                 AutoSuggest
             </a>
-            <button class="nav-toggle" aria-label="Menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <button class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
-            <div class="nav-links">
+            <div class="nav-links" id="nav-links">
                 <a href="#features">Features</a>
                 <a href="#how-it-works">Setup</a>
                 <a href="#runtimes">Runtimes</a>
@@ -79,7 +79,7 @@
 
             <div class="hero-actions">
                 <a href="#download" class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Download for Mac
                 </a>
                 <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener" class="btn-secondary">
@@ -140,7 +140,7 @@
             <div class="features-grid">
                 <div class="feature-card reveal reveal-delay-1">
                     <div class="feature-icon teal">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     </div>
                     <h3>Private</h3>
                     <p>Everything runs locally on your Mac. No data leaves your device. No accounts, no cloud, no telemetry.</p>
@@ -148,7 +148,7 @@
 
                 <div class="feature-card reveal reveal-delay-2">
                     <div class="feature-icon coral">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     </div>
                     <h3>Fast</h3>
                     <p>Sub-second suggestions via Ollama, llama.cpp, or CoreML. Optimized for Apple Silicon.</p>
@@ -156,7 +156,7 @@
 
                 <div class="feature-card reveal reveal-delay-3">
                     <div class="feature-icon green">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                     </div>
                     <h3>Open Source</h3>
                     <p>GPL v3 licensed. Read every line, fork it, extend it. Built in Swift 6.2 with full strict concurrency.</p>
@@ -164,7 +164,7 @@
 
                 <div class="feature-card reveal reveal-delay-4">
                     <div class="feature-icon warm">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                     </div>
                     <h3>Smart</h3>
                     <p>Context-aware completions with PII filtering, per-app exclusion rules, and personalization that learns your style.</p>
@@ -187,7 +187,7 @@
                     <h3>Install a runtime</h3>
                     <p>Install Ollama with Homebrew and pull a small model. That's the whole setup — about a minute.</p>
                     <div class="step-connector">
-                        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
                     </div>
                 </div>
 
@@ -196,7 +196,7 @@
                     <h3>Launch AutoSuggest</h3>
                     <p>It lives in your menu bar. Grant Accessibility and Input Monitoring when prompted.</p>
                     <div class="step-connector">
-                        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
                     </div>
                 </div>
 
@@ -285,7 +285,7 @@
             </p>
             <div class="reveal reveal-delay-2">
                 <a href="https://github.com/2002bishwajeet/autosuggest/releases" target="_blank" rel="noopener" class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Download Latest Release
                 </a>
             </div>

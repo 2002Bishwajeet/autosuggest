@@ -12,13 +12,17 @@ export function initNav() {
     const toggle = nav.querySelector('.nav-toggle');
     const links = nav.querySelector('.nav-links');
     if (toggle && links) {
+        const setOpen = (open) => {
+            links.classList.toggle('open', open);
+            toggle.setAttribute('aria-expanded', String(open));
+        };
         toggle.addEventListener('click', () => {
-            links.classList.toggle('open');
+            setOpen(!links.classList.contains('open'));
         });
 
         // Close on link click
         links.querySelectorAll('a').forEach(a => {
-            a.addEventListener('click', () => links.classList.remove('open'));
+            a.addEventListener('click', () => setOpen(false));
         });
     }
 
