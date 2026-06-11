@@ -98,7 +98,73 @@ jobs:
           APP_PATH=$(find build -name "AutoSuggest.app" -type d | head -1)
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           codesign -d --entitlements - "$APP_PATH"
+          # Signing-authority diagnostic: codesign -dvvv writes to stderr, so
+          # capture it. A "Developer ID Application: …" Authority line proves the
+          # app is signed with the real Developer ID identity; its absence (e.g.
+          # "Signature=adhoc") points at an ad-hoc signature, which Apple's
+          # notary service rejects as Invalid.
+          codesign -dvvv "$APP_PATH" 2>&1 | tee codesign-authority.txt
+          if grep -q "Authority=Developer ID Application" codesign-authority.txt; then
+            echo "Signed by Developer ID Application."
+          else
+            echo "::warning::App is NOT signed by 'Developer ID Application' (see codesign -dvvv output above). This is a likely cause of notarization Invalid."
+          fi
           echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Deep-sign nested code
+        working-directory: macos
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          APP_PATH="${{ steps.locate.outputs.app_path }}"
+          IDENTITY="Developer ID Application"
+          ENTITLEMENTS="AutoSuggestDesktop/AutoSuggest.entitlements"
+          # Most-likely cause of notarization Invalid for this app shape: nested
+          # code (resource bundles like AutoSuggestApp_AutoSuggestApp.bundle and
+          # swift-transformers_Hub.bundle, plus any frameworks/dylibs carrying
+          # Mach-O) was left ad-hoc signed or without hardened runtime / secure
+          # timestamp. Re-sign every nested Mach-O inside-out (deepest path
+          # first) with Developer ID + hardened runtime + timestamp, then
+          # re-sign the outer app last so its signature seals the new contents.
+
+          # Collect candidate nested code: frameworks, dylibs, bundles, plus any
+          # other Mach-O files under the bundle (executables in helper tools etc).
+          declare -a TARGETS=()
+          while IFS= read -r p; do
+            TARGETS+=("$p")
+          done < <(find "$APP_PATH/Contents" \
+            \( -name "*.framework" -o -name "*.dylib" -o -name "*.bundle" \) -print)
+          # Also pick up loose Mach-O files (no bundle wrapper) not already covered.
+          while IFS= read -r f; do
+            if file "$f" 2>/dev/null | grep -q "Mach-O"; then
+              TARGETS+=("$f")
+            fi
+          done < <(find "$APP_PATH/Contents" -type f ! -name "*.dylib")
+
+          # Sign deepest paths first so inner code is sealed before its container.
+          # Sort by path depth (number of "/") descending; awk '!seen[$0]++'
+          # drops duplicates while preserving that depth order (a second sort
+          # would scramble it).
+          if [ "${#TARGETS[@]}" -gt 0 ]; then
+            printf '%s\n' "${TARGETS[@]}" | awk -F/ '{print NF"\t"$0}' | sort -rn -k1,1 | cut -f2- | awk '!seen[$0]++' | while IFS= read -r item; do
+              [ -e "$item" ] || continue
+              echo "Signing nested: $item"
+              codesign --force --options runtime --timestamp \
+                --sign "$IDENTITY" "$item"
+            done
+          fi
+
+          # Re-sign the outer app last, with the project entitlements.
+          echo "Re-signing app bundle: $APP_PATH"
+          codesign --force --options runtime --timestamp \
+            --entitlements "$ENTITLEMENTS" \
+            --sign "$IDENTITY" "$APP_PATH"
+
+          # Confirm the final signature is valid and still Developer ID.
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          codesign -dvvv "$APP_PATH" 2>&1 | grep "Authority=Developer ID Application" \
+            || { echo "::error::App not signed by Developer ID Application after deep-sign"; exit 1; }
 
       - name: Create DMG
         run: |
@@ -115,11 +181,36 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          xcrun notarytool submit AutoSuggest.dmg \
+          set -euo pipefail
+          # `notarytool submit --wait` exits 0 even when the final status is
+          # Invalid/Rejected, so the old pipeline sailed past this step and only
+          # failed later at "Staple" with a misleading error. Capture the JSON,
+          # extract id + status ourselves, and fail loudly on anything that is
+          # not "Accepted" — printing the full notary log so the rejection
+          # reasons are visible directly in this step's output.
+          SUBMIT_JSON=$(xcrun notarytool submit AutoSuggest.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait --timeout 30m
+            --wait --timeout 30m \
+            --output-format json)
+          echo "$SUBMIT_JSON"
+
+          SUBMISSION_ID=$(echo "$SUBMIT_JSON" | jq -r '.id // empty')
+          STATUS=$(echo "$SUBMIT_JSON" | jq -r '.status // empty')
+          echo "Notarization submission id: $SUBMISSION_ID"
+          echo "Notarization status: $STATUS"
+
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "::error::Notarization failed with status '$STATUS' (submission $SUBMISSION_ID). Notary log follows:"
+            if [ -n "$SUBMISSION_ID" ]; then
+              xcrun notarytool log "$SUBMISSION_ID" \
+                --apple-id "$APPLE_ID" \
+                --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                --team-id "$APPLE_TEAM_ID" || true
+            fi
+            exit 1
+          fi
 
       - name: Staple DMG
         run: |
@@ -140,11 +231,29 @@ jobs:
           if ! xcrun stapler staple "$APP_PATH"; then
             echo "No ticket found for the standalone app; submitting it separately."
             ditto -c -k --keepParent "$APP_PATH" "$GITHUB_WORKSPACE/AutoSuggest-notarize.zip"
-            xcrun notarytool submit "$GITHUB_WORKSPACE/AutoSuggest-notarize.zip" \
+            # Same as the DMG step: --wait exits 0 on Invalid, so check status
+            # ourselves and surface the notary log before failing.
+            ZIP_SUBMIT_JSON=$(xcrun notarytool submit "$GITHUB_WORKSPACE/AutoSuggest-notarize.zip" \
               --apple-id "$APPLE_ID" \
               --password "$APPLE_APP_SPECIFIC_PASSWORD" \
               --team-id "$APPLE_TEAM_ID" \
-              --wait --timeout 30m
+              --wait --timeout 30m \
+              --output-format json)
+            echo "$ZIP_SUBMIT_JSON"
+            ZIP_SUBMISSION_ID=$(echo "$ZIP_SUBMIT_JSON" | jq -r '.id // empty')
+            ZIP_STATUS=$(echo "$ZIP_SUBMIT_JSON" | jq -r '.status // empty')
+            echo "App notarization submission id: $ZIP_SUBMISSION_ID"
+            echo "App notarization status: $ZIP_STATUS"
+            if [ "$ZIP_STATUS" != "Accepted" ]; then
+              echo "::error::App notarization failed with status '$ZIP_STATUS' (submission $ZIP_SUBMISSION_ID). Notary log follows:"
+              if [ -n "$ZIP_SUBMISSION_ID" ]; then
+                xcrun notarytool log "$ZIP_SUBMISSION_ID" \
+                  --apple-id "$APPLE_ID" \
+                  --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                  --team-id "$APPLE_TEAM_ID" || true
+              fi
+              exit 1
+            fi
             xcrun stapler staple "$APP_PATH"
           fi
           xcrun stapler validate "$APP_PATH"
