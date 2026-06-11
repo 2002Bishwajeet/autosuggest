@@ -17,7 +17,7 @@ plan 008. Its item #3 is already done.
 | 002 | Stop user text leaking into system log + telemetry | P1 | S | — | DONE |
 | 003 | Preserve full clipboard contents on accept | P1 | M | 001 | DONE |
 | 004 | Remove main-thread blocking from the suggestion hot path | P1 | M | 001, 003 | DONE |
-| 005 | Overlay contrast + animation race; actionable runtime-down state | P2 | S | — | TODO |
+| 005 | Overlay contrast + animation race; actionable runtime-down state | P2 | S | — | DONE |
 | 006 | Secure-input, keychain, and model-download integrity hardening | P2 | M | — | TODO |
 | 007 | DX bundle: swiftformat, CI cache+lint, CLAUDE.md, dep pin | P2 | S | 001–006 (ordering only) | TODO |
 | 008 | Signed, notarized release pipeline (v0.1.0 launch gate) | P1 | M | — (see note) | TODO |

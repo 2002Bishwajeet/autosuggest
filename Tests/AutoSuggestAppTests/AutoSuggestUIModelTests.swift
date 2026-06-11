@@ -43,4 +43,27 @@ final class AutoSuggestUIModelTests: XCTestCase {
 
         XCTAssertEqual(health.summary, "All required permissions are granted.")
     }
+
+    func testPauseRemedyForRuntimeDownGivesOllamaHint() {
+        let remedy = AppCoordinator.derivePauseRemedy(
+            isManualPause: false,
+            permissionsReady: true,
+            lowPowerPause: false,
+            runtimeReady: false
+        )
+        XCTAssertEqual(
+            remedy,
+            "Start Ollama (`ollama serve`) or install a model via Model Source Settings…"
+        )
+    }
+
+    func testPauseRemedyIsNilWhenNoPauseReason() {
+        let remedy = AppCoordinator.derivePauseRemedy(
+            isManualPause: false,
+            permissionsReady: true,
+            lowPowerPause: false,
+            runtimeReady: true
+        )
+        XCTAssertNil(remedy)
+    }
 }

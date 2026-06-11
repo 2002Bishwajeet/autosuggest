@@ -31,8 +31,15 @@ struct StatusPopoverView: View {
 
                 if let pauseReason = uiModel.quickPanelState.pauseReason {
                     SimplePanel {
-                        Label(pauseReason, systemImage: "pause.circle")
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label(pauseReason, systemImage: "pause.circle")
+                                .foregroundStyle(.secondary)
+                            if let remedy = uiModel.quickPanelState.pauseRemedy {
+                                Text(remedy)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
 

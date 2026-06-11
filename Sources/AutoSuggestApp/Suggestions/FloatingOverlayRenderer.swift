@@ -7,6 +7,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
     private let logger = Logger(scope: "FloatingOverlayRenderer")
     private var panel: NSPanel?
     private var textField: NSTextField?
+    private var hideGeneration = 0
 
     func showSuggestion(_ text: String, caretRectInScreen: CGRect?) {
         ensurePanel()
@@ -14,24 +15,28 @@ final class FloatingOverlayRenderer: OverlayRenderer {
 
         textField.stringValue = text
         layoutPanel(panel: panel, textField: textField, text: text, caretRectInScreen: caretRectInScreen)
+        hideGeneration += 1
         if !panel.isVisible {
             panel.alphaValue = 0
             panel.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.14
-                panel.animator().alphaValue = 1
-            }
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.14
+            panel.animator().alphaValue = 1
         }
     }
 
     func hideSuggestion() {
         guard let panel, panel.isVisible else { return }
+        hideGeneration += 1
+        let generation = hideGeneration
         NSAnimationContext.runAnimationGroup { context in
             context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.12
             panel.animator().alphaValue = 0
         } completionHandler: {
-            DispatchQueue.main.async {
-                panel.orderOut(nil)
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.hideGeneration == generation else { return }
+                self.panel?.orderOut(nil)
             }
         }
     }
@@ -64,7 +69,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         visual.alphaValue = 0.96
 
         let textField = NSTextField(labelWithString: "")
-        textField.textColor = NSColor.tertiaryLabelColor
+        textField.textColor = NSColor.secondaryLabelColor
         textField.font = NSFont.systemFont(ofSize: 14, weight: .regular)
         textField.alignment = .natural
         textField.lineBreakMode = .byTruncatingTail

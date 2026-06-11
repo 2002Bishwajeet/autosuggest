@@ -313,6 +313,7 @@ final class AppCoordinator {
         )
 
         let pauseReason = derivePauseReason(config: currentConfig, permissions: permissionHealth, report: report)
+        let pauseRemedy = derivePauseRemedy(config: currentConfig, permissions: permissionHealth, report: report)
         let headline: String
         if !currentConfig.enabled {
             headline = "Autocomplete is off"
@@ -327,6 +328,7 @@ final class AppCoordinator {
         uiModel.modelHealth = modelHealth
         uiModel.quickPanelState = QuickPanelState(
             pauseReason: pauseReason,
+            pauseRemedy: pauseRemedy,
             activeRuntimeLabel: activeRuntimeLabel,
             activeModelLabel: activeModelLabel,
             statusHeadline: headline
@@ -831,6 +833,43 @@ final class AppCoordinator {
         }
         if !report.runtimeHealth.contains(where: { $0.ready }) {
             return "No local runtime is ready"
+        }
+        return nil
+    }
+
+    private func derivePauseRemedy(
+        config: AppConfig,
+        permissions: PermissionHealth,
+        report: ModelCompatibilityReport
+    ) -> String? {
+        let isManualPause = manualPauseUntil.map { $0 > Date() } ?? false
+        return AppCoordinator.derivePauseRemedy(
+            isManualPause: isManualPause,
+            permissionsReady: permissions.isReady,
+            lowPowerPause: config.battery.mode == .pauseOnLowPower && ProcessInfo.processInfo.isLowPowerModeEnabled,
+            runtimeReady: report.runtimeHealth.contains(where: { $0.ready })
+        )
+    }
+
+    /// Maps the same pause conditions evaluated by `derivePauseReason` to an actionable hint.
+    /// Pure and order-matched to `derivePauseReason` so the remedy always describes the active reason.
+    nonisolated static func derivePauseRemedy(
+        isManualPause: Bool,
+        permissionsReady: Bool,
+        lowPowerPause: Bool,
+        runtimeReady: Bool
+    ) -> String? {
+        if isManualPause {
+            return nil
+        }
+        if !permissionsReady {
+            return "Open System Settings → Privacy & Security → Accessibility / Input Monitoring, then relaunch AutoSuggest."
+        }
+        if lowPowerPause {
+            return "Suggestions resume automatically when Low Power Mode turns off."
+        }
+        if !runtimeReady {
+            return "Start Ollama (`ollama serve`) or install a model via Model Source Settings…"
         }
         return nil
     }

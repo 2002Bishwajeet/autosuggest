@@ -99,12 +99,14 @@ struct PermissionHealth {
 
 struct QuickPanelState {
     var pauseReason: String?
+    var pauseRemedy: String?
     var activeRuntimeLabel: String
     var activeModelLabel: String
     var statusHeadline: String
 
     static let empty = QuickPanelState(
         pauseReason: nil,
+        pauseRemedy: nil,
         activeRuntimeLabel: "No runtime ready",
         activeModelLabel: "No local model",
         statusHeadline: "Waiting for setup"
