@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="website/readme-banner.png" alt="AutoSuggest — system-wide autocomplete for macOS, powered by local LLMs" width="100%">
+</p>
+
 # AutoSuggest
 
 System-wide macOS autocomplete powered by local LLMs. Runs entirely on your machine — no cloud, no account, no telemetry by default.
