@@ -102,45 +102,55 @@ final class AXTextInsertionEngine: TextInsertionEngine {
     }
 
     private static let clipboardBackupKey = "autosuggest.clipboardBackup"
+    /// UserDefaults is not a good home for large blobs; cap the encoded crash
+    /// backup at 1 MB and fall back to a plain-string backup above that.
+    private static let clipboardBackupMaxBytes = 1 * 1024 * 1024
 
     static func restoreClipboardIfNeeded() {
-        guard let backup = UserDefaults.standard.string(forKey: clipboardBackupKey) else { return }
+        let defaults = UserDefaults.standard
+        defer { defaults.removeObject(forKey: clipboardBackupKey) }
         let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(backup, forType: .string)
-        UserDefaults.standard.removeObject(forKey: clipboardBackupKey)
+        if let data = defaults.data(forKey: clipboardBackupKey),
+           let snapshot = try? PropertyListDecoder().decode(PasteboardSnapshot.self, from: data) {
+            snapshot.restore(to: pasteboard)
+        } else if let legacy = defaults.string(forKey: clipboardBackupKey) {
+            pasteboard.clearContents()
+            pasteboard.setString(legacy, forType: .string)
+        }
     }
 
     private func insertByClipboardPaste(_ suggestion: String) -> Bool {
         let pasteboard = NSPasteboard.general
-        let existing = pasteboard.string(forType: .string)
+        let snapshot = PasteboardSnapshot.capture(from: pasteboard)
 
-        // Back up clipboard to UserDefaults in case app crashes mid-paste
-        if let existing {
-            UserDefaults.standard.set(existing, forKey: Self.clipboardBackupKey)
+        // Back up clipboard to UserDefaults in case app crashes mid-paste.
+        let defaults = UserDefaults.standard
+        if let encoded = try? PropertyListEncoder().encode(snapshot),
+           encoded.count <= Self.clipboardBackupMaxBytes {
+            defaults.set(encoded, forKey: Self.clipboardBackupKey)
+        } else if let existingString = pasteboard.string(forType: .string) {
+            // UserDefaults is the wrong place for huge blobs; fall back to the
+            // plain-string crash backup when the snapshot is too big to store.
+            defaults.set(existingString, forKey: Self.clipboardBackupKey)
+        } else {
+            defaults.removeObject(forKey: Self.clipboardBackupKey)
         }
 
         pasteboard.clearContents()
         pasteboard.setString(suggestion, forType: .string)
 
         guard sendCommandV() else {
-            // Restore immediately on failure
-            if let existing {
-                pasteboard.clearContents()
-                pasteboard.setString(existing, forType: .string)
-            }
-            UserDefaults.standard.removeObject(forKey: Self.clipboardBackupKey)
+            // Restore immediately on failure.
+            snapshot.restore(to: pasteboard)
+            defaults.removeObject(forKey: Self.clipboardBackupKey)
             return false
         }
 
         // Brief delay so paste event can be processed before clipboard restore
         Thread.sleep(forTimeInterval: 0.05)
 
-        if let existing {
-            pasteboard.clearContents()
-            pasteboard.setString(existing, forType: .string)
-        }
-        UserDefaults.standard.removeObject(forKey: Self.clipboardBackupKey)
+        snapshot.restore(to: pasteboard)
+        defaults.removeObject(forKey: Self.clipboardBackupKey)
         return true
     }
 
@@ -174,5 +184,64 @@ final class AXTextInsertionEngine: TextInsertionEngine {
         vUp.post(tap: .cghidEventTap)
         commandUp.post(tap: .cghidEventTap)
         return true
+    }
+}
+
+/// A full, type-preserving snapshot of an `NSPasteboard`'s contents.
+///
+/// Unlike a plain `string(forType:)` backup, this captures every pasteboard
+/// item with every type identifier, so non-string content (images, files,
+/// rich text) survives a backup/restore round-trip.
+struct PasteboardSnapshot: Codable {
+    /// One entry per pasteboard item; each maps raw type identifiers to data.
+    let items: [[String: Data]]
+
+    /// Above this total captured size, fall back to a string-only snapshot:
+    /// losing a >16 MB clipboard to memory pressure is worse than the status quo.
+    private static let maxCaptureBytes = 16 * 1024 * 1024
+
+    @MainActor
+    static func capture(from pasteboard: NSPasteboard) -> PasteboardSnapshot {
+        var totalBytes = 0
+        var capped = false
+        let items = (pasteboard.pasteboardItems ?? []).map { item -> [String: Data] in
+            var entry: [String: Data] = [:]
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    totalBytes += data.count
+                    if totalBytes > maxCaptureBytes {
+                        capped = true
+                        break
+                    }
+                    entry[type.rawValue] = data
+                }
+            }
+            return entry
+        }
+
+        guard !capped else {
+            // Too large to snapshot fully; preserve only the string form.
+            if let string = pasteboard.string(forType: .string),
+               let data = string.data(using: .utf8) {
+                return PasteboardSnapshot(items: [[NSPasteboard.PasteboardType.string.rawValue: data]])
+            }
+            return PasteboardSnapshot(items: [])
+        }
+
+        return PasteboardSnapshot(items: items)
+    }
+
+    @MainActor
+    func restore(to pasteboard: NSPasteboard) {
+        pasteboard.clearContents()
+        guard !items.isEmpty else { return }
+        let pbItems = items.map { entry -> NSPasteboardItem in
+            let item = NSPasteboardItem()
+            for (rawType, data) in entry {
+                item.setData(data, forType: NSPasteboard.PasteboardType(rawType))
+            }
+            return item
+        }
+        pasteboard.writeObjects(pbItems)
     }
 }
