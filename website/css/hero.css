@@ -106,7 +106,7 @@
 .hero-note code {
     font-family: var(--font-mono);
     font-size: 0.78rem;
-    background: rgba(0,0,0,0.04);
+    background: var(--surface-subtle);
     padding: 2px 8px;
     border-radius: 5px;
 }

@@ -90,9 +90,9 @@
 }
 
 .feature-icon.teal  { background: var(--accent-light); color: var(--accent); }
-.feature-icon.coral { background: #FDECE7; color: var(--coral); }
-.feature-icon.green { background: #E6F4EA; color: var(--green); }
-.feature-icon.warm  { background: #FFF3E0; color: #E65100; }
+.feature-icon.coral { background: var(--icon-coral-bg); color: var(--coral); }
+.feature-icon.green { background: var(--icon-green-bg); color: var(--green); }
+.feature-icon.warm  { background: var(--icon-warm-bg); color: var(--icon-warm-fg); }
 
 /* Runtime cards */
 .runtime-card {

@@ -2,12 +2,13 @@
    Design Tokens — AutoSuggest Palette
    ═══════════════════════════════════════ */
 :root {
+    color-scheme: light dark;
     --bg:           #FAFAF8;
     --bg-warm:      #F5F4F0;
     --bg-card:      #FFFFFF;
     --text:         #1A1A1A;
     --text-secondary: #6B6B6B;
-    --text-tertiary: #9A9A9A;
+    --text-tertiary: #787875;
     --accent:       #0A9396;
     --accent-hover: #088284;
     --accent-light: #E0F5F5;
@@ -19,6 +20,14 @@
     --shadow-sm:    0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
     --shadow-md:    0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
     --shadow-lg:    0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    /* Surfaces that must invert in dark mode (nav blur, subtle hovers, icon tints) */
+    --nav-bg:        rgba(250, 250, 248, 0.82);
+    --nav-bg-mobile: rgba(250, 250, 248, 0.96);
+    --surface-subtle: rgba(0, 0, 0, 0.04);
+    --icon-coral-bg: #FDECE7;
+    --icon-green-bg: #E6F4EA;
+    --icon-warm-bg:  #FFF3E0;
+    --icon-warm-fg:  #E65100;
     --radius:       12px;
     --radius-lg:    20px;
     --font-display: 'Instrument Serif', Georgia, serif;
@@ -26,4 +35,39 @@
     --font-mono:    'JetBrains Mono', 'SF Mono', monospace;
     --max-width:    1120px;
     --nav-height:   64px;
+}
+
+/* ═══════════════════════════════════════
+   Dark mode — token overrides only
+   (Mac dev audience; many run dark system-wide.)
+   The demo "editor" window stays dark in both schemes by design.
+   ═══════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --bg:           #111110;
+        --bg-warm:      #1A1A18;
+        --bg-card:      #1C1C1A;
+        --text:         #ECECE8;
+        --text-secondary: #A6A6A0;
+        --text-tertiary: #7C7C76;
+        --accent:       #2DB7BA;
+        --accent-hover: #46C9CC;
+        --accent-light: rgba(45, 183, 186, 0.16);
+        --accent-glow:  rgba(45, 183, 186, 0.16);
+        --coral:        #F08A6E;
+        --green:        #4CB96A;
+        --border:       #2C2C29;
+        --border-hover: #3C3C38;
+        --shadow-sm:    0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+        --shadow-md:    0 4px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.35);
+        --shadow-lg:    0 12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.4);
+        --nav-bg:        rgba(17, 17, 16, 0.82);
+        --nav-bg-mobile: rgba(17, 17, 16, 0.96);
+        --surface-subtle: rgba(255, 255, 255, 0.06);
+        --icon-coral-bg: rgba(231, 111, 81, 0.18);
+        --icon-green-bg: rgba(45, 159, 79, 0.18);
+        --icon-warm-bg:  rgba(230, 81, 0, 0.18);
+        --icon-warm-fg:  #F2935A;
+    }
 }
