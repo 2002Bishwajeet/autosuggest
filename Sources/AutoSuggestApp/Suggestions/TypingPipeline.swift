@@ -1,3 +1,4 @@
+import Carbon
 import Foundation
 
 @MainActor
@@ -84,6 +85,10 @@ final class TypingPipeline {
     private func handleInputEvent() {
         guard let context = contextProvider.currentContext() else { return }
         if inputMethodMonitor.isIMEActive() {
+            clearSuggestion()
+            return
+        }
+        if IsSecureEventInputEnabled() {
             clearSuggestion()
             return
         }

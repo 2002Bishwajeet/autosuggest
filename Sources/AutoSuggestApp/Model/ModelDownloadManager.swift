@@ -8,6 +8,7 @@ enum ModelDownloadError: Error {
     case signatureVerificationFailed
     case extractionFailed(exitCode: Int32)
     case invalidActiveModelPathEncoding
+    case unsafeArchiveContents(path: String)
 }
 
 struct CustomModelDownloadRequest {
@@ -151,7 +152,7 @@ struct ModelDownloadManager {
         return results
     }
 
-    private func validateArtifactIntegrity(fileURL: URL, manifest: ModelManifest) throws -> Bool {
+    func validateArtifactIntegrity(fileURL: URL, manifest: ModelManifest) throws -> Bool {
         _ = try validateChecksumIfPresent(fileURL: fileURL, manifest: manifest)
         _ = try validateSignatureIfPresent(fileURL: fileURL, manifest: manifest)
         return true
@@ -232,8 +233,26 @@ struct ModelDownloadManager {
             throw ModelDownloadError.extractionFailed(exitCode: process.terminationStatus)
         }
 
+        try validateExtractedContents(installDir: installDir)
+
         logger.info("Model archive extracted to \(installDir.path)")
         return installDir
+    }
+
+    /// Fail closed if any extracted entry resolves to a path outside `installDir`
+    /// (e.g. a symlink or `../` traversal that escapes the install root).
+    func validateExtractedContents(installDir: URL) throws {
+        let fm = FileManager.default
+        let installRoot = installDir.resolvingSymlinksInPath().standardizedFileURL.path
+        if let enumerator = fm.enumerator(at: installDir, includingPropertiesForKeys: [.isSymbolicLinkKey]) {
+            for case let entry as URL in enumerator {
+                let resolved = entry.resolvingSymlinksInPath().standardizedFileURL.path
+                if !resolved.hasPrefix(installRoot) {
+                    try? fm.removeItem(at: installDir)
+                    throw ModelDownloadError.unsafeArchiveContents(path: entry.lastPathComponent)
+                }
+            }
+        }
     }
 
     private func setActiveInstalledModel(path: URL) throws {

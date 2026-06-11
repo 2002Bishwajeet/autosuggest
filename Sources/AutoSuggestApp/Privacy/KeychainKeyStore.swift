@@ -46,6 +46,7 @@ struct KeychainKeyStore {
             kSecAttrService: service,
             kSecAttrAccount: account,
             kSecValueData: data,
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else {
