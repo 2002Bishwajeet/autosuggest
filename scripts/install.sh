@@ -56,6 +56,14 @@ echo "==> Cleaning up..."
 echo ""
 echo "Installed ${APP_NAME} to /Applications."
 echo ""
+echo "First launch:"
+echo "  • macOS will ask you to grant Accessibility and Input Monitoring."
+echo "    AutoSuggest needs both to read context and insert suggestions."
+echo "  • Official releases are signed & notarized, so they open normally."
+echo "    If you built this yourself and Gatekeeper says the app is damaged,"
+echo "    clear the quarantine flag:"
+echo "        xattr -dr com.apple.quarantine \"${DEST}\""
+echo ""
 
 read -rp "Launch ${APP_NAME} now? [Y/n] " response
 case "${response}" in
