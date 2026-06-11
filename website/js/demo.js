@@ -1,30 +1,24 @@
-/** Demo window typing animation */
+/** Hero GhostText demo — stepped line reveal on a timer.
+ *  The demo lives in the hero (in view on load), so it animates on init the
+ *  way the design's HeroDemo does — revealing the 5 lines one at a time
+ *  (650ms apart). Under reduced motion, all lines show at once, no timers. */
 export function initDemo() {
     const demoEl = document.getElementById('demo');
     if (!demoEl) return;
 
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                animateDemo();
-                observer.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.3 });
-
-    observer.observe(demoEl);
-}
-
-function animateDemo() {
-    const lines = document.querySelectorAll('#demo .line');
+    const lines = Array.from(demoEl.querySelectorAll('.demo-line'));
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    lines.forEach(line => {
-        if (reduce) {
-            // No staggered typing animation; reveal all lines at once.
-            line.classList.add('visible');
-            return;
-        }
-        const delay = parseInt(line.dataset.delay) || 0;
-        setTimeout(() => line.classList.add('visible'), delay);
-    });
+
+    if (reduce) {
+        lines.forEach(l => l.classList.add('visible'));
+        return;
+    }
+
+    let i = 0;
+    const id = setInterval(() => {
+        i += 1;
+        const line = lines.find(l => Number(l.dataset.step) === i);
+        if (line) line.classList.add('visible');
+        if (i >= lines.length) clearInterval(id);
+    }, 650);
 }

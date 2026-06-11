@@ -320,7 +320,7 @@ struct OnboardingFlowView: View {
                         title: "Accept the suggestion",
                         subtitle: "The highlighted completion is inserted immediately.",
                         keycaps: ["Tab", "Enter"],
-                        accentColor: .blue,
+                        accentColor: AutoSuggestTheme.brand,
                         highlighted: true
                     )
 
@@ -685,7 +685,7 @@ private struct SuggestionPreviewCard: View {
                     )
 
                     HStack(spacing: 10) {
-                        KeycapView(label: "Tab", accentColor: .blue, highlighted: true)
+                        KeycapView(label: "Tab", accentColor: AutoSuggestTheme.brand, highlighted: true)
                         Text("to accept the highlighted completion")
                             .foregroundStyle(.secondary)
                     }

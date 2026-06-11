@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════
-   Reset, Base Typography & Grain
+   Reset, Base Typography, Grain & Shared Primitives
    ═══════════════════════════════════════ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,7 +13,7 @@ body {
     font-family: var(--font-body);
     background: var(--bg);
     color: var(--text);
-    line-height: 1.6;
+    line-height: var(--leading-body);
     overflow-x: hidden;
 }
 
@@ -23,10 +23,10 @@ img { max-width: 100%; display: block; }
 .container {
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: 0 32px;
+    padding: 0 var(--gutter);
 }
 
-/* Grain overlay */
+/* Film-grain overlay */
 body::after {
     content: '';
     position: fixed;
@@ -34,50 +34,55 @@ body::after {
     pointer-events: none;
     z-index: 9999;
     opacity: 0.022;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-image: var(--grain-url);
     background-repeat: repeat;
     background-size: 200px;
 }
 
-/* Section shared styles */
+/* ── Section eyebrow + serif title (SectionLabel / SectionTitle) ── */
 .section-label {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
+    font-size: var(--text-label);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-label);
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-strong);
     margin-bottom: 12px;
 }
 
 .section-title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-size: var(--text-display);
     letter-spacing: -0.02em;
     line-height: 1.15;
-    margin-bottom: 56px;
+    font-weight: 400;
+    margin: 0 0 56px;
     max-width: 560px;
+    color: var(--text);
 }
 
-/* Scroll reveal */
+.serif-accent {
+    color: var(--accent);
+    font-style: italic;
+}
+
+/* ── Scroll reveal ── */
 .reveal {
     opacity: 0;
     transform: translateY(24px);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity var(--duration-reveal) var(--ease-out-expo),
+                transform var(--duration-reveal) var(--ease-out-expo);
 }
-
 .reveal.visible {
     opacity: 1;
     transform: translateY(0);
 }
-
 .reveal-delay-1 { transition-delay: 0.08s; }
 .reveal-delay-2 { transition-delay: 0.16s; }
 .reveal-delay-3 { transition-delay: 0.24s; }
 .reveal-delay-4 { transition-delay: 0.32s; }
 
-/* Keyboard focus — visible ring on every interactive element */
+/* ── Focus ring ── */
 :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
@@ -85,8 +90,11 @@ body::after {
 }
 :focus:not(:focus-visible) { outline: none; }
 
-/* Respect reduced-motion: kill scroll-reveal, the typing demo timers' visual
-   motion, the blinking cursor, and the pulsing badge. JS also bails early. */
+/* ── Native <details> chrome reset (FAQ accordion) ── */
+details summary { cursor: pointer; list-style: none; }
+details summary::-webkit-details-marker { display: none; }
+
+/* ── Reduced motion: kill reveal/typing/blink/pulse motion; JS also bails. ── */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after {
@@ -95,5 +103,5 @@ body::after {
         transition-duration: 0.001ms !important;
     }
     .reveal { opacity: 1 !important; transform: none !important; }
-    .demo-body .line { opacity: 1 !important; transform: none !important; }
+    .demo-line { opacity: 1 !important; transform: none !important; }
 }

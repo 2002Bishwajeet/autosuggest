@@ -6,6 +6,15 @@ import SwiftUI
 enum AutoSuggestTheme {
     static let accent = Color.accentColor
 
+    /// Lantern-amber brand accent (#E3A411), brightened in dark mode (#F0B43C)
+    /// to match the design system. Used for brand accent moments; surfaces and
+    /// most controls keep system colors to respect the user's system accent.
+    static let brand = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 0xF0 / 255.0, green: 0xB4 / 255.0, blue: 0x3C / 255.0, alpha: 1)
+            : NSColor(srgbRed: 0xE3 / 255.0, green: 0xA4 / 255.0, blue: 0x11 / 255.0, alpha: 1)
+    })
+
     static let surfacePrimary = Color(nsColor: .windowBackgroundColor)
     static let surfaceSecondary = Color(nsColor: .controlBackgroundColor)
     static let surfaceElevated = Color(nsColor: .underPageBackgroundColor)

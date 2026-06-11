@@ -31,19 +31,37 @@ final class StatusBarController: NSObject {
 
     func refreshAppearance() {
         guard let button = statusItem.button, let uiModel else { return }
-        let symbolName: String = if uiModel.permissionHealth.isReady {
-            uiModel.config.enabled ? "text.cursor" : "pause.circle"
-        } else {
-            "exclamationmark.shield"
-        }
 
-        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "AutoSuggest") {
-            image.isTemplate = true
-            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-            button.image = image.withSymbolConfiguration(config)
+        // Active state shows the brand ghost glyph; paused/permission states keep
+        // their meaningful SF Symbols so the menu bar still communicates status.
+        if uiModel.permissionHealth.isReady, uiModel.config.enabled {
+            button.image = Self.ghostMenuBarImage()
+        } else {
+            let symbolName = uiModel.permissionHealth.isReady ? "pause.circle" : "exclamationmark.shield"
+            if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "AutoSuggest") {
+                image.isTemplate = true
+                button.image = image.withSymbolConfiguration(NSImage.SymbolConfiguration(
+                    pointSize: 14,
+                    weight: .medium
+                ))
+            }
         }
         button.title = ""
         button.toolTip = uiModel.quickPanelState.statusHeadline
+    }
+
+    /// The amber-ghost brand glyph as a tintable menu-bar template image. Falls
+    /// back to the `text.cursor` SF Symbol when the asset catalog isn't present
+    /// (e.g. the SwiftPM `AutoSuggestRunner`, which has no Assets.xcassets).
+    private static func ghostMenuBarImage() -> NSImage? {
+        if let ghost = NSImage(named: NSImage.Name("MenuBarGhost")) {
+            ghost.isTemplate = true
+            ghost.size = NSSize(width: 16, height: 16)
+            return ghost
+        }
+        let fallback = NSImage(systemSymbolName: "text.cursor", accessibilityDescription: "AutoSuggest")
+        fallback?.isTemplate = true
+        return fallback?.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .medium))
     }
 
     @objc private func handleStatusItemAction(_ sender: NSStatusBarButton) {

@@ -6,11 +6,12 @@
     <title>AutoSuggest — System-wide autocomplete powered by local LLMs</title>
     <meta name="description" content="Free, open-source, privacy-first autocomplete for macOS. Powered by local LLMs. No cloud. No telemetry. Just fast suggestions.">
     <link rel="canonical" href="https://2002bishwajeet.github.io/autosuggest/">
-    <meta name="theme-color" content="#FAFAF8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#FAF9F5" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
 
     <!-- Favicon & Touch Icon -->
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
     <!-- Open Graph -->
@@ -62,10 +63,12 @@
 <body>
 
     <!-- ═══════════ Navigation ═══════════ -->
-    <nav id="navbar">
+    <nav class="navbar" id="navbar">
         <div class="container">
             <a href="#" class="nav-logo">
-                <div class="cursor-icon">&#x258C;</div>
+                <span class="nav-glyph" aria-hidden="true">
+                    <svg viewBox="0 0 18 18" width="17" height="17" fill="currentColor"><path fill-rule="evenodd" d="M 2 8.6 a 7 7 0 0 1 14 0 V 15 c 0 1.3 -1.55 1.3 -2.35 0.4 c -0.8 -0.9 -2.2 -0.9 -3 0 c -0.8 0.9 -2.5 0.9 -3.3 0 c -0.8 -0.9 -2.2 -0.9 -3 0 C 3.55 16.3 2 16.3 2 15 Z M 7.1 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z M 11.6 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z"/></svg>
+                </span>
                 AutoSuggest
             </a>
             <button class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
@@ -73,160 +76,272 @@
             </button>
             <div class="nav-links" id="nav-links">
                 <a href="#features">Features</a>
+                <a href="#menubar">Menu bar</a>
                 <a href="#how-it-works">Setup</a>
                 <a href="#runtimes">Runtimes</a>
-                <a href="#fine-tuning">Fine-Tune</a>
+                <a href="#privacy">Privacy</a>
                 <a href="#faq">FAQ</a>
-                <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener">GitHub</a>
-                <a href="#download" class="btn-nav">Download</a>
+                <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener" class="nav-github" aria-label="GitHub">
+                    <svg aria-hidden="true" focusable="false" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                    <span class="nav-github-text">GitHub</span>
+                </a>
+                <a href="#download" class="btn btn-nav">Download</a>
             </div>
         </div>
     </nav>
 
     <!-- ═══════════ Hero ═══════════ -->
-    <section class="hero">
+    <header class="hero">
+        <div class="hero-glow" aria-hidden="true"></div>
         <div class="container">
-            <div class="hero-badge">
-                <div class="dot"></div>
-                v0.1.0 — 100% local, no cloud
+            <div class="reveal visible">
+                <span class="badge">
+                    <span class="badge-dot" aria-hidden="true"></span>
+                    v0.1.0 — 100% local, no cloud
+                </span>
             </div>
 
             <h1>
-                Type less,<br>
-                say <span class="accent">more</span><span class="cursor-blink"></span>
+                Your Mac finishes<br>
+                your <span class="accent">sentences</span><span class="cursor-blink" aria-hidden="true"></span>
             </h1>
 
             <p class="hero-sub">
-                System-wide autocomplete for macOS. Powered by local LLMs. Private, fast, open source.
+                System-wide inline autocomplete, powered by a language model that runs entirely on your machine. Private, fast, open source.
             </p>
 
             <div class="hero-actions">
-                <a href="#download" class="btn-primary">
-                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <a href="#download" class="btn btn-primary">
+                    <span class="btn-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </span>
                     Download for Mac
                 </a>
-                <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener" class="btn-secondary">
+                <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener" class="btn btn-secondary">
                     View on GitHub
                 </a>
             </div>
 
             <p class="hero-note">
-                Requires <code>macOS 13+</code> &middot; Apple Silicon recommended &middot; GPL v3
+                Requires <code>macOS 13+</code>
+                &nbsp;·&nbsp; Apple Silicon recommended &nbsp;·&nbsp; GPL v3
             </p>
-        </div>
-    </section>
 
-    <!-- ═══════════ Demo ═══════════ -->
-    <section class="demo-section">
-        <div class="container">
-            <div class="demo-window reveal">
-                <div class="demo-titlebar">
-                    <div class="traffic-dot red"></div>
-                    <div class="traffic-dot yellow"></div>
-                    <div class="traffic-dot green"></div>
-                    <div class="title">Notes.app</div>
+            <!-- desktop composition -->
+            <div class="hero-desktop reveal visible">
+                <div class="hero-desktop-inner">
+                    <!-- menu bar -->
+                    <div class="menu-bar">
+                        <div class="menu-bar-left">
+                            <span class="menu-bar-apple"></span>
+                            <span class="menu-bar-app">Notes</span>
+                            <span class="menu-bar-menus">
+                                <span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Window</span><span>Help</span>
+                            </span>
+                        </div>
+                        <div class="menu-bar-right">
+                            <span class="menu-bar-glyph-wrap active" aria-hidden="true">
+                                <svg viewBox="0 0 18 18" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M 2 8.6 a 7 7 0 0 1 14 0 V 15 c 0 1.3 -1.55 1.3 -2.35 0.4 c -0.8 -0.9 -2.2 -0.9 -3 0 c -0.8 0.9 -2.5 0.9 -3.3 0 c -0.8 -0.9 -2.2 -0.9 -3 0 C 3.55 16.3 2 16.3 2 15 Z M 7.1 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z M 11.6 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z"/></svg>
+                            </span>
+                            <svg class="menu-bar-wifi" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                            <span class="menu-bar-battery" aria-label="Battery">
+                                <span class="menu-bar-battery-shell"><span class="menu-bar-battery-fill"></span></span>
+                                <span class="menu-bar-battery-cap"></span>
+                            </span>
+                            <span class="menu-bar-clock">Wed Jun 11&nbsp;&nbsp;9:41 AM</span>
+                        </div>
+                    </div>
+                    <!-- Notes.app window -->
+                    <div class="hero-desktop-stage">
+                        <div class="window-frame">
+                            <div class="window-titlebar">
+                                <span class="traffic-dot red"></span>
+                                <span class="traffic-dot yellow"></span>
+                                <span class="traffic-dot green"></span>
+                                <span class="window-title">Notes.app</span>
+                            </div>
+                            <div class="hero-demo" id="demo">
+                                <div class="demo-line" data-step="1">
+                                    <div class="ghost-text"><span>Dear team,</span></div>
+                                </div>
+                                <div class="demo-line" data-step="2">
+                                    <div class="ghost-text"><span>I wanted to follow up on</span><span class="ghost-suggestion"> the discussion from yesterday's standup</span><kbd class="ghost-tab">tab</kbd></div>
+                                </div>
+                                <div class="demo-line" data-step="3">
+                                    <div class="ghost-text"><span>regarding the migration timeline.</span></div>
+                                </div>
+                                <div class="demo-line" data-step="4">
+                                    <div class="ghost-text"><span>The current ETA is</span><span class="ghost-suggestion"> end of Q2, pending the infrastructure review</span><kbd class="ghost-tab">tab</kbd></div>
+                                </div>
+                                <div class="demo-line" data-step="5">
+                                    <div class="ghost-comment">// suggestions appear inline — Tab to accept, Esc to dismiss</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="demo-body" id="demo">
-                    <div class="line" data-delay="0">
-                        <span class="typed">Dear team,</span>
-                    </div>
-                    <div class="line" data-delay="400">
-                        <span class="typed">I wanted to follow up on</span>
-                        <span class="suggestion"> the discussion from yesterday's standup</span>
-                        <span class="tab-hint">tab</span>
-                    </div>
-                    <div class="line" data-delay="1200">
-                        <span class="typed">regarding the migration timeline.</span>
-                    </div>
-                    <div class="line" data-delay="1800"><br></div>
-                    <div class="line" data-delay="2200">
-                        <span class="typed">The current ETA is</span>
-                        <span class="suggestion"> end of Q2, pending the infrastructure review</span>
-                        <span class="tab-hint">tab</span>
-                    </div>
-                    <div class="line" data-delay="3000">
-                        <span class="dim">// Suggestions appear inline, press Tab to accept</span>
-                    </div>
-                </div>
+                <div class="hero-desktop-sheen" aria-hidden="true"></div>
             </div>
         </div>
-    </section>
+    </header>
 
     <!-- ═══════════ Features ═══════════ -->
     <section class="features" id="features">
         <div class="container">
             <div class="section-label reveal">Features</div>
-            <h2 class="section-title reveal reveal-delay-1">
-                Autocomplete that respects your privacy
-            </h2>
+            <h2 class="section-title reveal reveal-delay-1">Autocomplete that respects your privacy</h2>
 
             <div class="features-grid">
-                <div class="feature-card reveal reveal-delay-1">
-                    <div class="feature-icon teal">
-                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <div class="reveal reveal-delay-1">
+                    <div class="feature-card">
+                        <div class="icon-tile tint-warm" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <h3>Private</h3>
+                        <p>Everything runs locally on your Mac. No data leaves your device. No accounts, no cloud, no telemetry.</p>
                     </div>
-                    <h3>Private</h3>
-                    <p>Everything runs locally on your Mac. No data leaves your device. No accounts, no cloud, no telemetry.</p>
                 </div>
-
-                <div class="feature-card reveal reveal-delay-2">
-                    <div class="feature-icon coral">
-                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <div class="reveal reveal-delay-2">
+                    <div class="feature-card">
+                        <div class="icon-tile tint-coral" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </div>
+                        <h3>Fast</h3>
+                        <p>Suggestions in 100–300ms via Ollama, llama.cpp, or CoreML. Optimized for Apple Silicon.</p>
                     </div>
-                    <h3>Fast</h3>
-                    <p>Sub-second suggestions via Ollama, llama.cpp, or CoreML. Optimized for Apple Silicon.</p>
                 </div>
-
-                <div class="feature-card reveal reveal-delay-3">
-                    <div class="feature-icon green">
-                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                <div class="reveal reveal-delay-3">
+                    <div class="feature-card">
+                        <div class="icon-tile tint-green" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                        </div>
+                        <h3>Open source</h3>
+                        <p>GPL v3 licensed. Read every line, fork it, extend it. Built in Swift 6.2 with strict concurrency.</p>
                     </div>
-                    <h3>Open Source</h3>
-                    <p>GPL v3 licensed. Read every line, fork it, extend it. Built in Swift 6.2 with full strict concurrency.</p>
                 </div>
-
-                <div class="feature-card reveal reveal-delay-4">
-                    <div class="feature-icon warm">
-                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                <div class="reveal reveal-delay-4">
+                    <div class="feature-card">
+                        <div class="icon-tile tint-teal" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                        </div>
+                        <h3>Yours to tune</h3>
+                        <p>Per-app exclusion rules, PII filtering, battery-aware pause, and personalization that learns your style.</p>
                     </div>
-                    <h3>Smart</h3>
-                    <p>Context-aware completions with PII filtering, per-app exclusion rules, and personalization that learns your style.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ═══════════ How It Works ═══════════ -->
+    <!-- ═══════════ Menu bar ═══════════ -->
+    <section class="menubar-section" id="menubar">
+        <div class="container menubar-grid">
+            <div class="menubar-copy">
+                <div class="section-label reveal">Menu bar</div>
+                <h2 class="section-title reveal reveal-delay-1">Lives quietly in your menu bar</h2>
+                <p class="reveal reveal-delay-2">
+                    One glyph tells you everything: amber when it's suggesting, dimmed when paused.
+                    Swap models, exclude apps, or check the compatibility report without opening a window.
+                </p>
+                <ul class="menubar-checklist reveal reveal-delay-3">
+                    <li>
+                        <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        Enable or pause with one click
+                    </li>
+                    <li>
+                        <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        Model source, rollback &amp; compatibility report
+                    </li>
+                    <li>
+                        <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        Exclude the frontmost app instantly
+                    </li>
+                </ul>
+            </div>
+            <div class="menubar-mockup reveal reveal-delay-2">
+                <div class="menu-bar">
+                    <div class="menu-bar-left">
+                        <span class="menu-bar-apple"></span>
+                        <span class="menu-bar-app">Mail</span>
+                        <span class="menu-bar-menus">
+                            <span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Window</span><span>Help</span>
+                        </span>
+                    </div>
+                    <div class="menu-bar-right">
+                        <span class="menu-bar-glyph-wrap active highlighted" aria-hidden="true">
+                            <svg viewBox="0 0 18 18" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M 2 8.6 a 7 7 0 0 1 14 0 V 15 c 0 1.3 -1.55 1.3 -2.35 0.4 c -0.8 -0.9 -2.2 -0.9 -3 0 c -0.8 0.9 -2.5 0.9 -3.3 0 c -0.8 -0.9 -2.2 -0.9 -3 0 C 3.55 16.3 2 16.3 2 15 Z M 7.1 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z M 11.6 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z"/></svg>
+                        </span>
+                        <svg class="menu-bar-wifi" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                        <span class="menu-bar-battery" aria-label="Battery">
+                            <span class="menu-bar-battery-shell"><span class="menu-bar-battery-fill"></span></span>
+                            <span class="menu-bar-battery-cap"></span>
+                        </span>
+                        <span class="menu-bar-clock">Wed Jun 11&nbsp;&nbsp;9:41 AM</span>
+                    </div>
+                </div>
+                <div class="menu-dropdown" role="menu">
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check">✓</span><span class="menu-dropdown-label">AutoSuggest is on</span></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Pause on battery</span></div>
+                    <div class="menu-dropdown-sep"></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Model Source Settings…</span></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Model Compatibility Report…</span></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Switch to next installed model</span></div>
+                    <div class="menu-dropdown-item disabled" role="menuitem" aria-disabled="true"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Rollback active model</span></div>
+                    <div class="menu-dropdown-sep"></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Exclude frontmost app</span><span class="menu-dropdown-shortcut">⌥⌘E</span></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Add exclusion rule…</span></div>
+                    <div class="menu-dropdown-sep"></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Export local telemetry</span></div>
+                    <div class="menu-dropdown-item" role="menuitem"><span class="menu-dropdown-check"></span><span class="menu-dropdown-label">Quit AutoSuggest</span><span class="menu-dropdown-shortcut">⌘Q</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ How it works ═══════════ -->
     <section class="how-it-works" id="how-it-works">
         <div class="container">
             <div class="section-label reveal">Get started in 60 seconds</div>
-            <h2 class="section-title reveal reveal-delay-1">
-                Three steps. No sign-up.
-            </h2>
+            <h2 class="section-title reveal reveal-delay-1">Three steps. No sign-up.</h2>
 
-            <div class="steps">
-                <div class="step reveal reveal-delay-1">
-                    <div class="step-number">1</div>
-                    <h3>Install a runtime</h3>
-                    <p>Install Ollama with Homebrew and pull a small model. That's the whole setup — about a minute.</p>
-                    <div class="step-connector">
-                        <svg aria-hidden="true" focusable="false" width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+            <div class="steps-grid">
+                <div class="steps-list">
+                    <div class="step reveal reveal-delay-1">
+                        <div class="step-number">1</div>
+                        <div>
+                            <h3>Install a runtime</h3>
+                            <p>Install Ollama with Homebrew and pull a small model. That's the whole setup — about a minute.</p>
+                        </div>
+                    </div>
+                    <div class="step reveal reveal-delay-2">
+                        <div class="step-number">2</div>
+                        <div>
+                            <h3>Launch AutoSuggest</h3>
+                            <p>It lives in your menu bar. Grant Accessibility and Input Monitoring when prompted.</p>
+                        </div>
+                    </div>
+                    <div class="step reveal reveal-delay-3">
+                        <div class="step-number">3</div>
+                        <div>
+                            <h3>Start typing</h3>
+                            <p>Suggestions appear inline in any text field. Press Tab to accept, Esc to dismiss.</p>
+                        </div>
                     </div>
                 </div>
-
-                <div class="step reveal reveal-delay-2">
-                    <div class="step-number">2</div>
-                    <h3>Launch AutoSuggest</h3>
-                    <p>It lives in your menu bar. Grant Accessibility and Input Monitoring when prompted.</p>
-                    <div class="step-connector">
-                        <svg aria-hidden="true" focusable="false" width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+                <div class="reveal reveal-delay-2">
+                    <div class="window-frame">
+                        <div class="window-titlebar">
+                            <span class="traffic-dot red"></span>
+                            <span class="traffic-dot yellow"></span>
+                            <span class="traffic-dot green"></span>
+                            <span class="window-title">Terminal — zsh</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div><span class="prompt">$</span> brew install ollama</div>
+                            <div><span class="prompt">$</span> ollama pull qwen2.5:1.5b</div>
+                            <div><span class="prompt">$</span> open -a AutoSuggest</div>
+                            <div class="comment">// grant Accessibility + Input Monitoring — done</div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="step reveal reveal-delay-3">
-                    <div class="step-number">3</div>
-                    <h3>Start typing</h3>
-                    <p>Suggestions appear inline in any text field. Press Tab to accept, Esc to dismiss.</p>
                 </div>
             </div>
         </div>
@@ -236,119 +351,169 @@
     <section class="runtimes" id="runtimes">
         <div class="container">
             <div class="section-label reveal">Runtimes</div>
-            <h2 class="section-title reveal reveal-delay-1">
-                Choose your inference engine
-            </h2>
+            <h2 class="section-title reveal reveal-delay-1">Choose your inference engine</h2>
 
             <div class="runtimes-grid">
-                <div class="runtime-card reveal reveal-delay-1">
-                    <h3>Ollama <span class="tag">Recommended</span></h3>
-                    <p>Easiest setup. Manages models for you. Great performance on Apple Silicon.</p>
-                    <code>brew install ollama<br>ollama pull qwen2.5:1.5b</code>
+                <div class="reveal reveal-delay-1">
+                    <div class="runtime-card">
+                        <h3>Ollama <span class="tag tag-accent">Recommended</span></h3>
+                        <p>Easiest setup. Manages models for you. Great performance on Apple Silicon.</p>
+                        <div class="code-block" data-copy="brew install ollama&#10;ollama pull qwen2.5:1.5b">
+                            <code>brew install ollama
+ollama pull qwen2.5:1.5b</code>
+                            <button class="code-copy" type="button" aria-label="Copy command">copy</button>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="runtime-card reveal reveal-delay-2">
-                    <h3>llama.cpp</h3>
-                    <p>Direct GGUF model loading. Maximum control over quantization and parameters.</p>
-                    <code>brew install llama.cpp<br>llama-server -m model.gguf</code>
+                <div class="reveal reveal-delay-2">
+                    <div class="runtime-card">
+                        <h3>llama.cpp</h3>
+                        <p>Direct GGUF model loading. Maximum control over quantization and parameters.</p>
+                        <div class="code-block" data-copy="brew install llama.cpp&#10;llama-server -m model.gguf">
+                            <code>brew install llama.cpp
+llama-server -m model.gguf</code>
+                            <button class="code-copy" type="button" aria-label="Copy command">copy</button>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="runtime-card reveal reveal-delay-3">
-                    <h3>CoreML <span class="tag">On-device</span></h3>
-                    <p>Apple Neural Engine inference with a bundled model. No server to run — fully on-device.</p>
-                    <code>// Settings &gt; Model Source<br>// Point to a local CoreML manifest</code>
+                <div class="reveal reveal-delay-3">
+                    <div class="runtime-card">
+                        <h3>CoreML <span class="tag tag-green">On-device</span></h3>
+                        <p>Apple Neural Engine inference with a bundled model. No server to run.</p>
+                        <div class="code-block" data-copy="// Settings > Model Source&#10;// Point to a CoreML manifest">
+                            <code>// Settings &gt; Model Source
+// Point to a CoreML manifest</code>
+                            <button class="code-copy" type="button" aria-label="Copy command">copy</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ═══════════ Fine-Tuning ═══════════ -->
+    <!-- ═══════════ Privacy band (dark) ═══════════ -->
+    <section class="privacy-band" id="privacy" data-theme="dark">
+        <div class="privacy-glow" aria-hidden="true"></div>
+        <div class="container privacy-grid">
+            <div>
+                <div class="section-label reveal">Trust &amp; privacy</div>
+                <h2 class="reveal reveal-delay-1">Your text never leaves your <span class="accent">Mac</span></h2>
+                <p class="privacy-tagline reveal reveal-delay-2">No cloud. No telemetry. No accounts.</p>
+            </div>
+            <div class="privacy-card reveal reveal-delay-2">
+                <h3>Privacy at a glance</h3>
+                <ul>
+                    <li><span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg></span>100% on-device — no cloud inference, ever</li>
+                    <li><span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg></span>No telemetry by default, content-free when enabled</li>
+                    <li><span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg></span>Personalization is opt-in, PII-filtered &amp; encrypted at rest</li>
+                    <li><span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg></span>Stays silent in password fields &amp; secure input</li>
+                    <li><span class="check-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg></span>GPL v3 — fully auditable</li>
+                </ul>
+                <a class="privacy-link" href="https://github.com/2002bishwajeet/autosuggest/tree/main/Sources/AutoSuggestApp/Privacy" target="_blank" rel="noopener">Read the privacy source →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ Fine-tuning ═══════════ -->
     <section class="fine-tuning" id="fine-tuning">
         <div class="container">
             <div class="section-label reveal">Personalize</div>
-            <h2 class="section-title reveal reveal-delay-1">
-                Fine-tune a model on your writing
-            </h2>
+            <h2 class="section-title reveal reveal-delay-1">Fine-tune a model on your writing</h2>
 
             <div class="fine-tuning-grid">
-                <div class="ft-card reveal reveal-delay-1">
-                    <h3><span class="ft-icon">&#xF8FF;</span> Train on Mac (MLX)</h3>
-                    <p>Fine-tune directly on Apple Silicon using MLX. No GPU rental needed &mdash; your M-series chip handles it.</p>
-                    <code>pip install -r requirements-mlx.txt<br>python finetune_mlx.py --data-dir ./data</code>
+                <div class="reveal reveal-delay-1">
+                    <div class="ft-card">
+                        <h3>Train on Mac (MLX)</h3>
+                        <p>Fine-tune directly on Apple Silicon using MLX. No GPU rental needed — your M-series chip handles it.</p>
+                        <div class="code-block" data-copy="pip install -r requirements-mlx.txt&#10;python finetune_mlx.py --data-dir ./data">
+                            <code>pip install -r requirements-mlx.txt
+python finetune_mlx.py --data-dir ./data</code>
+                            <button class="code-copy" type="button" aria-label="Copy command">copy</button>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="ft-card reveal reveal-delay-2">
-                    <h3><span class="ft-icon">&#x2601;</span> Train on Colab (Free GPU)</h3>
-                    <p>Upload your data to Google Colab and train with Unsloth on a free T4 GPU. Ready-made notebook included.</p>
-                    <code>Open finetune_colab.ipynb in Colab<br>Upload data &rarr; Train &rarr; Download GGUF</code>
+                <div class="reveal reveal-delay-2">
+                    <div class="ft-card">
+                        <h3>Train on Colab (free GPU)</h3>
+                        <p>Upload your data to Google Colab and train with Unsloth on a free T4 GPU. Ready-made notebook included.</p>
+                        <div class="code-block">
+                            <code>Open finetune_colab.ipynb in Colab
+Upload data → Train → Download GGUF</code>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="ft-card reveal reveal-delay-3">
-                    <h3><span class="ft-icon">&#x1F504;</span> One-Click Import</h3>
-                    <p>Export the fine-tuned model as GGUF with an auto-generated Ollama Modelfile. One command to import.</p>
-                    <code>ollama create my-autosuggest -f Modelfile<br>// AutoSuggest picks it up automatically</code>
+                <div class="reveal reveal-delay-1">
+                    <div class="ft-card">
+                        <h3>One-click import</h3>
+                        <p>Export the fine-tuned model as GGUF with an auto-generated Ollama Modelfile. One command to import.</p>
+                        <div class="code-block" data-copy="ollama create my-autosuggest -f Modelfile">
+                            <code>ollama create my-autosuggest -f Modelfile</code>
+                            <button class="code-copy" type="button" aria-label="Copy command">copy</button>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="ft-card reveal reveal-delay-4">
-                    <h3><span class="ft-icon">&#x1F512;</span> Privacy-First Data</h3>
-                    <p>Training data is opt-in, PII-filtered twice (on record + on export), stored locally, and never transmitted.</p>
-                    <code>Settings &gt; Privacy &gt; Enable collection<br>Settings &gt; Privacy &gt; Export Training Data</code>
+                <div class="reveal reveal-delay-2">
+                    <div class="ft-card">
+                        <h3>Privacy-first data</h3>
+                        <p>Training data is opt-in, PII-filtered twice, stored locally, and never transmitted.</p>
+                        <div class="code-block">
+                            <code>Settings &gt; Privacy &gt; Enable collection</code>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ═══════════ FAQ / Trust ═══════════ -->
+    <!-- ═══════════ FAQ ═══════════ -->
     <section class="faq" id="faq">
         <div class="container">
-            <div class="section-label reveal">Trust &amp; Privacy</div>
-            <h2 class="section-title reveal reveal-delay-1">
-                Your text never leaves your Mac
-            </h2>
+            <div class="section-label reveal">FAQ</div>
+            <h2 class="section-title reveal reveal-delay-1">Questions, answered</h2>
 
-            <div class="faq-grid">
-                <div class="faq-list reveal reveal-delay-1">
-                    <details>
-                        <summary>Is anything sent to a server?</summary>
-                        <p>No. Suggestions are generated by a model running on your Mac — your text, the surrounding context, and any personalization never leave the device. There are no accounts and no analytics. The only network activity is what you set up yourself: downloading a model, or talking to a local runtime like Ollama on <code>127.0.0.1</code>.</p>
-                    </details>
-                    <details>
-                        <summary>Why does it need Accessibility and Input Monitoring?</summary>
-                        <p>Accessibility lets AutoSuggest read the text field you're focused on (for context) and insert a suggestion when you accept it. Input Monitoring lets it notice typing and the Tab / Esc shortcuts. macOS gates both behind a one-time permission prompt — a system-wide autocomplete can't work without them.</p>
-                    </details>
-                    <details>
-                        <summary>Does it store what I type?</summary>
-                        <p>Not unless you turn on personalization. When you do, entries are PII-filtered, encrypted at rest, and kept on your Mac — never uploaded. Accepted suggestions aren't written to logs, and the optional local telemetry is off by default and contains no text.</p>
-                    </details>
-                    <details>
-                        <summary>Will it read my passwords?</summary>
-                        <p>No. AutoSuggest detects secure text fields and macOS secure input mode (sudo prompts, password managers) and stays silent there. Common password-manager apps are excluded by default.</p>
-                    </details>
-                    <details>
-                        <summary>Is it really open source?</summary>
-                        <p>Yes — GPL v3, every line on <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener">GitHub</a>. Inspect the <a href="https://github.com/2002bishwajeet/autosuggest/tree/main/Sources/AutoSuggestApp/Privacy" target="_blank" rel="noopener">privacy code</a> or the insertion engine before you trust it.</p>
-                    </details>
-                    <details>
-                        <summary>Which Macs are supported?</summary>
-                        <p>macOS 13 (Ventura) or later. Apple Silicon is recommended for sub-second suggestions; Intel Macs work but are slower.</p>
-                    </details>
-                    <details>
-                        <summary>How do I uninstall it?</summary>
-                        <p>Quit AutoSuggest from the menu bar, drag it out of <code>/Applications</code>, and revoke its permissions under System Settings → Privacy &amp; Security. No background remnants are left behind.</p>
-                    </details>
-                </div>
-
-                <aside class="privacy-card reveal reveal-delay-2">
-                    <h3>Privacy at a glance</h3>
-                    <ul>
-                        <li>100% on-device — no cloud inference, ever</li>
-                        <li>No telemetry by default, and content-free when enabled</li>
-                        <li>Personalization is opt-in, PII-filtered &amp; encrypted at rest</li>
-                        <li>Stays silent in password fields &amp; secure input</li>
-                        <li>GPL v3 — fully auditable</li>
-                    </ul>
-                    <a class="privacy-link" href="https://github.com/2002bishwajeet/autosuggest/tree/main/Sources/AutoSuggestApp/Privacy" target="_blank" rel="noopener">Read the privacy source →</a>
-                </aside>
+            <div class="faq-list reveal reveal-delay-2">
+                <details class="faq-item" open>
+                    <summary>
+                        Is anything sent to a server?
+                        <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </summary>
+                    <p class="faq-answer">No. Suggestions are generated by a model running on your Mac — your text, the surrounding context, and any personalization never leave the device. The only network activity is what you set up yourself: downloading a model, or talking to a local runtime on 127.0.0.1.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>
+                        Why does it need Accessibility and Input Monitoring?
+                        <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </summary>
+                    <p class="faq-answer">Accessibility lets AutoSuggest read the text field you're focused on and insert a suggestion when you accept it. Input Monitoring lets it notice typing and the Tab / Esc shortcuts. A system-wide autocomplete can't work without them.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>
+                        Does it store what I type?
+                        <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </summary>
+                    <p class="faq-answer">Not unless you turn on personalization. When you do, entries are PII-filtered, encrypted at rest, and kept on your Mac — never uploaded.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>
+                        Will it read my passwords?
+                        <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </summary>
+                    <p class="faq-answer">No. AutoSuggest detects secure text fields and macOS secure input mode and stays silent there. Common password-manager apps are excluded by default.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>
+                        Which Macs are supported?
+                        <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </summary>
+                    <p class="faq-answer">macOS 13 (Ventura) or later. Apple Silicon is recommended for sub-second suggestions; Intel Macs work but are slower.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>
+                        How do I uninstall it?
+                        <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </summary>
+                    <p class="faq-answer">Quit AutoSuggest from the menu bar, drag it out of /Applications, and revoke its permissions under System Settings → Privacy &amp; Security. No background remnants.</p>
+                </details>
             </div>
         </div>
     </section>
@@ -356,35 +521,40 @@
     <!-- ═══════════ CTA ═══════════ -->
     <section class="cta" id="download">
         <div class="container">
-            <h2 class="reveal">Ready to type less?</h2>
+            <h2 class="reveal">Ready to type <span class="accent">less</span>?</h2>
             <p class="reveal reveal-delay-1">
-                Free, open source, and runs entirely on your machine.
-                No account needed. No internet required.
+                Free, open source, and runs entirely on your machine. No account needed. No internet required.
             </p>
-            <div class="reveal reveal-delay-2">
-                <a href="https://github.com/2002bishwajeet/autosuggest/releases" target="_blank" rel="noopener" class="btn-primary">
-                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Download Latest Release
+            <div class="cta-btn-wrap reveal reveal-delay-2">
+                <a href="https://github.com/2002bishwajeet/autosuggest/releases" target="_blank" rel="noopener" class="btn btn-primary">
+                    <span class="btn-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </span>
+                    Download latest release
                 </a>
             </div>
-            <div class="reveal reveal-delay-3">
-                <div class="cta-install" data-copy="curl -fsSL https://raw.githubusercontent.com/2002bishwajeet/autosuggest/main/scripts/install.sh | bash">
-                    <span>$</span> curl -fsSL .../install.sh | bash
+            <div class="cta-install reveal reveal-delay-3">
+                <div class="code-block dark" data-copy="curl -fsSL https://raw.githubusercontent.com/2002bishwajeet/autosuggest/main/scripts/install.sh | bash">
+                    <code>$ curl -fsSL .../install.sh | bash</code>
+                    <button class="code-copy" type="button" aria-label="Copy command">copy</button>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- ═══════════ Footer ═══════════ -->
-    <footer>
+    <footer class="footer">
         <div class="container">
             <div class="footer-left">
-                <span>AutoSuggest</span> &middot; GPL v3 &middot; Made for macOS
+                <span class="glyph-accent" aria-hidden="true">
+                    <svg viewBox="0 0 18 18" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M 2 8.6 a 7 7 0 0 1 14 0 V 15 c 0 1.3 -1.55 1.3 -2.35 0.4 c -0.8 -0.9 -2.2 -0.9 -3 0 c -0.8 0.9 -2.5 0.9 -3.3 0 c -0.8 -0.9 -2.2 -0.9 -3 0 C 3.55 16.3 2 16.3 2 15 Z M 7.1 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z M 11.6 9.6 c 0.66 0 1.2 -0.63 1.2 -1.4 s -0.54 -1.4 -1.2 -1.4 s -1.2 0.63 -1.2 1.4 s 0.54 1.4 1.2 1.4 Z"/></svg>
+                </span>
+                <span class="footer-brand">AutoSuggest</span>
+                · GPL v3 · Made for macOS
             </div>
             <div class="footer-links">
                 <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener">GitHub</a>
-                <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/docs/FINE_TUNING.md" target="_blank" rel="noopener">Fine-Tuning Guide</a>
-                <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Docs</a>
+                <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/docs/FINE_TUNING.md" target="_blank" rel="noopener">Fine-tuning guide</a>
                 <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
                 <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
             </div>

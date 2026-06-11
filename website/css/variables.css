@@ -1,73 +1,243 @@
 /* ═══════════════════════════════════════
-   Design Tokens — AutoSuggest Palette
+   AutoSuggest — Design Tokens
+   Warm-paper light theme + true-ink dark theme.
+   Brand accent = "lantern amber" (#E3A411) — the warm glow of the
+   ghost that writes your next word. Teal remains as a support hue.
+   Ported from the design system tokens/*.css.
    ═══════════════════════════════════════ */
 :root {
-    color-scheme: light dark;
-    --bg:           #FAFAF8;
-    --bg-warm:      #F5F4F0;
-    --bg-card:      #FFFFFF;
-    --text:         #1A1A1A;
-    --text-secondary: #6B6B6B;
-    --text-tertiary: #787875;
-    --accent:       #0A9396;
-    --accent-hover: #088284;
-    --accent-light: #E0F5F5;
-    --accent-glow:  rgba(10, 147, 150, 0.15);
-    --coral:        #E76F51;
-    --green:        #2D9F4F;
-    --border:       #E8E7E3;
-    --border-hover: #D0CFC9;
-    --shadow-sm:    0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-    --shadow-md:    0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
-    --shadow-lg:    0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
-    /* Surfaces that must invert in dark mode (nav blur, subtle hovers, icon tints) */
-    --nav-bg:        rgba(250, 250, 248, 0.82);
-    --nav-bg-mobile: rgba(250, 250, 248, 0.96);
+    color-scheme: light;
+
+    /* ── Base neutrals (warm gray ramp) ── */
+    --ink-950: #131311;
+    --ink-900: #1A1A18;
+    --ink-700: #3E3E3A;
+    --ink-500: #6B6B66;
+    --ink-400: #8A8A83;
+    --ink-300: #B9B8B0;
+    --ink-200: #E6E4DC;
+    --ink-150: #EEECE5;
+    --ink-100: #F3F1EA;
+    --ink-50:  #FAF9F5;
+    --white:   #FFFFFF;
+
+    /* ── Brand amber ramp ── */
+    --amber-700: #7A5203;
+    --amber-600: #C98E07;
+    --amber-500: #E3A411;   /* brand core */
+    --amber-400: #F0B43C;
+    --amber-300: #F6CB6E;
+    --amber-100: #F9EFD6;
+    --amber-glow: rgba(227, 164, 17, 0.2);
+
+    /* ── Support hues ── */
+    --teal-700: #065F62;
+    --teal-600: #087E81;
+    --teal-500: #0A9396;
+    --teal-400: #2DB7BA;
+    --teal-300: #6FCFD1;
+    --teal-100: #DFF2F2;
+    --teal-glow: rgba(10, 147, 150, 0.16);
+    --coral-500: #E76F51;
+    --coral-100: #FDECE7;
+    --green-500: #2D9F4F;
+    --green-100: #E6F4EA;
+
+    /* ── Semantic: surfaces ── */
+    --bg:            var(--ink-50);
+    --bg-warm:       var(--ink-100);
+    --surface-card:  var(--white);
+    --surface-sunken: var(--ink-100);
     --surface-subtle: rgba(0, 0, 0, 0.04);
-    --icon-coral-bg: #FDECE7;
-    --icon-green-bg: #E6F4EA;
-    --icon-warm-bg:  #FFF3E0;
-    --icon-warm-fg:  #E65100;
-    --radius:       12px;
-    --radius-lg:    20px;
-    --font-display: 'Instrument Serif', Georgia, serif;
-    --font-body:    'DM Sans', system-ui, sans-serif;
-    --font-mono:    'JetBrains Mono', 'SF Mono', monospace;
-    --max-width:    1120px;
-    --nav-height:   64px;
+    --surface-editor: #161714;          /* demo/editor windows stay dark in BOTH themes */
+    --surface-editor-bar: #222320;
+    --nav-bg:        rgba(250, 249, 245, 0.82);
+
+    /* ── Semantic: text ── */
+    --text:           var(--ink-900);
+    --text-secondary: var(--ink-500);
+    --text-tertiary:  var(--ink-400);
+    --text-ghost:     var(--ink-300);   /* the inline suggestion color */
+    --text-on-accent: #221A04;          /* ink on amber — never white on yellow */
+    --text-on-editor: #E8E8E4;
+    --text-ghost-on-editor: #8B8B85;
+
+    /* ── Semantic: accent ── */
+    --accent:        var(--amber-500);
+    --accent-strong: #B0790A;  /* for small text on paper (AA) */
+    --accent-hover:  var(--amber-600);
+    --accent-soft:   var(--amber-100);
+    --accent-glow:   var(--amber-glow);
+
+    /* ── Semantic: lines ── */
+    --border:       #E8E6DF;
+    --border-hover: #D2D0C8;
+    --border-on-editor: #34352F;
+
+    /* ── Corner radii ── */
+    --radius-xs:   6px;    /* keycaps, inline code chips */
+    --radius-sm:   8px;    /* nav pills, small controls */
+    --radius-md:   12px;   /* buttons, cards, icon tiles */
+    --radius-lg:   16px;   /* large cards */
+    --radius-xl:   20px;   /* windows, hero frames */
+    --radius-full: 999px;  /* badges, pills */
+
+    /* ── Layout ── */
+    --max-width:  1120px;
+    --nav-height: 64px;
+    --gutter:     32px;
+
+    /* ── Spacing (4px grid) ── */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-7:  28px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-14: 56px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
+    --space-30: 120px;
+
+    /* ── Type families ── */
+    --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    --font-body:    'DM Sans', -apple-system, system-ui, sans-serif;
+    --font-mono:    'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+
+    /* ── Type scale (fluid where it matters) ── */
+    --text-hero:    clamp(3.2rem, 7.5vw, 5.6rem);  /* display serif, 400 */
+    --text-display: clamp(2.2rem, 4.5vw, 3.2rem);  /* section titles */
+    --text-title:   1.45rem;                        /* card/window titles */
+    --text-lead:    1.18rem;                        /* hero subcopy */
+    --text-body:    1rem;
+    --text-small:   0.88rem;
+    --text-caption: 0.8rem;
+    --text-micro:   0.7rem;
+    --text-code:    0.84rem;
+    --text-label:   0.76rem;   /* uppercase mono eyebrows */
+
+    /* ── Leading ── */
+    --leading-display: 1.06;
+    --leading-title:   1.2;
+    --leading-body:    1.6;
+    --leading-code:    1.7;
+
+    /* ── Tracking ── */
+    --tracking-display: -0.025em;
+    --tracking-title:   -0.015em;
+    --tracking-label:    0.09em;
+
+    /* ── Weights ── */
+    --weight-regular:  400;
+    --weight-medium:   500;
+    --weight-semibold: 600;
+    --weight-bold:     700;
+
+    /* ── Shadows (light, diffuse, warm-neutral) ── */
+    --shadow-sm: 0 1px 3px rgba(20, 18, 10, 0.05), 0 1px 2px rgba(20, 18, 10, 0.04);
+    --shadow-md: 0 4px 16px rgba(20, 18, 10, 0.07), 0 1px 4px rgba(20, 18, 10, 0.04);
+    --shadow-lg: 0 12px 40px rgba(20, 18, 10, 0.09), 0 4px 12px rgba(20, 18, 10, 0.05);
+    --shadow-window: 0 24px 70px rgba(20, 18, 10, 0.16), 0 8px 24px rgba(20, 18, 10, 0.08);
+    --shadow-accent: 0 2px 12px rgba(227, 164, 17, 0.3);
+    --shadow-accent-hover: 0 6px 24px rgba(227, 164, 17, 0.35);
+
+    /* ── Blur ── */
+    --blur-nav: blur(20px) saturate(1.6);
+
+    /* ── Motion ── */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring:   cubic-bezier(0.34, 1.4, 0.4, 1);
+    --duration-fast:   0.15s;
+    --duration-base:   0.25s;
+    --duration-reveal: 0.7s;
+
+    /* ── Grain (film-grain overlay, use at opacity ~0.02) ── */
+    --grain-url: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
 /* ═══════════════════════════════════════
-   Dark mode — token overrides only
-   (Mac dev audience; many run dark system-wide.)
-   The demo "editor" window stays dark in both schemes by design.
+   Dark theme — opt-in scope (data-theme="dark") AND auto via
+   prefers-color-scheme. The PrivacyBand uses data-theme="dark"
+   as an always-dark band even in light mode.
    ═══════════════════════════════════════ */
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg:            #111110;
+    --bg-warm:       #1A1A18;
+    --surface-card:  #1C1C1A;
+    --surface-sunken: #161614;
+    --surface-subtle: rgba(255, 255, 255, 0.06);
+    --nav-bg:        rgba(17, 17, 16, 0.82);
+
+    --text:           #ECECE8;
+    --text-secondary: #A6A6A0;
+    --text-tertiary:  #7C7C76;
+    --text-ghost:     #5C5C56;
+
+    --accent:        var(--amber-400);
+    --accent-strong: var(--amber-400);
+    --accent-hover:  #F6C25C;
+    --accent-soft:   rgba(240, 180, 60, 0.16);
+    --accent-glow:   rgba(240, 180, 60, 0.14);
+
+    --coral-500: #F08A6E;
+    --coral-100: rgba(231, 111, 81, 0.18);
+    --green-500: #4CB96A;
+    --green-100: rgba(45, 159, 79, 0.18);
+    --amber-500: #F0B43C;
+    --amber-100: rgba(240, 180, 60, 0.16);
+
+    --border:       #2C2C29;
+    --border-hover: #3C3C38;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-window: 0 24px 70px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Auto dark mode (honor system preference) — same overrides as the scope. */
 @media (prefers-color-scheme: dark) {
     :root {
         color-scheme: dark;
-        --bg:           #111110;
-        --bg-warm:      #1A1A18;
-        --bg-card:      #1C1C1A;
-        --text:         #ECECE8;
+
+        --bg:            #111110;
+        --bg-warm:       #1A1A18;
+        --surface-card:  #1C1C1A;
+        --surface-sunken: #161614;
+        --surface-subtle: rgba(255, 255, 255, 0.06);
+        --nav-bg:        rgba(17, 17, 16, 0.82);
+
+        --text:           #ECECE8;
         --text-secondary: #A6A6A0;
-        --text-tertiary: #7C7C76;
-        --accent:       #2DB7BA;
-        --accent-hover: #46C9CC;
-        --accent-light: rgba(45, 183, 186, 0.16);
-        --accent-glow:  rgba(45, 183, 186, 0.16);
-        --coral:        #F08A6E;
-        --green:        #4CB96A;
+        --text-tertiary:  #7C7C76;
+        --text-ghost:     #5C5C56;
+
+        --accent:        var(--amber-400);
+        --accent-strong: var(--amber-400);
+        --accent-hover:  #F6C25C;
+        --accent-soft:   rgba(240, 180, 60, 0.16);
+        --accent-glow:   rgba(240, 180, 60, 0.14);
+
+        --coral-500: #F08A6E;
+        --coral-100: rgba(231, 111, 81, 0.18);
+        --green-500: #4CB96A;
+        --green-100: rgba(45, 159, 79, 0.18);
+        --amber-500: #F0B43C;
+        --amber-100: rgba(240, 180, 60, 0.16);
+
         --border:       #2C2C29;
         --border-hover: #3C3C38;
-        --shadow-sm:    0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-        --shadow-md:    0 4px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.35);
-        --shadow-lg:    0 12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.4);
-        --nav-bg:        rgba(17, 17, 16, 0.82);
-        --nav-bg-mobile: rgba(17, 17, 16, 0.96);
-        --surface-subtle: rgba(255, 255, 255, 0.06);
-        --icon-coral-bg: rgba(231, 111, 81, 0.18);
-        --icon-green-bg: rgba(45, 159, 79, 0.18);
-        --icon-warm-bg:  rgba(230, 81, 0, 0.18);
-        --icon-warm-fg:  #F2935A;
+
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.35);
+        --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-window: 0 24px 70px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.45);
     }
 }
