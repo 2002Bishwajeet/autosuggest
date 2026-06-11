@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       # Swift 6.2 (the package's required tools version) ships with Xcode 26,
       # which needs macOS 15. macos-14 defaults to Swift 5.10 and fails.
       - name: Select Xcode (Swift 6.2+)
@@ -30,7 +30,7 @@ jobs:
     runs-on: macos-15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Select Xcode (Swift 6.2+)
         uses: maxim-lobanov/setup-xcode@v1
