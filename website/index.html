@@ -65,7 +65,7 @@
         <div class="container">
             <div class="hero-badge">
                 <div class="dot"></div>
-                v0.1.0 — Now with online LLM support
+                v0.1.0 — 100% local, no cloud
             </div>
 
             <h1>
@@ -74,7 +74,7 @@
             </h1>
 
             <p class="hero-sub">
-                System-wide autocomplete for macOS. Powered by local LLMs or your own API key. Private, fast, open source.
+                System-wide autocomplete for macOS. Powered by local LLMs. Private, fast, open source.
             </p>
 
             <div class="hero-actions">
@@ -151,7 +151,7 @@
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     </div>
                     <h3>Fast</h3>
-                    <p>Sub-second suggestions via Ollama, llama.cpp, CoreML, or online APIs. Optimized for Apple Silicon.</p>
+                    <p>Sub-second suggestions via Ollama, llama.cpp, or CoreML. Optimized for Apple Silicon.</p>
                 </div>
 
                 <div class="feature-card reveal reveal-delay-3">
@@ -185,7 +185,7 @@
                 <div class="step reveal reveal-delay-1">
                     <div class="step-number">1</div>
                     <h3>Install a runtime</h3>
-                    <p>Install Ollama with Homebrew and pull a small model. Or configure your own API key for online LLMs.</p>
+                    <p>Install Ollama with Homebrew and pull a small model. That's the whole setup — about a minute.</p>
                     <div class="step-connector">
                         <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
                     </div>
@@ -231,9 +231,9 @@
                 </div>
 
                 <div class="runtime-card reveal reveal-delay-3">
-                    <h3>Online LLM <span class="tag">BYOK</span></h3>
-                    <p>Bring your own key. Supports OpenAI, Anthropic, OpenRouter, and custom endpoints.</p>
-                    <code>// Settings &gt; Online LLM<br>// Add your API key &amp; choose provider</code>
+                    <h3>CoreML <span class="tag">On-device</span></h3>
+                    <p>Apple Neural Engine inference with a bundled model. No server to run — fully on-device.</p>
+                    <code>// Settings &gt; Model Source<br>// Point to a local CoreML manifest</code>
                 </div>
             </div>
         </div>
