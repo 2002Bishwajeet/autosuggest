@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════
    Reusable Components
-   Button · Badge · Tag · KeyCap · FeatureCard · CodeBlock
+   Button · Tag · KeyCap · FeatureCard · CodeBlock
    WindowFrame · MenuBar · MenuBarDropdown · GhostText
    ═══════════════════════════════════════ */
 
@@ -62,34 +62,6 @@
 .btn-nav:hover { opacity: 0.85; transform: translateY(-2px); }
 .btn-nav:active { transform: translateY(0); }
 
-/* ── Badge (hero status pill) ── */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px 6px 10px;
-    border-radius: var(--radius-full);
-    border: 1px solid var(--border);
-    background: var(--surface-card);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    box-shadow: var(--shadow-sm);
-    font-family: var(--font-body);
-}
-.badge-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--green-500);
-    box-shadow: 0 0 8px rgba(45, 159, 79, 0.4);
-    animation: as-pulse-dot 2s ease-in-out infinite;
-}
-@keyframes as-pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.65; }
-}
-
 /* ── Tag (mono chip after card titles) ── */
 .tag {
     font-family: var(--font-mono);
@@ -129,6 +101,7 @@
 
 /* ── Feature card + tinted icon tile ── */
 .feature-card {
+    height: 100%;
     padding: 28px 24px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
@@ -304,18 +277,32 @@
     display: flex;
     align-items: center;
     gap: 18px;
+    /* Let the app-menu cluster shrink/clip instead of crowding the
+       right-side status cluster (it owns the LEFT, status owns the RIGHT). */
+    min-width: 0;
+    overflow: hidden;
+    /* Guarantee a clear gap before the status cluster even when
+       space-between collapses in a narrow card. */
+    margin-right: var(--space-6);
 }
-.menu-bar-apple { font-size: 0.95rem; line-height: 1; }
-.menu-bar-app { font-weight: 700; }
+.menu-bar-apple { font-size: 0.95rem; line-height: 1; flex-shrink: 0; }
+.menu-bar-app { font-weight: 700; flex-shrink: 0; }
 .menu-bar-menus {
     color: rgba(0, 0, 0, 0.5);
     display: flex;
     gap: 16px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
 }
+.menu-bar-menus span { flex-shrink: 0; }
 .menu-bar-right {
     display: flex;
     align-items: center;
     gap: 14px;
+    /* Never let the status cluster (glyph + wifi + battery + clock) be
+       squeezed — it stays pinned to the right. */
+    flex-shrink: 0;
 }
 .menu-bar-glyph-wrap {
     display: inline-flex;
@@ -414,3 +401,20 @@
 
 /* Inline brand glyph helper */
 .glyph-accent { color: var(--accent); display: inline-flex; }
+
+/* ── Menu bar on small screens ──
+   Hide the middle app menus, shrink font/padding so the bar (app name +
+   status cluster) fits a phone viewport without overflowing. */
+@media (max-width: 560px) {
+    .menu-bar {
+        font-size: 0.7rem;
+        padding: 0 8px;
+        gap: 8px;
+    }
+    .menu-bar-left { gap: 10px; margin-right: var(--space-3); }
+    .menu-bar-menus { display: none; }
+    .menu-bar-right { gap: 9px; }
+    .menu-bar-glyph-wrap { padding: 2px 5px; }
+    .menu-bar-clock { font-size: 0.66rem; }
+    .menu-bar-battery-shell { width: 17px; }
+}

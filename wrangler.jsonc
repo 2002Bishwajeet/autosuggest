@@ -1,0 +1,6 @@
+{
+  // Cloudflare Pages project config for the static marketing site in website/.
+  // Lets `wrangler pages deploy` and Git integration find the output directory.
+  "name": "autosuggest",
+  "pages_build_output_dir": "website"
+}

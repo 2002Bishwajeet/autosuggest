@@ -2,243 +2,125 @@
   <img src="website/readme-banner.png" alt="AutoSuggest — system-wide autocomplete for macOS, powered by local LLMs" width="100%">
 </p>
 
-# AutoSuggest
+<h1 align="center">AutoSuggest</h1>
 
-System-wide macOS autocomplete powered by local LLMs. Runs entirely on your machine — no cloud, no account, no telemetry by default.
+<p align="center">
+  System-wide inline autocomplete for macOS, powered by a language model that runs
+  <strong>entirely on your Mac</strong>. No cloud, no account, no telemetry.
+  <br>
+  <a href="https://autosuggest.cloudx.run">Website</a> ·
+  <a href="https://github.com/2002Bishwajeet/autosuggest/releases">Download</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
 
-## Quick Start (Local, No Internet Required)
+<p align="center">
+  <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-111?logo=apple">
+  <img alt="Swift 6.2" src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift">
+  <img alt="License: GPL v3" src="https://img.shields.io/badge/License-GPLv3-blue">
+</p>
+
+---
+
+AutoSuggest watches the text field you're typing in, asks a local model what comes
+next, and shows the suggestion inline — press **Tab** to accept, **Esc** to dismiss.
+It works in any app, and your keystrokes never leave the machine.
+
+- **Private** — inference, context, and personalization stay on-device. No accounts, no analytics.
+- **Fast** — 100–300 ms suggestions via Ollama, llama.cpp, or CoreML; tuned for Apple Silicon.
+- **Yours to tune** — per-app exclusion rules, PII filtering, battery-aware pause, and opt-in personalization that learns your style.
+- **Open** — GPL v3, written in Swift 6.2 with strict concurrency.
+
+## Install
+
+**Download (recommended).** Grab the latest signed & notarized build from the
+[releases page](https://github.com/2002Bishwajeet/autosuggest/releases), drag
+`AutoSuggest.app` to `/Applications`, and open it. Or one line:
 
 ```bash
-# 1. Install Ollama
-brew install ollama
+curl -fsSL https://raw.githubusercontent.com/2002Bishwajeet/autosuggest/main/scripts/install.sh | bash
+```
 
-# 2. Pull a small model
+You also need a local model runtime — the quickest is Ollama:
+
+```bash
+brew install ollama && ollama serve
 ollama pull qwen2.5:1.5b
-
-# 3. Start the Ollama server
-ollama serve
-
-# 4. Build and run AutoSuggest
-swift build && swift run AutoSuggestRunner
 ```
 
-Grant **Accessibility** and **Input Monitoring** permissions when prompted. Start typing in any text field — suggestions appear inline. **Tab** or **Enter** to accept, **Esc** to dismiss.
+## First run
 
-## System Requirements
+1. Grant **Accessibility** and **Input Monitoring** when prompted
+   (System Settings → Privacy & Security). Both are required for a system-wide
+   autocomplete; nothing works without them.
+2. Start typing in any text field. Suggestions appear inline — **Tab**/**Enter**
+   to accept, **Esc** to dismiss.
 
-- macOS 13+ (Ventura or later)
-- Apple Silicon recommended (Intel supported)
-- Xcode or Swift toolchain (`swift-tools-version: 6.2`)
-- One of: Ollama, llama.cpp, or a CoreML model
+AutoSuggest lives in the menu bar; click the ghost glyph to pause, switch models,
+exclude an app, or open settings.
 
-## Features
+**Requirements:** macOS 13 (Ventura)+, Apple Silicon recommended (Intel works, slower).
 
-- Menu bar utility with floating inline suggestions
-- Three local runtime adapters: Ollama, llama.cpp, CoreML
-- Automatic runtime fallback chain
-- Accept/dismiss shortcuts (Tab/Enter/Esc)
-- AX/paste/typing insertion fallback chain
-- Encrypted personalization with PII filtering
-- Exclusion rules (by app, window title, or content regex)
-- Battery-aware pause mode
-- Device-aware model compatibility advisor
-- Settings window with model management, exclusions, privacy controls
+## Runtimes
 
-## Run (Xcode App Target)
+Pick any; the engine tries them in order and falls through automatically.
 
-Preferred path for real permission handling and daily development:
+| Runtime | Setup |
+|---|---|
+| **Ollama** (recommended) | `brew install ollama` → `ollama pull qwen2.5:1.5b` |
+| **llama.cpp** | `llama-server -m model.gguf --port 8080` |
+| **CoreML** | On-device via the Apple Neural Engine — point Settings → Model Source at a CoreML manifest |
 
-1. Generate or refresh the Xcode project:
+## Privacy
 
-```bash
-cd macos
-xcodegen generate
-```
+Everything runs locally. Accepted suggestions are never logged; optional telemetry
+is off by default and content-free. Personalization is opt-in, PII-filtered,
+encrypted at rest, and never transmitted. AutoSuggest stays silent in password
+fields and macOS secure input. Read the
+[privacy source](Sources/AutoSuggestApp/Privacy) — it's all auditable.
 
-2. Open [AutoSuggestDesktop.xcodeproj](/Users/biswa/Documents/GitHub/autosuggest/macos/AutoSuggestDesktop.xcodeproj).
-3. Select scheme `AutoSuggestDesktop`.
-4. Run (`Cmd+R`).
-
-This launches a real bundled `AutoSuggest.app` with a stable bundle identifier, which is the correct path for Accessibility and Input Monitoring.
-
-## Run (SwiftPM)
-
-From repo root:
+## Build from source
 
 ```bash
+# Library + menu-bar runner (fast iteration)
 swift build
 swift run AutoSuggestRunner
-```
-
-The app runs as a menu bar utility (`AS On` / `AS Off`).
-
-Use the SwiftPM runner only for low-friction iteration. For permission-sensitive testing, prefer the Xcode app target above.
-
-## Runtime Adapter Configuration
-
-Config file path:
-
-`~/Library/Application Support/AutoSuggestApp/config.json`
-
-`localModel` now supports runtime ordering:
-
-```json
-{
-  "runtimeOrder": ["ollama", "llama.cpp", "coreml"],
-  "fallbackRuntimeEnabled": true,
-  "customSource": {
-    "sourceType": "direct_url",
-    "modelID": "custom-local-model",
-    "version": "0.1.0",
-    "sha256": "",
-    "directURL": "",
-    "huggingFace": {
-      "repoID": "",
-      "revision": "main",
-      "filePath": "",
-      "tokenKeychainAccount": "autosuggest.huggingface.token"
-    }
-  },
-  "ollama": {
-    "baseURL": "http://127.0.0.1:11434",
-    "modelName": "qwen2.5:1.5b"
-  },
-  "llamaCpp": {
-    "baseURL": "http://127.0.0.1:8080"
-  },
-  "onlineLLM": {
-    "enabled": false,
-    "rolloutStage": "post-mvp",
-    "byok": {
-      "selectedProvider": "openai-compatible",
-      "selectedModel": "gpt-4o-mini",
-      "endpointURL": null,
-      "apiKeyKeychainAccount": "autosuggest.online.byok.default"
-    }
-  }
-}
-```
-
-The engine tries adapters in `runtimeOrder` and falls through automatically on unavailable/failed runtime.
-
-## Local Model Setup (No Existing Model Needed)
-
-### Option 1: Ollama (Fastest)
-
-```bash
-brew install ollama
-ollama serve
-ollama pull qwen2.5:1.5b
-```
-
-Set in config:
-- `runtimeOrder`: `["ollama", "coreml", "llama.cpp"]` (or keep default)
-- `localModel.ollama.modelName`: pulled model name
-- optionally `localModel.autoDownloadOnFirstRun: false` if you want to skip CoreML bootstrap download
-
-### Option 2: llama.cpp server
-
-Run llama.cpp server separately (example command depends on your local build/model):
-
-```bash
-llama-server -m /path/to/model.gguf --port 8080
-```
-
-Set in config:
-- `runtimeOrder`: include `"llama.cpp"`
-- `localModel.llamaCpp.baseURL`: `http://127.0.0.1:8080`
-
-### Option 3: CoreML local model
-
-You can use a local manifest + local artifact URL (`file://...`) without remote hosting:
-
-1. Create a manifest JSON with fields from `ModelManifest`.
-2. Point `localModel.manifestSourceURL` to `file:///absolute/path/to/manifest.json`.
-3. Set `localModel.autoDownloadOnFirstRun: true` and run app.
-
-The installer supports local file URLs for both manifest and model zip.
-
-### Option 4: Settings Screen (URL / Hugging Face Download)
-
-In the app menu:
-- `Model Source Settings…`
-
-You can configure:
-- `Direct URL` download (any reachable model artifact URL)
-- `Hugging Face` (`repo`, `revision`, `file path`) with optional token
-
-On `Save & Download`, the app downloads, installs, and activates the model locally.
-For Hugging Face, token is stored in keychain account from config (`customSource.huggingFace.tokenKeychainAccount`).
-
-## Model Selection Guidance (Built In)
-
-Open the menu item `Model Compatibility Report…` to get:
-- total/available memory on this Mac
-- recommended model-size ceiling for current conditions
-- likely unstable size threshold
-- readiness status for each configured runtime
-- per-installed-model verdict (`Good`, `Borderline`, `Not Recommended`) when model size can be inferred from model name
-
-## Run (Xcode via Package)
-
-1. Open `Package.swift` in Xcode.
-2. Select scheme `AutoSuggestRunner`.
-3. Run (`Cmd+R`).
-
-This remains useful for fast package iteration, but it is no longer the recommended path for permission testing.
-
-The package exports a library product (`AutoSuggestApp`) and the repo now includes a native app wrapper in `macos/`.
-
-## Permissions Required
-
-On first run, grant:
-- Accessibility
-- Input Monitoring
-
-In macOS settings:
-- `System Settings > Privacy & Security > Accessibility`
-- `System Settings > Privacy & Security > Input Monitoring`
-
-If event taps or insertion don’t work:
-- run the Xcode app target from `macos/AutoSuggestDesktop.xcodeproj`
-- re-check both permissions for `AutoSuggest`
-- fully quit and reopen the app after enabling Input Monitoring
-
-## Tests
-
-```bash
 swift test
+
+# The real app target (correct for permission testing & distribution)
+cd macos && xcodegen generate
+open AutoSuggestDesktop.xcodeproj   # scheme: AutoSuggestDesktop, Cmd+R
 ```
 
-## Useful Menu Actions
+Use the Xcode app target for anything permission-sensitive — it builds a real
+bundled `AutoSuggest.app` with a stable bundle ID. See [`CLAUDE.md`](CLAUDE.md)
+for the architecture map and conventions.
 
-- Enable/Disable autocomplete
-- Model Source Settings…
-- Rollback active model
-- Switch to next installed model
-- Export local telemetry
-- Exclude frontmost app
-- Add exclusion rule
+**Project layout**
 
-## Dedicated macOS App Target
+| Path | What |
+|---|---|
+| `Sources/AutoSuggestApp/` | The library: input → context → policy → inference → overlay → insertion pipeline |
+| `macos/` | xcodegen spec + the distributable Xcode app shell |
+| `website/` | Marketing site (static, deployed to Cloudflare Pages) |
+| `training/` | Fine-tuning scripts (MLX / Colab) — see [docs/FINE_TUNING.md](docs/FINE_TUNING.md) |
+| `docs/` | [Architecture](docs/ARCHITECTURE.md), [local setup](docs/LOCAL_SETUP.md), fine-tuning |
 
-The repo now includes one:
-- project spec: [project.yml](/Users/biswa/Documents/GitHub/autosuggest/macos/project.yml)
-- generated Xcode project: [AutoSuggestDesktop.xcodeproj](/Users/biswa/Documents/GitHub/autosuggest/macos/AutoSuggestDesktop.xcodeproj)
-- host app entry: [AutoSuggestDesktopApp.swift](/Users/biswa/Documents/GitHub/autosuggest/macos/AutoSuggestDesktop/AutoSuggestDesktopApp.swift)
+Config lives at `~/Library/Application Support/AutoSuggestApp/config.json`
+(runtime order, model source, exclusion rules); it's created on first run and
+migrated forward across versions.
 
-Use `docs/macos-app-target-setup.md` for the workflow.
+## Fine-tuning
 
-## Online Models (Post-MVP BYOK)
+Train a small model on your own writing — on-device with MLX, or free on a Colab
+GPU — then import the GGUF with one command. See
+[docs/FINE_TUNING.md](docs/FINE_TUNING.md).
 
-Online model selection is intentionally disabled during MVP.
+## Contributing
 
-Current behavior:
-- menu entry `Online Models (BYOK) — Post-MVP` shows rollout status
-- config includes BYOK placeholders (provider/model/endpoint/keychain account)
-- local runtime adapters remain primary (`coreml`, `ollama`, `llama.cpp`)
+Issues and PRs welcome. Run `swift test` and `swiftformat Sources Tests --lint`
+before pushing; CI runs both. Touching the insertion, policy, or privacy paths?
+Read the "Critical paths" section in [`CLAUDE.md`](CLAUDE.md) first.
 
-Post-MVP target:
-- UI for provider + model selection
-- key entry and secure storage via keychain
-- optional online fallback routing when enabled
+## License
+
+[GPL v3](LICENSE).

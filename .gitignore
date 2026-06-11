@@ -70,3 +70,6 @@ skills-lock.json
 # Agent-generated planning artifacts (kept locally, not committed)
 plans/
 docs/LAUNCH_AUDIT.md
+
+# macOS
+.DS_Store
