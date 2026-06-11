@@ -3,7 +3,7 @@ set -euo pipefail
 
 # AutoSuggest installer — downloads latest release DMG, mounts, copies to /Applications, launches.
 
-REPO="2002bishwajeet/autosuggest"
+REPO="2002Bishwajeet/autosuggest"
 APP_NAME="AutoSuggest"
 
 echo "==> Fetching latest release info..."
