@@ -1,16 +1,29 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 jobs:
+  lint:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SwiftFormat
+        run: brew install swiftformat
+      - name: Lint
+        # Paths before the flag: SwiftFormat 0.61+ rejects `--lint <paths>`.
+        run: swiftformat Sources Tests --lint
   build-and-test:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+          restore-keys: ${{ runner.os }}-spm-
       - name: Build
         run: swift build
       - name: Test

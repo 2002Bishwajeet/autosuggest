@@ -19,7 +19,7 @@ plan 008. Its item #3 is already done.
 | 004 | Remove main-thread blocking from the suggestion hot path | P1 | M | 001, 003 | DONE |
 | 005 | Overlay contrast + animation race; actionable runtime-down state | P2 | S | — | DONE |
 | 006 | Secure-input, keychain, and model-download integrity hardening | P2 | M | — | PARTIAL — Steps 1-3,5,6 DONE; Step 4 (checksum enforcement) deferred (STOP: default manifest sha256 is empty; needs maintainer's real artifact hash before enforcing) |
-| 007 | DX bundle: swiftformat, CI cache+lint, CLAUDE.md, dep pin | P2 | S | 001–006 (ordering only) | TODO |
+| 007 | DX bundle: swiftformat, CI cache+lint, CLAUDE.md, dep pin | P2 | S | 001–006 (ordering only) | DONE |
 | 008 | Signed, notarized release pipeline (v0.1.0 launch gate) | P1 | M | — (see note) | DONE-pending-tag — workflow wired; maintainer must add 5 Apple secrets + push v0.1.0 tag (see plan Step 6) |
 | 009 | BYOK ship spike (direction / v0.2) | P3 | M | 002 | TODO |
 

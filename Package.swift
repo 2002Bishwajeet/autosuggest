@@ -20,7 +20,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/huggingface/swift-transformers", from: "0.1.12"),
+        .package(url: "https://github.com/huggingface/swift-transformers", from: "0.1.24"), // 0.1.24 verified against this codebase; test before crossing 0.2.0
     ],
     targets: [
         .target(
