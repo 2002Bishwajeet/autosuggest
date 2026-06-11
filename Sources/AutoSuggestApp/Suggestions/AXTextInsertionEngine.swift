@@ -56,7 +56,7 @@ final class AXTextInsertionEngine: TextInsertionEngine {
         return true
     }
 
-    private func replacingText(in text: String, selectedRange: NSRange, replacement: String) -> String {
+    func replacingText(in text: String, selectedRange: NSRange, replacement: String) -> String {
         let nsText = text as NSString
         let safeLocation = max(0, min(selectedRange.location, nsText.length))
         let safeLength = max(0, min(selectedRange.length, nsText.length - safeLocation))

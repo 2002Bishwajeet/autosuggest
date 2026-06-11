@@ -70,7 +70,7 @@ final class AXTextContextProvider: TextContextProvider {
         return ""
     }
 
-    private func stringValue(from value: AnyObject) -> String? {
+    func stringValue(from value: AnyObject) -> String? {
         if let string = value as? String {
             return string
         }
@@ -99,7 +99,7 @@ final class AXTextContextProvider: TextContextProvider {
         return AXHelpers.castToAXUIElement(value)
     }
 
-    private func extractTextBeforeCaret(fullValue: String, selectedRange: NSRange?) -> String {
+    func extractTextBeforeCaret(fullValue: String, selectedRange: NSRange?) -> String {
         guard let selectedRange else {
             return fullValue
         }

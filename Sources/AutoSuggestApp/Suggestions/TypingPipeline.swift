@@ -187,7 +187,7 @@ final class TypingPipeline {
         }
     }
 
-    private func adjustSuggestionForSmartContinuation(
+    func adjustSuggestionForSmartContinuation(
         activeSuggestion: SuggestionCandidate,
         newContext: String
     ) -> SuggestionCandidate? {
@@ -208,7 +208,7 @@ final class TypingPipeline {
         )
     }
 
-    private func isSuggestion(_ suggestion: SuggestionCandidate, validFor context: TextContext) -> Bool {
+    func isSuggestion(_ suggestion: SuggestionCandidate, validFor context: TextContext) -> Bool {
         if context.policyContext.bundleID != suggestion.sourceBundleID {
             return false
         }
