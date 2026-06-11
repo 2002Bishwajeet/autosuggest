@@ -2,7 +2,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class InferenceRuntimeFactoryTests: XCTestCase {
-
     @MainActor
     private func makeFactory() -> InferenceRuntimeFactory {
         InferenceRuntimeFactory(

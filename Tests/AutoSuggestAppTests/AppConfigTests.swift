@@ -2,7 +2,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class AppConfigTests: XCTestCase {
-
     // MARK: - Helpers
 
     /// Minimal JSON that satisfies all required fields for AppConfig decoding.
@@ -13,7 +12,7 @@ final class AppConfigTests: XCTestCase {
             "enabled": true,
             "distribution": [
                 "notarizationEnabled": false,
-                "releaseChannel": "unsigned-pre-mvp"
+                "releaseChannel": "unsigned-pre-mvp",
             ],
             "localModel": [
                 "autoDownloadOnFirstRun": false,
@@ -25,13 +24,13 @@ final class AppConfigTests: XCTestCase {
                     "version": "1.0",
                     "fileName": "test.mlpackage",
                     "downloadURL": "https://example.com/test.mlpackage",
-                    "sha256": "abc123"
-                ]
+                    "sha256": "abc123",
+                ],
             ],
             "onlineLLM": [
                 "enabled": false,
-                "rolloutStage": "post-mvp"
-            ]
+                "rolloutStage": "post-mvp",
+            ],
         ]
         for (key, value) in extras {
             root[key] = value
@@ -52,7 +51,10 @@ final class AppConfigTests: XCTestCase {
         XCTAssertEqual(decoded.configVersion, AppConfig.default.configVersion)
         XCTAssertEqual(decoded.distribution.releaseChannel, AppConfig.default.distribution.releaseChannel)
         XCTAssertEqual(decoded.localModel.preferredRuntime, AppConfig.default.localModel.preferredRuntime)
-        XCTAssertEqual(decoded.localModel.fallbackManifest.modelID, AppConfig.default.localModel.fallbackManifest.modelID)
+        XCTAssertEqual(
+            decoded.localModel.fallbackManifest.modelID,
+            AppConfig.default.localModel.fallbackManifest.modelID
+        )
         XCTAssertEqual(decoded.onlineLLM.enabled, AppConfig.default.onlineLLM.enabled)
         XCTAssertEqual(decoded.privacy.encryptedStorageEnabled, AppConfig.default.privacy.encryptedStorageEnabled)
         XCTAssertEqual(decoded.privacy.piiFilteringEnabled, AppConfig.default.privacy.piiFilteringEnabled)
@@ -109,7 +111,7 @@ final class AppConfigTests: XCTestCase {
             "enabled": true,
             "distribution": [
                 "notarizationEnabled": false,
-                "releaseChannel": "unsigned-pre-mvp"
+                "releaseChannel": "unsigned-pre-mvp",
             ],
             "localModel": [
                 "autoDownloadOnFirstRun": false,
@@ -121,13 +123,13 @@ final class AppConfigTests: XCTestCase {
                     "version": "0.0.1",
                     "fileName": "legacy.zip",
                     "downloadURL": "https://example.com/legacy.zip",
-                    "sha256": "deadbeef"
-                ]
+                    "sha256": "deadbeef",
+                ],
             ],
             "onlineLLM": [
                 "enabled": false,
-                "rolloutStage": "post-mvp"
-            ]
+                "rolloutStage": "post-mvp",
+            ],
         ]
         let data = try JSONSerialization.data(withJSONObject: json)
         let config = try JSONDecoder().decode(AppConfig.self, from: data)

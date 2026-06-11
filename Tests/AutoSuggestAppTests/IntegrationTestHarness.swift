@@ -1,5 +1,5 @@
-import XCTest
 import CoreGraphics
+import XCTest
 @testable import AutoSuggestApp
 
 // MARK: - Mock Input Monitor
@@ -44,7 +44,7 @@ final class MockShortcutMonitor: SuggestionShortcutMonitor {
 
     @discardableResult
     func simulateCommand(_ command: SuggestionCommand) -> Bool {
-        return handler?(command) ?? false
+        handler?(command) ?? false
     }
 }
 
@@ -129,7 +129,9 @@ final class MockInferenceRuntime: InferenceRuntime {
         self.available = available
     }
 
-    func isAvailable() -> Bool { available }
+    func isAvailable() async -> Bool {
+        available
+    }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
         generateCallCount += 1
@@ -158,7 +160,6 @@ final class TestMetricsObserver {
 // MARK: - Integration Tests
 
 final class TypingPipelineIntegrationTests: XCTestCase {
-
     @MainActor
     func testFullAcceptFlow() async throws {
         // Setup all mocks

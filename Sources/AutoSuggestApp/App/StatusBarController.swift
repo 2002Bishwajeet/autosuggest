@@ -31,11 +31,10 @@ final class StatusBarController: NSObject {
 
     func refreshAppearance() {
         guard let button = statusItem.button, let uiModel else { return }
-        let symbolName: String
-        if uiModel.permissionHealth.isReady {
-            symbolName = uiModel.config.enabled ? "text.cursor" : "pause.circle"
+        let symbolName: String = if uiModel.permissionHealth.isReady {
+            uiModel.config.enabled ? "text.cursor" : "pause.circle"
         } else {
-            symbolName = "exclamationmark.shield"
+            "exclamationmark.shield"
         }
 
         if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "AutoSuggest") {
@@ -80,7 +79,11 @@ final class StatusBarController: NSObject {
         settingsItem.target = self
         overflowMenu.addItem(settingsItem)
 
-        let diagnosticsItem = NSMenuItem(title: "Export Diagnostics", action: #selector(exportDiagnostics), keyEquivalent: "e")
+        let diagnosticsItem = NSMenuItem(
+            title: "Export Diagnostics",
+            action: #selector(exportDiagnostics),
+            keyEquivalent: "e"
+        )
         diagnosticsItem.target = self
         overflowMenu.addItem(diagnosticsItem)
 

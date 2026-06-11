@@ -9,11 +9,64 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: macos-14
+  test:
+    runs-on: macos-15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+      # Swift 6.2 (the package's required tools version) ships with Xcode 26,
+      # which needs macOS 15. macos-14 defaults to Swift 5.10 and fails.
+      - name: Select Xcode (Swift 6.2+)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Run tests
+        run: |
+          swift --version
+          swift test
+
+  build-sign-notarize:
+    needs: test
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Select Xcode (Swift 6.2+)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Preflight secrets
+        env:
+          CERT: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          AID: ${{ secrets.APPLE_ID }}
+          APW: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          for v in CERT CERT_PW TEAM AID APW; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Missing release secret: $v. Required: MACOS_CERT_P12_BASE64, MACOS_CERT_PASSWORD, APPLE_TEAM_ID, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD"
+              exit 1
+            fi
+          done
+
+      - name: Import Developer ID certificate
+        env:
+          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN=build.keychain
+          KEYCHAIN_PW=$(uuidgen)
+          echo "$MACOS_CERT_P12_BASE64" | base64 --decode > cert.p12
+          security create-keychain -p "$KEYCHAIN_PW" $KEYCHAIN
+          security default-keychain -s $KEYCHAIN
+          security unlock-keychain -p "$KEYCHAIN_PW" $KEYCHAIN
+          security set-keychain-settings -t 3600 -u $KEYCHAIN
+          security import cert.p12 -k $KEYCHAIN -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PW" $KEYCHAIN
+          rm cert.p12
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -22,23 +75,29 @@ jobs:
         working-directory: macos
         run: xcodegen generate
 
-      - name: Build app
+      - name: Build signed app
         working-directory: macos
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcodebuild build \
             -project AutoSuggestDesktop.xcodeproj \
             -scheme AutoSuggestDesktop \
             -configuration Release \
             -derivedDataPath build \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            OTHER_CODE_SIGN_FLAGS="--timestamp" \
+            ENABLE_HARDENED_RUNTIME=YES
 
-      - name: Locate .app
+      - name: Verify signature
         id: locate
         working-directory: macos
         run: |
           APP_PATH=$(find build -name "AutoSuggest.app" -type d | head -1)
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          codesign -d --entitlements - "$APP_PATH"
           echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Create DMG
@@ -50,10 +109,47 @@ jobs:
             -ov -format UDZO \
             AutoSuggest.dmg
 
-      - name: Create ZIP
+      - name: Notarize DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          cd "macos/$(dirname "${{ steps.locate.outputs.app_path }}")"
-          zip -r "$GITHUB_WORKSPACE/AutoSuggest.zip" "AutoSuggest.app"
+          xcrun notarytool submit AutoSuggest.dmg \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait --timeout 30m
+
+      - name: Staple DMG
+        run: |
+          xcrun stapler staple AutoSuggest.dmg
+          xcrun stapler validate AutoSuggest.dmg
+
+      - name: Staple app and create ZIP
+        working-directory: macos
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH="${{ steps.locate.outputs.app_path }}"
+          # The app inside the just-notarized DMG shares the notarization ticket
+          # (tickets attach to the bundle's code signature), so stapling the
+          # standalone app normally succeeds without a second submission.
+          if ! xcrun stapler staple "$APP_PATH"; then
+            echo "No ticket found for the standalone app; submitting it separately."
+            ditto -c -k --keepParent "$APP_PATH" "$GITHUB_WORKSPACE/AutoSuggest-notarize.zip"
+            xcrun notarytool submit "$GITHUB_WORKSPACE/AutoSuggest-notarize.zip" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait --timeout 30m
+            xcrun stapler staple "$APP_PATH"
+          fi
+          xcrun stapler validate "$APP_PATH"
+          # ditto preserves resource forks / quarantine metadata better than zip -r.
+          ditto -c -k --keepParent "$APP_PATH" "$GITHUB_WORKSPACE/AutoSuggest.zip"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

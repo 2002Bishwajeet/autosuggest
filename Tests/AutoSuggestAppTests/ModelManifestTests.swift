@@ -2,15 +2,14 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class ModelManifestTests: XCTestCase {
-
     // MARK: - ModelManifest Codable
 
     func testModelManifestRoundTrips() throws {
-        let manifest = ModelManifest(
+        let manifest = try ModelManifest(
             modelID: "test-model",
             version: "2.0.0",
             fileName: "test-model.mlpackage",
-            downloadURL: URL(string: "https://example.com/model.zip")!,
+            downloadURL: XCTUnwrap(URL(string: "https://example.com/model.zip")),
             sha256: "abc123",
             signatureKeyID: "key-1",
             signatureEd25519Base64: "c2lnbmF0dXJl",
@@ -90,11 +89,11 @@ final class ModelManifestTests: XCTestCase {
     // MARK: - Nil optionals
 
     func testManifestWithNilOptionals() throws {
-        let manifest = ModelManifest(
+        let manifest = try ModelManifest(
             modelID: "minimal-model",
             version: "0.1.0",
             fileName: "minimal.mlmodelc",
-            downloadURL: URL(string: "https://example.com/minimal.zip")!,
+            downloadURL: XCTUnwrap(URL(string: "https://example.com/minimal.zip")),
             sha256: "deadbeef",
             signatureKeyID: nil,
             signatureEd25519Base64: nil,
@@ -107,7 +106,7 @@ final class ModelManifestTests: XCTestCase {
         XCTAssertEqual(decoded.modelID, "minimal-model")
         XCTAssertEqual(decoded.version, "0.1.0")
         XCTAssertEqual(decoded.fileName, "minimal.mlmodelc")
-        XCTAssertEqual(decoded.downloadURL, URL(string: "https://example.com/minimal.zip")!)
+        XCTAssertEqual(decoded.downloadURL, URL(string: "https://example.com/minimal.zip"))
         XCTAssertEqual(decoded.sha256, "deadbeef")
         XCTAssertNil(decoded.signatureKeyID)
         XCTAssertNil(decoded.signatureEd25519Base64)

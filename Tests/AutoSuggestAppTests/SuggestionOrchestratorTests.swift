@@ -3,7 +3,6 @@ import XCTest
 
 @MainActor
 final class SuggestionOrchestratorTests: XCTestCase {
-
     // MARK: - Test Helpers
 
     private func makeOrchestrator(runtimes: [InferenceRuntime]) -> SuggestionOrchestrator {
@@ -37,7 +36,7 @@ final class SuggestionOrchestratorTests: XCTestCase {
     func testScheduleSuggestionCallsOnSuggestion() {
         let exp = XCTestExpectation(description: "onSuggestion called")
         let orchestrator = makeOrchestrator(runtimes: [
-            TestRuntime(name: "test", available: true, result: "world")
+            TestRuntime(name: "test", available: true, result: "world"),
         ])
 
         var receivedCandidate: SuggestionCandidate?
@@ -55,7 +54,7 @@ final class SuggestionOrchestratorTests: XCTestCase {
     func testPolicyRejectionClearsSuggestion() {
         let exp = XCTestExpectation(description: "onClearSuggestion called")
         let orchestrator = makeOrchestrator(runtimes: [
-            TestRuntime(name: "test", available: true, result: "world")
+            TestRuntime(name: "test", available: true, result: "world"),
         ])
 
         orchestrator.onClearSuggestion = {
@@ -73,7 +72,7 @@ final class SuggestionOrchestratorTests: XCTestCase {
     func testEmptyInferenceClearsSuggestion() {
         let exp = XCTestExpectation(description: "onClearSuggestion called for empty inference")
         let orchestrator = makeOrchestrator(runtimes: [
-            TestRuntime(name: "test", available: true, result: "")
+            TestRuntime(name: "test", available: true, result: ""),
         ])
 
         orchestrator.onClearSuggestion = {
@@ -93,7 +92,7 @@ final class SuggestionOrchestratorTests: XCTestCase {
         suggestionExp.isInverted = true
 
         let orchestrator = makeOrchestrator(runtimes: [
-            TestRuntime(name: "test", available: true, result: "world")
+            TestRuntime(name: "test", available: true, result: "world"),
         ])
 
         orchestrator.onSuggestion = { _ in
@@ -111,7 +110,7 @@ final class SuggestionOrchestratorTests: XCTestCase {
         let clearExp = XCTestExpectation(description: "onClearSuggestion called on error")
 
         let orchestrator = makeOrchestrator(runtimes: [
-            ThrowingRuntime(name: "broken")
+            ThrowingRuntime(name: "broken"),
         ])
 
         orchestrator.onError = {
@@ -134,7 +133,9 @@ private struct TestRuntime: InferenceRuntime {
     let available: Bool
     let result: String
 
-    func isAvailable() -> Bool { available }
+    func isAvailable() async -> Bool {
+        available
+    }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
         Suggestion(completion: result, confidence: 0.5)
@@ -144,7 +145,9 @@ private struct TestRuntime: InferenceRuntime {
 private struct ThrowingRuntime: InferenceRuntime {
     let name: String
 
-    func isAvailable() -> Bool { true }
+    func isAvailable() async -> Bool {
+        true
+    }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
         throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated failure"])

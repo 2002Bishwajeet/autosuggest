@@ -8,11 +8,11 @@ enum TrainingDataError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .exportDisabled:
-            return "Training data collection is disabled. Enable it in Settings > Privacy."
-        case .fileSystemError(let underlying):
-            return "File system error: \(underlying.localizedDescription)"
+            "Training data collection is disabled. Enable it in Settings > Privacy."
+        case let .fileSystemError(underlying):
+            "File system error: \(underlying.localizedDescription)"
         case .encodingError:
-            return "Failed to encode training data pair."
+            "Failed to encode training data pair."
         }
     }
 }
@@ -138,6 +138,6 @@ actor TrainingDataExporter {
               let contents = try? String(contentsOf: url, encoding: .utf8) else {
             return 0
         }
-        return contents.components(separatedBy: "\n").filter { !$0.isEmpty }.count
+        return contents.components(separatedBy: "\n").count(where: { !$0.isEmpty })
     }
 }

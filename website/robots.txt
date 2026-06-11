@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://2002bishwajeet.github.io/autosuggest/sitemap.xml

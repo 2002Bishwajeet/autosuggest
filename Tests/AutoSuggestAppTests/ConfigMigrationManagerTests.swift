@@ -2,7 +2,6 @@ import XCTest
 @testable import AutoSuggestApp
 
 final class ConfigMigrationManagerTests: XCTestCase {
-
     // MARK: - ConfigMigrationManager
 
     func testMigrateV0toV1ReordersRuntimes() {
@@ -100,7 +99,7 @@ final class ConfigMigrationManagerTests: XCTestCase {
     func testValidateDisablesRulesWithBadRegex() {
         var config = AppConfig.default
         config.exclusions.userRules = [
-            ExclusionRule(enabled: true, bundleID: nil, windowTitleContains: nil, contentPattern: "[invalid(regex")
+            ExclusionRule(enabled: true, bundleID: nil, windowTitleContains: nil, contentPattern: "[invalid(regex"),
         ]
 
         let validator = ConfigValidator()
@@ -116,7 +115,12 @@ final class ConfigMigrationManagerTests: XCTestCase {
         config.localModel.ollama.baseURL = "http://127.0.0.1:11434"
         config.localModel.llamaCpp.baseURL = "http://127.0.0.1:8080"
         config.exclusions.userRules = [
-            ExclusionRule(enabled: true, bundleID: "com.example.app", windowTitleContains: nil, contentPattern: "^secret.*$")
+            ExclusionRule(
+                enabled: true,
+                bundleID: "com.example.app",
+                windowTitleContains: nil,
+                contentPattern: "^secret.*$"
+            ),
         ]
 
         let expected = config

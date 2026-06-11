@@ -20,7 +20,7 @@ struct ModelManifestProvider {
                 }
                 logger.warn("Remote returned 304 but cache is empty; using fallback manifest.")
                 return config.fallbackManifest
-            case .updated(let manifest, let etag):
+            case let .updated(manifest, etag):
                 saveCachedManifest(
                     ManifestCacheRecord(
                         sourceURL: config.manifestSourceURL.absoluteString,
@@ -60,7 +60,7 @@ struct ModelManifestProvider {
         if http.statusCode == 304 {
             return .notModified
         }
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
 

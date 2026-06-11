@@ -45,6 +45,7 @@ struct SecretStore {
 
         var addQuery = baseQuery
         addQuery[kSecValueData] = payload
+        addQuery[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
         guard addStatus == errSecSuccess else {
             throw NSError(domain: NSOSStatusErrorDomain, code: Int(addStatus))

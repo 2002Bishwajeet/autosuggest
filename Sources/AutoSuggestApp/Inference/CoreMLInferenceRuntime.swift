@@ -13,7 +13,7 @@ struct CoreMLInferenceRuntime: InferenceRuntime {
         self.modelAdapter = modelAdapter
     }
 
-    func isAvailable() -> Bool {
+    func isAvailable() async -> Bool {
         resourceMonitor.hasSufficientMemoryForPrimaryRuntime()
     }
 
@@ -35,7 +35,7 @@ struct CoreMLInferenceRuntime: InferenceRuntime {
                 modelURL: modelPath,
                 maxNewTokens: 24
             ),
-               !coreMLCompletion.isEmpty {
+                !coreMLCompletion.isEmpty {
                 return Suggestion(completion: coreMLCompletion, confidence: 0.72)
             }
             return nil
@@ -50,7 +50,8 @@ struct CoreMLInferenceRuntime: InferenceRuntime {
 
         let elapsed = Date().timeIntervalSince(startedAt)
         if elapsed > 0.65 {
-            Logger(scope: "CoreMLInferenceRuntime").warn("CoreML suggestion took \(String(format: "%.0f", elapsed * 1000))ms (slow)")
+            Logger(scope: "CoreMLInferenceRuntime")
+                .warn("CoreML suggestion took \(String(format: "%.0f", elapsed * 1000))ms (slow)")
         }
         return result
     }

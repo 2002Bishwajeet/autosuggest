@@ -1,6 +1,6 @@
-import Foundation
 import AppKit
 import ApplicationServices
+import Foundation
 
 final class AXTextContextProvider: TextContextProvider {
     private let logger = Logger(scope: "AXTextContextProvider")
@@ -27,7 +27,7 @@ final class AXTextContextProvider: TextContextProvider {
         let caretRect = extractCaretRect(from: focusedElement, selectedRange: selectedRange)
         let windowTitle = extractFocusedWindowTitle(systemWideElement: systemWide)
 
-        let context = TextContext(
+        return TextContext(
             policyContext: PolicyContext(
                 bundleID: bundleID,
                 axRole: roleMarker,
@@ -40,7 +40,6 @@ final class AXTextContextProvider: TextContextProvider {
             selectedRange: selectedRange,
             caretRectInScreen: caretRect
         )
-        return context
     }
 
     private func copyAttribute(named attribute: String, from element: AXUIElement) -> AnyObject? {
@@ -70,7 +69,7 @@ final class AXTextContextProvider: TextContextProvider {
         return ""
     }
 
-    private func stringValue(from value: AnyObject) -> String? {
+    func stringValue(from value: AnyObject) -> String? {
         if let string = value as? String {
             return string
         }
@@ -99,7 +98,7 @@ final class AXTextContextProvider: TextContextProvider {
         return AXHelpers.castToAXUIElement(value)
     }
 
-    private func extractTextBeforeCaret(fullValue: String, selectedRange: NSRange?) -> String {
+    func extractTextBeforeCaret(fullValue: String, selectedRange: NSRange?) -> String {
         guard let selectedRange else {
             return fullValue
         }

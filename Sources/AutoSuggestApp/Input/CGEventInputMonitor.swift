@@ -1,5 +1,5 @@
-import Foundation
 import CoreGraphics
+import Foundation
 
 final class CGEventInputMonitor: InputMonitor {
     private let logger = Logger(scope: "CGEventInputMonitor")

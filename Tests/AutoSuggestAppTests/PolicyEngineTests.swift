@@ -14,6 +14,18 @@ final class PolicyEngineTests: XCTestCase {
         XCTAssertFalse(engine.shouldSuggest(in: context))
     }
 
+    func testPasswordManagerBundleIsExcluded() {
+        let engine = PolicyEngine(defaults: .default)
+        let context = PolicyContext(
+            bundleID: "com.1password.1password",
+            axRole: "AXTextField",
+            isSecureField: false,
+            windowTitle: nil,
+            textPrefix: "looking up a login"
+        )
+        XCTAssertFalse(engine.shouldSuggest(in: context))
+    }
+
     func testSecureFieldIsExcluded() {
         let engine = PolicyEngine(defaults: .default)
         let context = PolicyContext(

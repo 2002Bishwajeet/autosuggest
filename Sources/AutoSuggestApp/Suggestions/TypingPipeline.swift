@@ -1,3 +1,4 @@
+import Carbon
 import Foundation
 
 @MainActor
@@ -87,13 +88,20 @@ final class TypingPipeline {
             clearSuggestion()
             return
         }
+        if IsSecureEventInputEnabled() {
+            clearSuggestion()
+            return
+        }
         if batteryMonitor.shouldPauseSuggestions(mode: batteryMode) {
             clearSuggestion()
             return
         }
 
         if let activeSuggestion, activeSuggestion.sourceContext != context.textBeforeCaret {
-            if let adjusted = adjustSuggestionForSmartContinuation(activeSuggestion: activeSuggestion, newContext: context.textBeforeCaret) {
+            if let adjusted = adjustSuggestionForSmartContinuation(
+                activeSuggestion: activeSuggestion,
+                newContext: context.textBeforeCaret
+            ) {
                 presentSuggestion(adjusted)
             } else {
                 clearSuggestion()
@@ -167,7 +175,7 @@ final class TypingPipeline {
                     await personalizationEngine.recordAcceptedSuggestion(completionText)
                     await telemetryManager.record(
                         event: "suggestion_accepted",
-                        payload: ["completion": completionText]
+                        payload: ["completion_length": String(completionText.count)]
                     )
                     await trainingDataExporter.recordTrainingPair(
                         prompt: sourceContext,
@@ -187,7 +195,7 @@ final class TypingPipeline {
         }
     }
 
-    private func adjustSuggestionForSmartContinuation(
+    func adjustSuggestionForSmartContinuation(
         activeSuggestion: SuggestionCandidate,
         newContext: String
     ) -> SuggestionCandidate? {
@@ -208,7 +216,7 @@ final class TypingPipeline {
         )
     }
 
-    private func isSuggestion(_ suggestion: SuggestionCandidate, validFor context: TextContext) -> Bool {
+    func isSuggestion(_ suggestion: SuggestionCandidate, validFor context: TextContext) -> Bool {
         if context.policyContext.bundleID != suggestion.sourceBundleID {
             return false
         }

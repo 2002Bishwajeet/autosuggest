@@ -9,6 +9,11 @@ extension PolicyRules {
     static let `default` = PolicyRules(
         blacklistedBundleIDs: [
             "com.apple.loginwindow",
+            "com.1password.1password",
+            "com.agilebits.onepassword7",
+            "com.bitwarden.desktop",
+            "org.keepassxc.keepassxc",
+            "com.lastpass.LastPass",
         ],
         codingBundleIDs: [
             "com.microsoft.VSCode",

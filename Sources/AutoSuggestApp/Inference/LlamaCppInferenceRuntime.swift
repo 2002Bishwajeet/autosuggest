@@ -10,28 +10,16 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
         self.personalizationEngine = personalizationEngine
     }
 
-    func isAvailable() -> Bool {
-        if isProcessRunning("llama-server") || isProcessRunning("llama.cpp") {
-            return true
-        }
-        return isEndpointReachable()
-    }
-
-    private func isEndpointReachable() -> Bool {
+    func isAvailable() async -> Bool {
         guard let url = URL(string: "\(baseURL)/completion") else { return false }
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
         request.timeoutInterval = 1.0
-        let resultBox = ResultBox()
-        let semaphore = DispatchSemaphore(value: 0)
-        URLSession.shared.dataTask(with: request) { _, response, _ in
-            if let http = response as? HTTPURLResponse {
-                resultBox.value = (200..<500).contains(http.statusCode)
-            }
-            semaphore.signal()
-        }.resume()
-        _ = semaphore.wait(timeout: .now() + 1.5)
-        return resultBox.value
+        guard let (_, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse else {
+            return false
+        }
+        return (200 ..< 500).contains(http.statusCode)
     }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
@@ -74,7 +62,7 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
             throw InferenceError.runtimeUnavailable("llama-server is not running")
         }
         guard let http = response as? HTTPURLResponse else { return nil }
-        guard (200..<300).contains(http.statusCode) else { return nil }
+        guard (200 ..< 300).contains(http.statusCode) else { return nil }
         let decoded = try JSONDecoder().decode(LlamaCppCompletionResponse.self, from: data)
         let text = decoded.content.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty { return nil }
@@ -98,24 +86,11 @@ struct LlamaCppInferenceRuntime: InferenceRuntime {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { return nil }
-        guard (200..<300).contains(http.statusCode) else { return nil }
+        guard (200 ..< 300).contains(http.statusCode) else { return nil }
         let decoded = try JSONDecoder().decode(OpenAICompatResponse.self, from: data)
         let text = decoded.choices.first?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if text.isEmpty { return nil }
         return Suggestion(completion: text, confidence: 0.58)
-    }
-
-    private func isProcessRunning(_ processName: String) -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        process.arguments = ["-x", processName]
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
-            return false
-        }
     }
 }
 
@@ -157,8 +132,4 @@ private struct OpenAICompatResponse: Decodable {
 
 private struct OpenAICompatChoice: Decodable {
     let text: String
-}
-
-private final class ResultBox: @unchecked Sendable {
-    var value = false
 }

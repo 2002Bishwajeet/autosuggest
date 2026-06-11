@@ -12,17 +12,15 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
         self.personalizationEngine = personalizationEngine
     }
 
-    func isAvailable() -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        process.arguments = ["-x", "ollama"]
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
+    func isAvailable() async -> Bool {
+        guard let url = URL(string: "\(baseURL)/api/tags") else { return false }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 1.0
+        guard let (_, response) = try? await URLSession.shared.data(for: request) else {
             return false
         }
+        return response is HTTPURLResponse
     }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
@@ -56,7 +54,7 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
         } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
             throw InferenceError.runtimeUnavailable("Ollama is not running. Start it with: ollama serve")
         }
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+        guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
 

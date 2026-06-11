@@ -94,7 +94,11 @@ struct ModelCompatibilityAdvisor {
             runtimeStatus(for: name, totalMemoryGB: totalMemoryGB, availableMemoryGB: availableMemoryGB)
         }
         let installedAssessments = installedModels.map {
-            assessInstalledModel($0, recommendedMaxParamsB: tier.recommendedMaxParamsB, hardMaxParamsB: tier.hardMaxParamsB)
+            assessInstalledModel(
+                $0,
+                recommendedMaxParamsB: tier.recommendedMaxParamsB,
+                hardMaxParamsB: tier.hardMaxParamsB
+            )
         }
 
         return ModelCompatibilityReport(
@@ -108,7 +112,10 @@ struct ModelCompatibilityAdvisor {
         )
     }
 
-    private func memoryTier(totalMemoryGB: Double, availableMemoryGB: Double?) -> (recommendedMaxParamsB: Double, hardMaxParamsB: Double) {
+    private func memoryTier(
+        totalMemoryGB: Double,
+        availableMemoryGB: Double?
+    ) -> (recommendedMaxParamsB: Double, hardMaxParamsB: Double) {
         var recommended: Double
         var hardMax: Double
 
@@ -174,7 +181,11 @@ struct ModelCompatibilityAdvisor {
         }
     }
 
-    private func assessInstalledModel(_ model: InstalledModel, recommendedMaxParamsB: Double, hardMaxParamsB: Double) -> InstalledModelAssessment {
+    private func assessInstalledModel(
+        _ model: InstalledModel,
+        recommendedMaxParamsB: Double,
+        hardMaxParamsB: Double
+    ) -> InstalledModelAssessment {
         let estimated = parseParamsB(from: "\(model.id) \(model.version) \(model.path.lastPathComponent)")
         guard let estimated else {
             return InstalledModelAssessment(

@@ -1,5 +1,5 @@
-import Foundation
 import Darwin.Mach
+import Foundation
 
 struct MemorySnapshot {
     let totalBytes: UInt64

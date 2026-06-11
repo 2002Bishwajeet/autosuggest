@@ -17,7 +17,13 @@ export function initDemo() {
 
 function animateDemo() {
     const lines = document.querySelectorAll('#demo .line');
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     lines.forEach(line => {
+        if (reduce) {
+            // No staggered typing animation; reveal all lines at once.
+            line.classList.add('visible');
+            return;
+        }
         const delay = parseInt(line.dataset.delay) || 0;
         setTimeout(() => line.classList.add('visible'), delay);
     });

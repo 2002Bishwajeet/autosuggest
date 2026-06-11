@@ -17,16 +17,16 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
         self.apiKey = apiKey
     }
 
-    func isAvailable() -> Bool {
+    func isAvailable() async -> Bool {
         !apiKey.isEmpty
     }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
         switch provider {
         case .anthropic:
-            return try await requestAnthropic(context: context)
+            try await requestAnthropic(context: context)
         case .openAICompatible, .openRouter, .custom:
-            return try await requestOpenAICompatible(context: context)
+            try await requestOpenAICompatible(context: context)
         }
     }
 
@@ -140,7 +140,7 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
 
     private func checkHTTPStatus(_ http: HTTPURLResponse, data: Data) throws {
         switch http.statusCode {
-        case 200..<300:
+        case 200 ..< 300:
             return
         case 401:
             throw InferenceError.invalidAPIKey
@@ -148,7 +148,8 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
             let retryAfter = http.value(forHTTPHeaderField: "Retry-After").flatMap(Int.init)
             throw InferenceError.rateLimited(retryAfterSeconds: retryAfter)
         default:
-            let body = String(data: data, encoding: .utf8) ?? "No response body"
+            let rawBody = String(data: data, encoding: .utf8) ?? "No response body"
+            let body = String(rawBody.prefix(200))
             throw InferenceError.providerError(statusCode: http.statusCode, message: body)
         }
     }

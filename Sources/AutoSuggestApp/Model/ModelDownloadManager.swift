@@ -8,6 +8,7 @@ enum ModelDownloadError: Error {
     case signatureVerificationFailed
     case extractionFailed(exitCode: Int32)
     case invalidActiveModelPathEncoding
+    case unsafeArchiveContents(path: String)
 }
 
 struct CustomModelDownloadRequest {
@@ -80,7 +81,7 @@ struct ModelDownloadManager {
             }
 
             let (tempURL, response) = try await URLSession.shared.download(for: request)
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
                 throw URLError(.badServerResponse)
             }
             try FileManager.default.moveItem(at: tempURL, to: modelPath)
@@ -109,10 +110,14 @@ struct ModelDownloadManager {
         try FileManager.default.createDirectory(at: installDir, withIntermediateDirectories: true)
         let filePaths = try await listHuggingFaceFolderRecursive(repo: repo, revision: revision, folderPath: folderPath)
         for filePath in filePaths {
-            guard let url = URL(string: "https://huggingface.co/\(repo.replacingOccurrences(of: " ", with: ""))/resolve/\(revision)/\(filePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? filePath)") else { continue }
+            guard let url =
+                URL(
+                    string: "https://huggingface.co/\(repo.replacingOccurrences(of: " ", with: ""))/resolve/\(revision)/\(filePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? filePath)"
+                )
+            else { continue }
             let request = URLRequest(url: url)
             let (tempURL, response) = try await URLSession.shared.download(for: request)
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
                 throw URLError(.badServerResponse)
             }
             let dest = installDir.appendingPathComponent(filePath, isDirectory: false)
@@ -129,12 +134,17 @@ struct ModelDownloadManager {
         return installDir
     }
 
-    private func listHuggingFaceFolderRecursive(repo: String, revision: String, folderPath: String) async throws -> [String] {
+    private func listHuggingFaceFolderRecursive(
+        repo: String,
+        revision: String,
+        folderPath: String
+    ) async throws -> [String] {
         var results: [String] = []
         let encoded = repo.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? repo
         let revEncoded = revision.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? revision
         let pathEncoded = folderPath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? folderPath
-        guard let treeURL = URL(string: "https://huggingface.co/api/models/\(encoded)/tree/\(revEncoded)/\(pathEncoded)") else {
+        guard let treeURL =
+            URL(string: "https://huggingface.co/api/models/\(encoded)/tree/\(revEncoded)/\(pathEncoded)") else {
             throw URLError(.badURL)
         }
         let (data, _) = try await URLSession.shared.data(from: treeURL)
@@ -144,14 +154,18 @@ struct ModelDownloadManager {
             if item.type == "file" {
                 results.append(fullPath)
             } else if item.type == "directory" {
-                let subPaths = try await listHuggingFaceFolderRecursive(repo: repo, revision: revision, folderPath: fullPath)
+                let subPaths = try await listHuggingFaceFolderRecursive(
+                    repo: repo,
+                    revision: revision,
+                    folderPath: fullPath
+                )
                 results.append(contentsOf: subPaths)
             }
         }
         return results
     }
 
-    private func validateArtifactIntegrity(fileURL: URL, manifest: ModelManifest) throws -> Bool {
+    func validateArtifactIntegrity(fileURL: URL, manifest: ModelManifest) throws -> Bool {
         _ = try validateChecksumIfPresent(fileURL: fileURL, manifest: manifest)
         _ = try validateSignatureIfPresent(fileURL: fileURL, manifest: manifest)
         return true
@@ -232,8 +246,26 @@ struct ModelDownloadManager {
             throw ModelDownloadError.extractionFailed(exitCode: process.terminationStatus)
         }
 
+        try validateExtractedContents(installDir: installDir)
+
         logger.info("Model archive extracted to \(installDir.path)")
         return installDir
+    }
+
+    /// Fail closed if any extracted entry resolves to a path outside `installDir`
+    /// (e.g. a symlink or `../` traversal that escapes the install root).
+    func validateExtractedContents(installDir: URL) throws {
+        let fm = FileManager.default
+        let installRoot = installDir.resolvingSymlinksInPath().standardizedFileURL.path
+        if let enumerator = fm.enumerator(at: installDir, includingPropertiesForKeys: [.isSymbolicLinkKey]) {
+            for case let entry as URL in enumerator {
+                let resolved = entry.resolvingSymlinksInPath().standardizedFileURL.path
+                if !resolved.hasPrefix(installRoot) {
+                    try? fm.removeItem(at: installDir)
+                    throw ModelDownloadError.unsafeArchiveContents(path: entry.lastPathComponent)
+                }
+            }
+        }
     }
 
     private func setActiveInstalledModel(path: URL) throws {

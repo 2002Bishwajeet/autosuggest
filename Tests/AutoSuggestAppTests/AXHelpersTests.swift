@@ -1,10 +1,8 @@
 import ApplicationServices
 import XCTest
-
 @testable import AutoSuggestApp
 
 final class AXHelpersTests: XCTestCase {
-
     // MARK: - castToAXUIElement
 
     func testCastValidAXUIElement() {
@@ -49,9 +47,9 @@ final class AXHelpersTests: XCTestCase {
         XCTAssertNotNil(result)
     }
 
-    func testCastInvalidCFAttributedStringReturnsNil() {
+    func testCastInvalidCFAttributedStringReturnsNil() throws {
         var intValue: Int32 = 42
-        let number = CFNumberCreate(kCFAllocatorDefault, .sInt32Type, &intValue)!
+        let number = try XCTUnwrap(CFNumberCreate(kCFAllocatorDefault, .sInt32Type, &intValue))
         let result = AXHelpers.castToCFAttributedString(number)
         XCTAssertNil(result)
     }

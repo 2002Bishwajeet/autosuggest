@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoSuggest — System-wide autocomplete powered by local LLMs</title>
     <meta name="description" content="Free, open-source, privacy-first autocomplete for macOS. Powered by local LLMs. No cloud. No telemetry. Just fast suggestions.">
+    <link rel="canonical" href="https://2002bishwajeet.github.io/autosuggest/">
+    <meta name="theme-color" content="#FAFAF8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
 
     <!-- Favicon & Touch Icon -->
     <link rel="icon" type="image/png" href="favicon.png">
@@ -23,10 +26,10 @@
     <meta name="twitter:description" content="Free, open-source, privacy-first autocomplete for macOS. Powered by local LLMs. No cloud. No telemetry. Just fast suggestions.">
     <meta name="twitter:image" content="https://2002bishwajeet.github.io/autosuggest/og-image.png">
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Self-hosted fonts — no third-party (Google) requests. Regenerate via scripts/fetch-fonts.py -->
+    <link rel="preload" href="fonts/dm-sans.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/fonts.css">
 
     <!-- Modular CSS -->
     <link rel="stylesheet" href="css/variables.css">
@@ -36,6 +39,25 @@
     <link rel="stylesheet" href="css/hero.css">
     <link rel="stylesheet" href="css/demo.css">
     <link rel="stylesheet" href="css/sections.css">
+
+    <!-- Structured data for rich results -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "AutoSuggest",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS 13+",
+        "description": "Free, open-source, privacy-first autocomplete for macOS. Powered by local LLMs. No cloud, no telemetry.",
+        "url": "https://2002bishwajeet.github.io/autosuggest/",
+        "downloadUrl": "https://github.com/2002bishwajeet/autosuggest/releases",
+        "softwareVersion": "0.1.0",
+        "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "Bishwajeet Parhi" }
+    }
+    </script>
 </head>
 <body>
 
@@ -46,14 +68,15 @@
                 <div class="cursor-icon">&#x258C;</div>
                 AutoSuggest
             </a>
-            <button class="nav-toggle" aria-label="Menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <button class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
-            <div class="nav-links">
+            <div class="nav-links" id="nav-links">
                 <a href="#features">Features</a>
                 <a href="#how-it-works">Setup</a>
                 <a href="#runtimes">Runtimes</a>
                 <a href="#fine-tuning">Fine-Tune</a>
+                <a href="#faq">FAQ</a>
                 <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener">GitHub</a>
                 <a href="#download" class="btn-nav">Download</a>
             </div>
@@ -65,7 +88,7 @@
         <div class="container">
             <div class="hero-badge">
                 <div class="dot"></div>
-                v0.1.0 — Now with online LLM support
+                v0.1.0 — 100% local, no cloud
             </div>
 
             <h1>
@@ -74,12 +97,12 @@
             </h1>
 
             <p class="hero-sub">
-                System-wide autocomplete for macOS. Powered by local LLMs or your own API key. Private, fast, open source.
+                System-wide autocomplete for macOS. Powered by local LLMs. Private, fast, open source.
             </p>
 
             <div class="hero-actions">
                 <a href="#download" class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Download for Mac
                 </a>
                 <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener" class="btn-secondary">
@@ -140,7 +163,7 @@
             <div class="features-grid">
                 <div class="feature-card reveal reveal-delay-1">
                     <div class="feature-icon teal">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     </div>
                     <h3>Private</h3>
                     <p>Everything runs locally on your Mac. No data leaves your device. No accounts, no cloud, no telemetry.</p>
@@ -148,15 +171,15 @@
 
                 <div class="feature-card reveal reveal-delay-2">
                     <div class="feature-icon coral">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     </div>
                     <h3>Fast</h3>
-                    <p>Sub-second suggestions via Ollama, llama.cpp, CoreML, or online APIs. Optimized for Apple Silicon.</p>
+                    <p>Sub-second suggestions via Ollama, llama.cpp, or CoreML. Optimized for Apple Silicon.</p>
                 </div>
 
                 <div class="feature-card reveal reveal-delay-3">
                     <div class="feature-icon green">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                     </div>
                     <h3>Open Source</h3>
                     <p>GPL v3 licensed. Read every line, fork it, extend it. Built in Swift 6.2 with full strict concurrency.</p>
@@ -164,7 +187,7 @@
 
                 <div class="feature-card reveal reveal-delay-4">
                     <div class="feature-icon warm">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                     </div>
                     <h3>Smart</h3>
                     <p>Context-aware completions with PII filtering, per-app exclusion rules, and personalization that learns your style.</p>
@@ -185,9 +208,9 @@
                 <div class="step reveal reveal-delay-1">
                     <div class="step-number">1</div>
                     <h3>Install a runtime</h3>
-                    <p>Install Ollama with Homebrew and pull a small model. Or configure your own API key for online LLMs.</p>
+                    <p>Install Ollama with Homebrew and pull a small model. That's the whole setup — about a minute.</p>
                     <div class="step-connector">
-                        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
                     </div>
                 </div>
 
@@ -196,7 +219,7 @@
                     <h3>Launch AutoSuggest</h3>
                     <p>It lives in your menu bar. Grant Accessibility and Input Monitoring when prompted.</p>
                     <div class="step-connector">
-                        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
+                        <svg aria-hidden="true" focusable="false" width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h20m0 0l-5-5m5 5l-5 5"/></svg>
                     </div>
                 </div>
 
@@ -231,9 +254,9 @@
                 </div>
 
                 <div class="runtime-card reveal reveal-delay-3">
-                    <h3>Online LLM <span class="tag">BYOK</span></h3>
-                    <p>Bring your own key. Supports OpenAI, Anthropic, OpenRouter, and custom endpoints.</p>
-                    <code>// Settings &gt; Online LLM<br>// Add your API key &amp; choose provider</code>
+                    <h3>CoreML <span class="tag">On-device</span></h3>
+                    <p>Apple Neural Engine inference with a bundled model. No server to run — fully on-device.</p>
+                    <code>// Settings &gt; Model Source<br>// Point to a local CoreML manifest</code>
                 </div>
             </div>
         </div>
@@ -275,6 +298,61 @@
         </div>
     </section>
 
+    <!-- ═══════════ FAQ / Trust ═══════════ -->
+    <section class="faq" id="faq">
+        <div class="container">
+            <div class="section-label reveal">Trust &amp; Privacy</div>
+            <h2 class="section-title reveal reveal-delay-1">
+                Your text never leaves your Mac
+            </h2>
+
+            <div class="faq-grid">
+                <div class="faq-list reveal reveal-delay-1">
+                    <details>
+                        <summary>Is anything sent to a server?</summary>
+                        <p>No. Suggestions are generated by a model running on your Mac — your text, the surrounding context, and any personalization never leave the device. There are no accounts and no analytics. The only network activity is what you set up yourself: downloading a model, or talking to a local runtime like Ollama on <code>127.0.0.1</code>.</p>
+                    </details>
+                    <details>
+                        <summary>Why does it need Accessibility and Input Monitoring?</summary>
+                        <p>Accessibility lets AutoSuggest read the text field you're focused on (for context) and insert a suggestion when you accept it. Input Monitoring lets it notice typing and the Tab / Esc shortcuts. macOS gates both behind a one-time permission prompt — a system-wide autocomplete can't work without them.</p>
+                    </details>
+                    <details>
+                        <summary>Does it store what I type?</summary>
+                        <p>Not unless you turn on personalization. When you do, entries are PII-filtered, encrypted at rest, and kept on your Mac — never uploaded. Accepted suggestions aren't written to logs, and the optional local telemetry is off by default and contains no text.</p>
+                    </details>
+                    <details>
+                        <summary>Will it read my passwords?</summary>
+                        <p>No. AutoSuggest detects secure text fields and macOS secure input mode (sudo prompts, password managers) and stays silent there. Common password-manager apps are excluded by default.</p>
+                    </details>
+                    <details>
+                        <summary>Is it really open source?</summary>
+                        <p>Yes — GPL v3, every line on <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener">GitHub</a>. Inspect the <a href="https://github.com/2002bishwajeet/autosuggest/tree/main/Sources/AutoSuggestApp/Privacy" target="_blank" rel="noopener">privacy code</a> or the insertion engine before you trust it.</p>
+                    </details>
+                    <details>
+                        <summary>Which Macs are supported?</summary>
+                        <p>macOS 13 (Ventura) or later. Apple Silicon is recommended for sub-second suggestions; Intel Macs work but are slower.</p>
+                    </details>
+                    <details>
+                        <summary>How do I uninstall it?</summary>
+                        <p>Quit AutoSuggest from the menu bar, drag it out of <code>/Applications</code>, and revoke its permissions under System Settings → Privacy &amp; Security. No background remnants are left behind.</p>
+                    </details>
+                </div>
+
+                <aside class="privacy-card reveal reveal-delay-2">
+                    <h3>Privacy at a glance</h3>
+                    <ul>
+                        <li>100% on-device — no cloud inference, ever</li>
+                        <li>No telemetry by default, and content-free when enabled</li>
+                        <li>Personalization is opt-in, PII-filtered &amp; encrypted at rest</li>
+                        <li>Stays silent in password fields &amp; secure input</li>
+                        <li>GPL v3 — fully auditable</li>
+                    </ul>
+                    <a class="privacy-link" href="https://github.com/2002bishwajeet/autosuggest/tree/main/Sources/AutoSuggestApp/Privacy" target="_blank" rel="noopener">Read the privacy source →</a>
+                </aside>
+            </div>
+        </div>
+    </section>
+
     <!-- ═══════════ CTA ═══════════ -->
     <section class="cta" id="download">
         <div class="container">
@@ -285,7 +363,7 @@
             </p>
             <div class="reveal reveal-delay-2">
                 <a href="https://github.com/2002bishwajeet/autosuggest/releases" target="_blank" rel="noopener" class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Download Latest Release
                 </a>
             </div>
@@ -307,6 +385,7 @@
                 <a href="https://github.com/2002bishwajeet/autosuggest" target="_blank" rel="noopener">GitHub</a>
                 <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/docs/FINE_TUNING.md" target="_blank" rel="noopener">Fine-Tuning Guide</a>
                 <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Docs</a>
+                <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
                 <a href="https://github.com/2002bishwajeet/autosuggest/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
             </div>
         </div>

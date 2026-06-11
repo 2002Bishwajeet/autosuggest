@@ -7,6 +7,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
     private let logger = Logger(scope: "FloatingOverlayRenderer")
     private var panel: NSPanel?
     private var textField: NSTextField?
+    private var hideGeneration = 0
 
     func showSuggestion(_ text: String, caretRectInScreen: CGRect?) {
         ensurePanel()
@@ -14,24 +15,28 @@ final class FloatingOverlayRenderer: OverlayRenderer {
 
         textField.stringValue = text
         layoutPanel(panel: panel, textField: textField, text: text, caretRectInScreen: caretRectInScreen)
+        hideGeneration += 1
         if !panel.isVisible {
             panel.alphaValue = 0
             panel.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.14
-                panel.animator().alphaValue = 1
-            }
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.14
+            panel.animator().alphaValue = 1
         }
     }
 
     func hideSuggestion() {
         guard let panel, panel.isVisible else { return }
+        hideGeneration += 1
+        let generation = hideGeneration
         NSAnimationContext.runAnimationGroup { context in
             context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.12
             panel.animator().alphaValue = 0
         } completionHandler: {
-            DispatchQueue.main.async {
-                panel.orderOut(nil)
+            DispatchQueue.main.async { [weak self] in
+                guard let self, hideGeneration == generation else { return }
+                self.panel?.orderOut(nil)
             }
         }
     }
@@ -54,7 +59,8 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         panel.hidesOnDeactivate = false
 
         let visual = NSVisualEffectView(frame: panel.contentView?.bounds ?? .zero)
-        visual.material = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency ? .windowBackground : .hudWindow
+        visual.material = NSWorkspace.shared
+            .accessibilityDisplayShouldReduceTransparency ? .windowBackground : .hudWindow
         visual.state = .active
         visual.wantsLayer = true
         visual.layer?.cornerRadius = 8
@@ -64,7 +70,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         visual.alphaValue = 0.96
 
         let textField = NSTextField(labelWithString: "")
-        textField.textColor = NSColor.tertiaryLabelColor
+        textField.textColor = NSColor.secondaryLabelColor
         textField.font = NSFont.systemFont(ofSize: 14, weight: .regular)
         textField.alignment = .natural
         textField.lineBreakMode = .byTruncatingTail
@@ -87,17 +93,22 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         let width = min(max(measured.width + 28, 100), 420)
         let height: CGFloat = 32
 
-        let anchor: CGPoint
-        if let caretRectInScreen, !caretRectInScreen.isEmpty {
-            anchor = CGPoint(x: caretRectInScreen.maxX + 4, y: caretRectInScreen.minY - 1)
+        let anchor: CGPoint = if let caretRectInScreen, !caretRectInScreen.isEmpty {
+            CGPoint(x: caretRectInScreen.maxX + 4, y: caretRectInScreen.minY - 1)
         } else {
-            anchor = fallbackAnchor()
+            fallbackAnchor()
         }
 
         var targetFrame = NSRect(x: anchor.x, y: anchor.y, width: width, height: height)
         let screenFrame = targetScreenFrame(for: targetFrame.origin)
-        targetFrame.origin.x = min(max(targetFrame.origin.x, screenFrame.minX + 4), screenFrame.maxX - targetFrame.width - 4)
-        targetFrame.origin.y = min(max(targetFrame.origin.y, screenFrame.minY + 4), screenFrame.maxY - targetFrame.height - 4)
+        targetFrame.origin.x = min(
+            max(targetFrame.origin.x, screenFrame.minX + 4),
+            screenFrame.maxX - targetFrame.width - 4
+        )
+        targetFrame.origin.y = min(
+            max(targetFrame.origin.y, screenFrame.minY + 4),
+            screenFrame.maxY - targetFrame.height - 4
+        )
 
         panel.setFrame(targetFrame, display: true)
         textField.frame = NSRect(x: 12, y: 7, width: width - 24, height: 18)

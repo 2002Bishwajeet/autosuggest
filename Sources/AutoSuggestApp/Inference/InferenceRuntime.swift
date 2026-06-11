@@ -4,7 +4,7 @@ protocol InferenceRuntime {
     @MainActor
     var name: String { get }
     @MainActor
-    func isAvailable() -> Bool
+    func isAvailable() async -> Bool
     @MainActor
     func generateSuggestion(context: String) async throws -> Suggestion
 }
@@ -25,18 +25,18 @@ enum InferenceError: Error {
 extension InferenceError: LocalizedError {
     var errorDescription: String? {
         switch self {
-        case .runtimeUnavailable(let message):
+        case let .runtimeUnavailable(message):
             return "Runtime unavailable: \(message)"
         case .invalidAPIKey:
             return "Invalid API key. Check your key in Settings > Online LLM."
-        case .rateLimited(let retryAfter):
+        case let .rateLimited(retryAfter):
             if let seconds = retryAfter {
                 return "Rate limited by provider. Retry after \(seconds) seconds."
             }
             return "Rate limited by provider. Please wait before retrying."
-        case .networkError(let underlying):
+        case let .networkError(underlying):
             return "Network error: \(underlying.localizedDescription)"
-        case .providerError(let statusCode, let message):
+        case let .providerError(statusCode, message):
             return "Provider error (\(statusCode)): \(message)"
         }
     }
