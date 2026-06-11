@@ -104,15 +104,22 @@ final class AXTextInsertionEngine: TextInsertionEngine {
         return AXValueCreate(.cfRange, &range)
     }
 
-    private static let clipboardBackupKey = "autosuggest.clipboardBackup"
+    static let clipboardBackupKey = "autosuggest.clipboardBackup"
     /// UserDefaults is not a good home for large blobs; cap the encoded crash
     /// backup at 1 MB and fall back to a plain-string backup above that.
     private static let clipboardBackupMaxBytes = 1 * 1024 * 1024
 
+    /// Call once at app startup: if a previous run crashed mid-paste, the user's
+    /// clipboard backup is still in defaults while the pasteboard holds the
+    /// pasted suggestion. Recovers it before any new paste can overwrite it.
     static func restoreClipboardIfNeeded() {
-        let defaults = UserDefaults.standard
+        restoreClipboard(from: .standard, to: .general)
+    }
+
+    /// Injectable core of `restoreClipboardIfNeeded` so the recovery behavior is
+    /// testable without touching `UserDefaults.standard` / `NSPasteboard.general`.
+    static func restoreClipboard(from defaults: UserDefaults, to pasteboard: NSPasteboard) {
         defer { defaults.removeObject(forKey: clipboardBackupKey) }
-        let pasteboard = NSPasteboard.general
         if let data = defaults.data(forKey: clipboardBackupKey),
            let snapshot = try? PropertyListDecoder().decode(PasteboardSnapshot.self, from: data) {
             snapshot.restore(to: pasteboard)

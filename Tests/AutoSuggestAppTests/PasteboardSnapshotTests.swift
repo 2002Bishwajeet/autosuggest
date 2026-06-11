@@ -99,4 +99,62 @@ final class PasteboardSnapshotTests: XCTestCase {
         XCTAssertEqual(pasteboard.string(forType: .string), "encoded round trip")
         XCTAssertEqual(pasteboard.data(forType: htmlType), Data("<i>html</i>".utf8))
     }
+
+    // MARK: - Crash-recovery restore (restoreClipboardIfNeeded)
+
+    /// A throwaway defaults suite so tests never touch `UserDefaults.standard`.
+    private func makePrivateDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "autosuggest.tests.\(UUID().uuidString)")!
+    }
+
+    func testRestoreClipboardRecoversNewFormatSnapshot() throws {
+        // Simulate a crash mid-paste: a plist-encoded snapshot of the user's
+        // real clipboard is sitting in defaults, and the pasteboard still holds
+        // the suggestion that was pasted in.
+        let source = makePrivatePasteboard()
+        source.clearContents()
+        source.setString("original clipboard", forType: .string)
+        let snapshot = PasteboardSnapshot.capture(from: source)
+
+        let defaults = makePrivateDefaults()
+        try defaults.set(PropertyListEncoder().encode(snapshot), forKey: AXTextInsertionEngine.clipboardBackupKey)
+
+        let clobbered = makePrivatePasteboard()
+        clobbered.clearContents()
+        clobbered.setString("the suggestion", forType: .string)
+
+        AXTextInsertionEngine.restoreClipboard(from: defaults, to: clobbered)
+
+        XCTAssertEqual(clobbered.string(forType: .string), "original clipboard")
+        XCTAssertNil(defaults.data(forKey: AXTextInsertionEngine.clipboardBackupKey))
+    }
+
+    func testRestoreClipboardRecoversLegacyStringBackup() {
+        // Backups written by an older app version were plain strings.
+        let defaults = makePrivateDefaults()
+        defaults.set("legacy original", forKey: AXTextInsertionEngine.clipboardBackupKey)
+
+        let clobbered = makePrivatePasteboard()
+        clobbered.clearContents()
+        clobbered.setString("the suggestion", forType: .string)
+
+        AXTextInsertionEngine.restoreClipboard(from: defaults, to: clobbered)
+
+        XCTAssertEqual(clobbered.string(forType: .string), "legacy original")
+        XCTAssertNil(defaults.string(forKey: AXTextInsertionEngine.clipboardBackupKey))
+    }
+
+    func testRestoreClipboardWithNoBackupLeavesClipboardUntouched() {
+        // No crash backup pending: a normal launch must not disturb whatever the
+        // user currently has on the clipboard.
+        let defaults = makePrivateDefaults()
+
+        let pasteboard = makePrivatePasteboard()
+        pasteboard.clearContents()
+        pasteboard.setString("current clipboard", forType: .string)
+
+        AXTextInsertionEngine.restoreClipboard(from: defaults, to: pasteboard)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "current clipboard")
+    }
 }

@@ -41,6 +41,10 @@ final class AppCoordinator {
     private var diagnosticsExportPath: String?
 
     func start() async {
+        // Recover the user's clipboard if a previous run crashed mid-paste,
+        // before the pipeline can start and overwrite the saved backup.
+        AXTextInsertionEngine.restoreClipboardIfNeeded()
+
         let config = await configStore.loadOrCreateDefault()
         currentConfig = config
         telemetryManager = TelemetryManager(enabled: config.telemetry.enabled)
