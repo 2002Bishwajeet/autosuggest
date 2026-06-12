@@ -23,14 +23,14 @@ struct OnboardingFlowView: View {
     @State private var isCoreMLInstalled: Bool
     @State private var ollamaRunning = false
     @State private var llamaRunning = false
-    @State private var heartbeat = Date()
+    @State private var permissionsReady = false
     @State private var copyFeedback: String?
     // Tracks whether Input Monitoring went from denied → granted this session,
     // which requires a relaunch before the CGEvent tap can be installed.
     @State private var inputMonitoringJustGranted = false
     @State private var prevInputMonitoringState = false
 
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let logger = Logger(scope: "OnboardingFlowView")
 
     init(
         permissionManager: PermissionManager,
@@ -111,17 +111,31 @@ struct OnboardingFlowView: View {
         .padding(28)
         .frame(minWidth: 680, minHeight: 540, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
-        .onReceive(timer) { value in
-            heartbeat = value
-            // Detect Input Monitoring transitioning from denied → granted.
-            // CGEvent tap installation requires a process restart, so we need
-            // to warn the user immediately when this happens.
-            let current = permissionManager.hasInputMonitoringPermission()
-            if current && !prevInputMonitoringState {
-                inputMonitoringJustGranted = true
-            }
-            prevInputMonitoringState = current
+        .onAppear { refreshPermissionState() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // Refresh the moment the app regains focus — e.g. when the user
+            // returns from System Settings after toggling a permission — so the
+            // wizard advances instantly instead of lagging behind a poll.
+            refreshPermissionState()
         }
+    }
+
+    /// Recomputes permission-readiness from the live `PermissionManager` state.
+    /// Driven by `.onAppear` and `NSApplication.didBecomeActiveNotification`
+    /// (focus return) rather than an always-on timer.
+    private func refreshPermissionState() {
+        permissionsReady = permissionManager.isAccessibilityTrusted() && permissionManager
+            .hasInputMonitoringPermission()
+
+        // Detect Input Monitoring transitioning from denied → granted.
+        // CGEvent tap installation requires a process restart, so we warn the
+        // user immediately when this happens.
+        let current = permissionManager.hasInputMonitoringPermission()
+        if current && !prevInputMonitoringState {
+            inputMonitoringJustGranted = true
+            logger.info("Input Monitoring granted during onboarding; relaunch required")
+        }
+        prevInputMonitoringState = current
     }
 
     private var stepTitle: String {
@@ -151,11 +165,6 @@ struct OnboardingFlowView: View {
         case .finish:
             return "See how suggestions appear and which keys control them."
         }
-    }
-
-    private var permissionsReady: Bool {
-        _ = heartbeat
-        return permissionManager.isAccessibilityTrusted() && permissionManager.hasInputMonitoringPermission()
     }
 
     private var displayedSteps: [OnboardingStep] {
