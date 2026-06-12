@@ -1,0 +1,138 @@
+import AppKit
+import SwiftUI
+
+struct StatusPopoverView: View {
+    @ObservedObject var uiModel: AutoSuggestUIModel
+
+    private var statusIndicator: StatusDot.Status {
+        if !uiModel.config.enabled { return .inactive }
+        if uiModel.quickPanelState.pauseReason != nil { return .paused }
+        if uiModel.modelHealth.lastError != nil { return .error }
+        return .active
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if let banner = uiModel.banner {
+                BannerView(banner: banner, onDismiss: uiModel.dismissBanner)
+            }
+
+            HStack(spacing: 10) {
+                StatusDot(status: statusIndicator)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("AutoSuggest")
+                        .font(.title3.weight(.semibold))
+                    Text(uiModel.quickPanelState.statusHeadline)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let pauseReason = uiModel.quickPanelState.pauseReason {
+                SimplePanel {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label(pauseReason, systemImage: "pause.circle")
+                            .foregroundStyle(.secondary)
+                        if let remedy = uiModel.quickPanelState.pauseRemedy {
+                            Text(remedy)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
+            Toggle("AutoSuggest", isOn: Binding(
+                get: { uiModel.config.enabled },
+                set: { uiModel.toggleEnabled($0) }
+            ))
+            .toggleStyle(.switch)
+
+            GroupBox {
+                VStack(alignment: .leading, spacing: 8) {
+                    statusRow("Runtime", value: uiModel.quickPanelState.activeRuntimeLabel)
+                    statusRow("Model", value: uiModel.quickPanelState.activeModelLabel)
+                    statusRow("Permissions", value: uiModel.permissionHealth.summary)
+                    statusRow(
+                        "Latency",
+                        value: uiModel.metrics.avgLatencyMs > 0
+                            ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms"
+                            : "No samples"
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } label: {
+                SectionHeader("Status", systemImage: "chart.bar")
+            }
+
+            VStack(spacing: 6) {
+                QuickActionButton(title: "Open Settings", systemImage: "gearshape") {
+                    uiModel.openSettings(.general)
+                }
+                .accessibilityHint("Opens the settings window")
+                Divider().padding(.horizontal, 8)
+                QuickActionButton(title: "Pause for 1 Hour", systemImage: "pause.circle") {
+                    uiModel.pauseForHour()
+                }
+                .accessibilityHint("Pauses suggestions for one hour")
+                QuickActionButton(title: "Exclude Current App", systemImage: "minus.circle") {
+                    uiModel.excludeFrontmostApp()
+                }
+                .accessibilityHint("Adds the frontmost app to the exclusion list")
+                if uiModel.modelHealth.lastError != nil {
+                    QuickActionButton(title: "Retry Model", systemImage: "arrow.clockwise") {
+                        uiModel.retryModel()
+                    }
+                    .accessibilityHint("Retries loading the inference model")
+                }
+                Divider().padding(.horizontal, 8)
+                QuickActionButton(title: "Quit AutoSuggest", systemImage: "xmark.circle") {
+                    uiModel.quitApp()
+                }
+                .accessibilityHint("Quits the application")
+            }
+        }
+        .padding(16)
+        .frame(width: 368)
+        .background(AutoSuggestTheme.surfacePrimary)
+    }
+
+    private func statusRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .foregroundStyle(.secondary)
+                .font(.system(.body, design: .monospaced))
+            Spacer()
+            Text(value)
+                .font(.system(.body, design: .monospaced))
+        }
+    }
+}
+
+private struct QuickActionButton: View {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Label(title, systemImage: systemImage)
+                Spacer()
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+                    .fill(isHovered
+                        ? Color.primary.opacity(0.08)
+                        : AutoSuggestTheme.surfaceSecondary)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in isHovered = hovering }
+        .accessibilityLabel(title)
+    }
+}

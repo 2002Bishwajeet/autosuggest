@@ -1,6 +1,18 @@
 import AppKit
 import Foundation
 
+/// Disk-derived model state, gathered off the main actor and cached so the
+/// synchronous UI refresh never touches the filesystem.
+struct ModelStateSnapshot {
+    var installedModels: [InstalledModel]
+    var activeModelPath: URL?
+    var report: ModelCompatibilityReport
+
+    static func empty(report: ModelCompatibilityReport) -> ModelStateSnapshot {
+        ModelStateSnapshot(installedModels: [], activeModelPath: nil, report: report)
+    }
+}
+
 @MainActor
 final class AppCoordinator {
     private let logger = Logger(scope: "AppCoordinator")
@@ -39,6 +51,15 @@ final class AppCoordinator {
     private var manualPauseUntil: Date?
     private var lastModelError: String?
     private var diagnosticsExportPath: String?
+    private var lastModelSnapshot: ModelStateSnapshot?
+    private nonisolated(unsafe) var didBecomeActiveObserver: NSObjectProtocol?
+    private var lastInputMonitoringTrusted = false
+
+    deinit {
+        if let didBecomeActiveObserver {
+            NotificationCenter.default.removeObserver(didBecomeActiveObserver)
+        }
+    }
 
     func start() async {
         // Recover the user's clipboard if a previous run crashed mid-paste,
@@ -54,6 +75,15 @@ final class AppCoordinator {
         self.uiModel = uiModel
         bindUIModel(uiModel)
         statusBarController.configure(with: uiModel)
+
+        didBecomeActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.handleDidBecomeActive() }
+        }
+        lastInputMonitoringTrusted = permissionManager.hasInputMonitoringPermission()
 
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             onboardingManager.showIfNeeded(
@@ -82,12 +112,12 @@ final class AppCoordinator {
             uiModel.showBanner(
                 kind: .warning,
                 title: "Model setup needs attention",
-                message: error.localizedDescription
+                message: Self.friendlyModelSetupMessage(for: error)
             )
         }
 
         rebuildRuntimePipelines(using: currentConfig ?? config)
-        refreshUIState()
+        await refreshModelState()
         setPipelineEnabledFromCurrentState()
         startMetricsRefreshLoop()
         logger.info("Startup complete.")
@@ -119,7 +149,7 @@ final class AppCoordinator {
             self?.openInputMonitoringSettings()
         }
         uiModel.onRefreshPermissions = { [weak self] in
-            self?.refreshUIState()
+            self?.refreshPresentation()
         }
         uiModel.onRelaunchApp = { [weak self] in
             self?.permissionManager.relaunchApp()
@@ -280,7 +310,7 @@ final class AppCoordinator {
 
                 let snapshot = await metricsCollector.snapshot()
                 uiModel?.metrics = snapshot
-                refreshUIState()
+                await refreshModelState()
                 setPipelineEnabledFromCurrentState()
 
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -288,7 +318,26 @@ final class AppCoordinator {
         }
     }
 
-    private func refreshUIState() {
+    /// Reads installed/active model state from disk. Runs off the main actor so
+    /// the synchronous UI refresh never blocks on the filesystem.
+    private nonisolated func gatherModelSnapshot(config: LocalModelConfig) async -> ModelStateSnapshot {
+        let installed = (try? modelManager.listInstalledModels()
+            .sorted { $0.path.path < $1.path.path }) ?? []
+        let report = modelCompatibilityAdvisor.buildReport(config: config, installedModels: installed)
+        let activePath = (try? modelManager.readActiveModelPath()) ?? nil
+        return ModelStateSnapshot(installedModels: installed, activeModelPath: activePath, report: report)
+    }
+
+    /// Async: gather disk state off-main, cache it, then publish.
+    private func refreshModelState() async {
+        guard let currentConfig else { return }
+        lastModelSnapshot = await gatherModelSnapshot(config: currentConfig.localModel)
+        refreshPresentation()
+    }
+
+    /// Synchronous, main, NO disk I/O. Rebuilds @Published UI state from
+    /// currentConfig + cached model snapshot + cheap permission checks.
+    private func refreshPresentation() {
         guard let currentConfig, let uiModel else { return }
 
         let permissionHealth = PermissionHealth(
@@ -296,12 +345,14 @@ final class AppCoordinator {
             inputMonitoringTrusted: permissionManager.hasInputMonitoringPermission()
         )
 
-        let installedModels = (try? modelManager.listInstalledModels().sorted { $0.path.path < $1.path.path }) ?? []
-        let report = modelCompatibilityAdvisor.buildReport(
-            config: currentConfig.localModel,
-            installedModels: installedModels
-        )
-        let activeModelPath = try? modelManager.readActiveModelPath()
+        let snapshot = lastModelSnapshot
+            ?? .empty(report: modelCompatibilityAdvisor.buildReport(
+                config: currentConfig.localModel,
+                installedModels: []
+            ))
+        let report = snapshot.report
+        let installedModels = snapshot.installedModels
+        let activeModelPath = snapshot.activeModelPath
         let activeRuntimeLabel = deriveActiveRuntimeLabel(from: report)
         let activeModelLabel = deriveActiveModelLabel(activeModelPath: activeModelPath, config: currentConfig)
 
@@ -311,20 +362,14 @@ final class AppCoordinator {
             activeModelLabel: activeModelLabel,
             report: report,
             installedModels: installedModels,
-            activeModelPath: activeModelPath ?? nil,
+            activeModelPath: activeModelPath,
             isDownloading: uiModel.modelHealth.isDownloading,
             lastError: lastModelError
         )
 
         let pauseReason = derivePauseReason(config: currentConfig, permissions: permissionHealth, report: report)
         let pauseRemedy = derivePauseRemedy(config: currentConfig, permissions: permissionHealth, report: report)
-        let headline: String = if !currentConfig.enabled {
-            "Autocomplete is off"
-        } else if let pauseReason {
-            pauseReason
-        } else {
-            "Suggestions are live"
-        }
+        let headline = Self.statusHeadline(enabled: currentConfig.enabled, pauseReason: pauseReason)
 
         uiModel.config = currentConfig
         uiModel.permissionHealth = permissionHealth
@@ -359,6 +404,41 @@ final class AppCoordinator {
         }
     }
 
+    private func handleDidBecomeActive() {
+        // Cheap TCC re-check + immediate UI update (no disk I/O).
+        refreshPresentation()
+
+        let nowGranted = permissionManager.hasInputMonitoringPermission()
+        let tapActive = typingPipeline?.inputMonitorIsActive ?? false
+        let action = PermissionReArm.decide(
+            inputMonitoringNowGranted: nowGranted,
+            tapCurrentlyActive: tapActive
+        )
+        lastInputMonitoringTrusted = nowGranted
+
+        switch action {
+        case .none:
+            if tapActive { uiModel?.needsRelaunchToEnable = false }
+        case .rebuildAndVerify:
+            guard let currentConfig else { return }
+            rebuildRuntimePipelines(using: currentConfig)
+            setPipelineEnabledFromCurrentState()
+            // Verify after the run loop installs the fresh tap.
+            Task { @MainActor in
+                let armed = typingPipeline?.inputMonitorIsActive ?? false
+                uiModel?.needsRelaunchToEnable = !armed
+                if armed {
+                    uiModel?.showBanner(
+                        kind: .success,
+                        title: "AutoSuggest enabled",
+                        message: "Input Monitoring is now active."
+                    )
+                }
+                refreshPresentation()
+            }
+        }
+    }
+
     private func openSettings(route: SettingsRoute) {
         guard let uiModel else { return }
         if preferencesWindowController == nil {
@@ -375,7 +455,7 @@ final class AppCoordinator {
         Task {
             await configStore.updateEnabled(enabled)
         }
-        refreshUIState()
+        refreshPresentation()
         setPipelineEnabledFromCurrentState()
     }
 
@@ -440,7 +520,8 @@ final class AppCoordinator {
         localModelSession.invalidate()
         coreMLModelAdapter.invalidate()
         rebuildRuntimePipelines(using: currentConfig)
-        refreshUIState()
+        refreshPresentation()
+        Task { await refreshModelState() }
         setPipelineEnabledFromCurrentState()
     }
 
@@ -450,7 +531,8 @@ final class AppCoordinator {
             localModelSession.invalidate()
             coreMLModelAdapter.invalidate()
             lastModelError = nil
-            refreshUIState()
+            refreshPresentation()
+            Task { await refreshModelState() }
             uiModel?.showBanner(
                 kind: .success,
                 title: "Model switched",
@@ -458,7 +540,7 @@ final class AppCoordinator {
             )
         } catch {
             lastModelError = error.localizedDescription
-            refreshUIState()
+            refreshPresentation()
         }
     }
 
@@ -468,7 +550,8 @@ final class AppCoordinator {
             localModelSession.invalidate()
             coreMLModelAdapter.invalidate()
             lastModelError = nil
-            refreshUIState()
+            refreshPresentation()
+            Task { await refreshModelState() }
             uiModel?.showBanner(
                 kind: .success,
                 title: "Rollback complete",
@@ -476,7 +559,7 @@ final class AppCoordinator {
             )
         } catch {
             lastModelError = error.localizedDescription
-            refreshUIState()
+            refreshPresentation()
         }
     }
 
@@ -496,14 +579,14 @@ final class AppCoordinator {
                 )
             } catch {
                 lastModelError = error.localizedDescription
-                refreshUIState()
+                refreshPresentation()
                 return
             }
         }
 
         guard let request = buildCustomDownloadRequest(from: updatedSource) else {
             lastModelError = "Could not resolve a valid model download URL."
-            refreshUIState()
+            refreshPresentation()
             return
         }
 
@@ -521,7 +604,8 @@ final class AppCoordinator {
                 lastModelError = nil
                 setModelDownloadState(active: false)
                 rebuildRuntimePipelines(using: refreshedConfig)
-                refreshUIState()
+                refreshPresentation()
+                Task { await refreshModelState() }
                 uiModel?.showBanner(
                     kind: .success,
                     title: "Model installed",
@@ -530,7 +614,7 @@ final class AppCoordinator {
             } catch {
                 lastModelError = error.localizedDescription
                 setModelDownloadState(active: false)
-                refreshUIState()
+                refreshPresentation()
                 uiModel?.showBanner(
                     kind: .error,
                     title: "Model download failed",
@@ -549,7 +633,8 @@ final class AppCoordinator {
                 setModelDownloadState(active: false)
                 rebuildRuntimePipelines(using: self.currentConfig ?? currentConfig)
                 lastModelError = nil
-                refreshUIState()
+                refreshPresentation()
+                Task { await refreshModelState() }
                 uiModel?.showBanner(
                     kind: .success,
                     title: "Model ready",
@@ -558,7 +643,7 @@ final class AppCoordinator {
             } catch {
                 setModelDownloadState(active: false)
                 lastModelError = error.localizedDescription
-                refreshUIState()
+                refreshPresentation()
                 uiModel?.showBanner(
                     kind: .warning,
                     title: "Model retry failed",
@@ -578,7 +663,7 @@ final class AppCoordinator {
             await configStore.updateExclusionRules(currentConfig.exclusions.userRules)
         }
         rebuildRuntimePipelines(using: currentConfig)
-        refreshUIState()
+        refreshPresentation()
         setPipelineEnabledFromCurrentState()
     }
 
@@ -598,7 +683,7 @@ final class AppCoordinator {
             await configStore.updateExclusionRules(currentConfig.exclusions.userRules)
         }
         rebuildRuntimePipelines(using: currentConfig)
-        refreshUIState()
+        refreshPresentation()
     }
 
     private func deleteExclusionRule(_ rule: ExclusionRule) {
@@ -609,7 +694,7 @@ final class AppCoordinator {
             await configStore.updateExclusionRules(currentConfig.exclusions.userRules)
         }
         rebuildRuntimePipelines(using: currentConfig)
-        refreshUIState()
+        refreshPresentation()
     }
 
     private func applyExclusionPreset(_ bundleID: String) {
@@ -628,7 +713,7 @@ final class AppCoordinator {
             await configStore.updateExclusionRules(currentConfig.exclusions.userRules)
         }
         rebuildRuntimePipelines(using: currentConfig)
-        refreshUIState()
+        refreshPresentation()
     }
 
     private func excludeFrontmostApp() {
@@ -658,7 +743,7 @@ final class AppCoordinator {
         do {
             try uiModel.diagnostics.reportText.write(to: url, atomically: true, encoding: .utf8)
             diagnosticsExportPath = url.path
-            refreshUIState()
+            refreshPresentation()
             uiModel.showBanner(
                 kind: .success,
                 title: "Diagnostics exported",
@@ -666,13 +751,13 @@ final class AppCoordinator {
             )
         } catch {
             lastModelError = error.localizedDescription
-            refreshUIState()
+            refreshPresentation()
         }
     }
 
     private func pauseForHour() {
         manualPauseUntil = Date().addingTimeInterval(3600)
-        refreshUIState()
+        refreshPresentation()
         setPipelineEnabledFromCurrentState()
         uiModel?.showBanner(
             kind: .info,
@@ -696,7 +781,8 @@ final class AppCoordinator {
             await configStore.updateLocalModel(currentConfig.localModel)
         }
         rebuildRuntimePipelines(using: currentConfig)
-        refreshUIState()
+        refreshPresentation()
+        Task { await refreshModelState() }
     }
 
     private func updateOnlineLLMEnabled(_ enabled: Bool) {
@@ -854,6 +940,37 @@ final class AppCoordinator {
         )
     }
 
+    /// Pure presentation of the menu-bar / quick-panel status headline.
+    nonisolated static func statusHeadline(enabled: Bool, pauseReason: String?) -> String {
+        if !enabled {
+            return "Autocomplete is off"
+        }
+        if let pauseReason {
+            return pauseReason
+        }
+        return "Suggestions are live"
+    }
+
+    /// Turns a model-acquisition failure into a clear, actionable banner message
+    /// instead of a raw error code (e.g. the `NSURLErrorDomain -1011` a failed
+    /// model download surfaces). Network/server failures point the user at the
+    /// runtimes that don't need a download.
+    nonisolated static func friendlyModelSetupMessage(for error: Error) -> String {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .timedOut,
+                 .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+                return "Couldn't reach the model download server. Start Ollama (recommended), or pick a model in Settings → Models."
+            case .badServerResponse, .fileDoesNotExist, .resourceUnavailable,
+                 .badURL, .unsupportedURL:
+                return "The default model download isn't available right now. Start Ollama (recommended), or choose a model in Settings → Models."
+            default:
+                return "Couldn't download the default model. Start Ollama (recommended), or choose a model in Settings → Models."
+            }
+        }
+        return "Couldn't set up the default model: \(error.localizedDescription). Start Ollama, or pick a model in Settings → Models."
+    }
+
     /// Maps the same pause conditions evaluated by `derivePauseReason` to an actionable hint.
     /// Pure and order-matched to `derivePauseReason` so the remedy always describes the active reason.
     nonisolated static func derivePauseRemedy(
@@ -955,6 +1072,6 @@ final class AppCoordinator {
             rebuildRuntimePipelines(using: currentConfig)
             setPipelineEnabledFromCurrentState()
         }
-        refreshUIState()
+        refreshPresentation()
     }
 }

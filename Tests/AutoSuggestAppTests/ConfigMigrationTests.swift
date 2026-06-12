@@ -34,7 +34,7 @@ final class ConfigMigrationTests: XCTestCase {
         XCTAssertEqual(config.localModel.fallbackManifest.modelID, "legacy-model")
         XCTAssertEqual(
             config.localModel.manifestSourceURL.absoluteString,
-            "https://raw.githubusercontent.com/autosuggest/models/main/manifest/stable.json"
+            "https://raw.githubusercontent.com/2002Bishwajeet/autosuggest/main/models/stable.json"
         )
         XCTAssertTrue(config.privacy.encryptedStorageEnabled)
         XCTAssertFalse(config.telemetry.enabled)

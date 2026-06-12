@@ -21,14 +21,16 @@ struct OnboardingFlowView: View {
     @State private var isDownloadingCoreML = false
     @State private var downloadError: String?
     @State private var isCoreMLInstalled: Bool
-    @State private var heartbeat = Date()
+    @State private var ollamaRunning = false
+    @State private var llamaRunning = false
+    @State private var permissionsReady = false
     @State private var copyFeedback: String?
     // Tracks whether Input Monitoring went from denied → granted this session,
     // which requires a relaunch before the CGEvent tap can be installed.
     @State private var inputMonitoringJustGranted = false
     @State private var prevInputMonitoringState = false
 
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let logger = Logger(scope: "OnboardingFlowView")
 
     init(
         permissionManager: PermissionManager,
@@ -109,17 +111,31 @@ struct OnboardingFlowView: View {
         .padding(28)
         .frame(minWidth: 680, minHeight: 540, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
-        .onReceive(timer) { value in
-            heartbeat = value
-            // Detect Input Monitoring transitioning from denied → granted.
-            // CGEvent tap installation requires a process restart, so we need
-            // to warn the user immediately when this happens.
-            let current = permissionManager.hasInputMonitoringPermission()
-            if current && !prevInputMonitoringState {
-                inputMonitoringJustGranted = true
-            }
-            prevInputMonitoringState = current
+        .onAppear { refreshPermissionState() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // Refresh the moment the app regains focus — e.g. when the user
+            // returns from System Settings after toggling a permission — so the
+            // wizard advances instantly instead of lagging behind a poll.
+            refreshPermissionState()
         }
+    }
+
+    /// Recomputes permission-readiness from the live `PermissionManager` state.
+    /// Driven by `.onAppear` and `NSApplication.didBecomeActiveNotification`
+    /// (focus return) rather than an always-on timer.
+    private func refreshPermissionState() {
+        permissionsReady = permissionManager.isAccessibilityTrusted() && permissionManager
+            .hasInputMonitoringPermission()
+
+        // Detect Input Monitoring transitioning from denied → granted.
+        // CGEvent tap installation requires a process restart, so we warn the
+        // user immediately when this happens.
+        let current = permissionManager.hasInputMonitoringPermission()
+        if current && !prevInputMonitoringState {
+            inputMonitoringJustGranted = true
+            logger.info("Input Monitoring granted during onboarding; relaunch required")
+        }
+        prevInputMonitoringState = current
     }
 
     private var stepTitle: String {
@@ -149,11 +165,6 @@ struct OnboardingFlowView: View {
         case .finish:
             return "See how suggestions appear and which keys control them."
         }
-    }
-
-    private var permissionsReady: Bool {
-        _ = heartbeat
-        return permissionManager.isAccessibilityTrusted() && permissionManager.hasInputMonitoringPermission()
     }
 
     private var displayedSteps: [OnboardingStep] {
@@ -305,6 +316,16 @@ struct OnboardingFlowView: View {
             }
             selectedModelSetupSection
         }
+        .task {
+            await refreshRuntimeReadiness()
+        }
+    }
+
+    private func refreshRuntimeReadiness() async {
+        async let ollama = RuntimeDetectionService.live.status(for: .ollama)
+        async let llama = RuntimeDetectionService.live.status(for: .llamaServer)
+        ollamaRunning = await ollama == .running
+        llamaRunning = await llama == .running
     }
 
     private var finishStep: some View {
@@ -380,11 +401,15 @@ struct OnboardingFlowView: View {
                     SetupStatusBadge(
                         title: selectedChoice.isReady(
                             config: localModelConfig,
-                            isCoreMLInstalled: isCoreMLInstalled
+                            isCoreMLInstalled: isCoreMLInstalled,
+                            ollamaRunning: ollamaRunning,
+                            llamaRunning: llamaRunning
                         ) ? "Ready" : "Needs setup",
                         isReady: selectedChoice.isReady(
                             config: localModelConfig,
-                            isCoreMLInstalled: isCoreMLInstalled
+                            isCoreMLInstalled: isCoreMLInstalled,
+                            ollamaRunning: ollamaRunning,
+                            llamaRunning: llamaRunning
                         )
                     )
                 }
@@ -507,440 +532,6 @@ struct OnboardingFlowView: View {
         }
         withAnimation(.easeInOut(duration: 0.15)) {
             step = steps[currentIndex - 1]
-        }
-    }
-}
-
-private struct PermissionDetailRow: View {
-    let systemImage: String
-    let title: String
-    let description: String
-    let ready: Bool
-    let primaryAction: (String, () -> Void)
-    let secondaryAction: (String, () -> Void)
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Status icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(ready ? Color.green.opacity(0.12) : Color.orange.opacity(0.10))
-                    .frame(width: 44, height: 44)
-                Image(systemName: ready ? "checkmark.shield.fill" : systemImage)
-                    .font(.system(size: 20))
-                    .foregroundStyle(ready ? .green : .orange)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(title)
-                        .font(.headline)
-                    Spacer()
-                    Text(ready ? "Granted" : "Required")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule()
-                                .fill(ready ? Color.green.opacity(0.12) : Color.orange.opacity(0.12))
-                        )
-                        .foregroundStyle(ready ? .green : .orange)
-                }
-
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if !ready {
-                    HStack(spacing: 8) {
-                        Button(primaryAction.0, action: primaryAction.1)
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
-                        Button(secondaryAction.0, action: secondaryAction.1)
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                    }
-                    .padding(.top, 2)
-                }
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(
-                            ready ? Color.green.opacity(0.2) : Color(nsColor: .separatorColor),
-                            lineWidth: 1
-                        )
-                )
-        )
-    }
-}
-
-private struct OnboardingChoiceCard: View {
-    let title: String
-    let subtitle: String
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title)
-                    .font(.headline)
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                HStack {
-                    Spacer()
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? Color.blue : Color.secondary)
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(
-                                selected ? Color.blue : Color(nsColor: .separatorColor),
-                                lineWidth: selected ? 1.5 : 0.5
-                            )
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct SetupStatusBadge: View {
-    let title: String
-    let isReady: Bool
-
-    var body: some View {
-        Text(title)
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(isReady ? Color.green.opacity(0.16) : Color.orange.opacity(0.16))
-            )
-            .foregroundStyle(isReady ? Color.green : Color.orange)
-    }
-}
-
-private struct CommandSnippetCard: View {
-    let title: String
-    let command: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            Text(command)
-                .font(.system(.body, design: .monospaced))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(nsColor: .underPageBackgroundColor))
-                )
-        }
-    }
-}
-
-private struct SuggestionPreviewCard: View {
-    var body: some View {
-        SettingsCard {
-            VStack(alignment: .leading, spacing: 14) {
-                Label("How suggestions appear", systemImage: "text.cursor")
-                    .font(.headline)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(
-                        "When AutoSuggest has a completion, the suggested text appears inline and stays visually separate from what you already typed."
-                    )
-                    .foregroundStyle(.secondary)
-
-                    HStack(alignment: .firstTextBaseline, spacing: 0) {
-                        Text("Thanks for the")
-                            .font(.title3.weight(.medium))
-                        Text(" quick update")
-                            .font(.title3.weight(.medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color(nsColor: .underPageBackgroundColor))
-                    )
-
-                    HStack(spacing: 10) {
-                        KeycapView(label: "Tab", accentColor: AutoSuggestTheme.brand, highlighted: true)
-                        Text("to accept the highlighted completion")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct ShortcutHighlightRow: View {
-    let title: String
-    let subtitle: String
-    let keycaps: [String]
-    let accentColor: Color
-    let highlighted: Bool
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                Text(subtitle)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 12)
-            HStack(spacing: 8) {
-                ForEach(keycaps, id: \.self) { keycap in
-                    KeycapView(label: keycap, accentColor: accentColor, highlighted: highlighted)
-                }
-            }
-        }
-    }
-}
-
-private struct ShortcutActionCard: View {
-    let title: String
-    let detail: String
-    let systemImage: String
-
-    var body: some View {
-        SettingsCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: systemImage)
-                    .foregroundStyle(.blue)
-                Text(title)
-                    .font(.headline)
-                Text(detail)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-private struct KeycapView: View {
-    let label: String
-    let accentColor: Color
-    let highlighted: Bool
-
-    var body: some View {
-        Text(label)
-            .font(.system(.body, design: .rounded).weight(.semibold))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(accentColor.opacity(highlighted ? 0.16 : 0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(accentColor.opacity(highlighted ? 0.35 : 0.25), lineWidth: 1)
-                    )
-            )
-            .foregroundStyle(highlighted ? accentColor : .primary)
-    }
-}
-
-struct OllamaDetectionView: View {
-    @State private var status: OllamaStatus = .checking
-
-    enum OllamaStatus {
-        case checking
-        case notInstalled
-        case installedNotRunning
-        case running
-    }
-
-    var body: some View {
-        SettingsCard {
-            HStack(spacing: 12) {
-                switch status {
-                case .checking:
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Checking Ollama status...")
-                        .foregroundStyle(.secondary)
-                case .notInstalled:
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.red)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Ollama not installed")
-                            .font(.headline)
-                        Text("Install with: brew install ollama")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                case .installedNotRunning:
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Ollama installed but not running")
-                            .font(.headline)
-                        Text("Start with: ollama serve")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                case .running:
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Ollama is running")
-                            .font(.headline)
-                        Text("Ready to use for suggestions.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-                Button("Recheck") {
-                    detectOllama()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-        }
-        .onAppear {
-            detectOllama()
-        }
-    }
-
-    private func detectOllama() {
-        status = .checking
-
-        // Check if ollama binary exists
-        let searchPaths = [
-            "/opt/homebrew/bin/ollama",
-            "/usr/local/bin/ollama",
-            "/usr/bin/ollama",
-        ]
-        let installed = searchPaths.contains { FileManager.default.fileExists(atPath: $0) }
-        guard installed else {
-            status = .notInstalled
-            return
-        }
-
-        // Check if ollama process is running
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        process.arguments = ["-x", "ollama"]
-        do {
-            try process.run()
-            process.waitUntilExit()
-            status = process.terminationStatus == 0 ? .running : .installedNotRunning
-        } catch {
-            status = .installedNotRunning
-        }
-    }
-}
-
-private extension OnboardingModelChoice {
-    var displayTitle: String {
-        switch self {
-        case .ollama:
-            "Ollama"
-        case .llamaCpp:
-            "llama.cpp"
-        case .coreML:
-            "CoreML"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .ollama:
-            "shippingbox"
-        case .llamaCpp:
-            "server.rack"
-        case .coreML:
-            "cube.transparent"
-        }
-    }
-
-    var setupTitle: String {
-        switch self {
-        case .ollama:
-            "Set up Ollama"
-        case .llamaCpp:
-            "Set up llama.cpp"
-        case .coreML:
-            "Set up CoreML"
-        }
-    }
-
-    func setupSummary(config: LocalModelConfig) -> String {
-        switch self {
-        case .ollama:
-            "AutoSuggest will use \(config.ollama.modelName) from \(config.ollama.baseURL) once the Ollama service is running."
-        case .llamaCpp:
-            "Point AutoSuggest at a running llama.cpp server on \(config.llamaCpp.baseURL) and keep your GGUF model loaded there."
-        case .coreML:
-            "AutoSuggest can download the default CoreML package or use a custom local source from Settings."
-        }
-    }
-
-    func setupCommands(config: LocalModelConfig) -> String {
-        switch self {
-        case .ollama:
-            "ollama serve\nollama pull \(config.ollama.modelName)"
-        case .llamaCpp:
-            "llama-server -m /path/to/model.gguf --port 8080"
-        case .coreML:
-            "CoreML setup happens inside AutoSuggest."
-        }
-    }
-
-    func isReady(config: LocalModelConfig, isCoreMLInstalled: Bool) -> Bool {
-        switch self {
-        case .ollama:
-            isProcessRunning("ollama")
-        case .llamaCpp:
-            isProcessRunning("llama-server") || isProcessRunning("llama.cpp")
-        case .coreML:
-            isCoreMLInstalled || config.isModelPresent
-        }
-    }
-
-    func finishSummary(config: LocalModelConfig) -> String {
-        switch self {
-        case .ollama:
-            "Keep \(config.ollama.modelName) available in Ollama and AutoSuggest will prefer that path first."
-        case .llamaCpp:
-            "Keep your llama.cpp server running on \(config.llamaCpp.baseURL) when you want suggestions."
-        case .coreML:
-            "AutoSuggest will use the local CoreML package you downloaded or configured in Settings."
-        }
-    }
-
-    private func isProcessRunning(_ processName: String) -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        process.arguments = ["-x", processName]
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
-            return false
         }
     }
 }

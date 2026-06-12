@@ -170,6 +170,9 @@ jobs:
         run: |
           mkdir -p dmg_stage
           cp -R "macos/${{ steps.locate.outputs.app_path }}" dmg_stage/
+          # Drag-install target: an /Applications shortcut so opening the DMG
+          # shows AutoSuggest.app next to an Applications folder to drag it into.
+          ln -s /Applications dmg_stage/Applications
           hdiutil create -volname "AutoSuggest" \
             -srcfolder dmg_stage \
             -ov -format UDZO \

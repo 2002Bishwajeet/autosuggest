@@ -10,6 +10,11 @@ final class CGEventInputMonitor: InputMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
+    var isActive: Bool {
+        guard let eventTap else { return false }
+        return CGEvent.tapIsEnabled(tap: eventTap)
+    }
+
     func start(onEvent: @escaping (InputEvent) -> Void) {
         guard !isStarted else { return }
         self.onEvent = onEvent
@@ -46,6 +51,14 @@ final class CGEventInputMonitor: InputMonitor {
         let userInfo = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
 
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
+            if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                if let userInfo {
+                    let monitor = Unmanaged<CGEventInputMonitor>.fromOpaque(userInfo).takeUnretainedValue()
+                    monitor.reEnableTap()
+                }
+                return Unmanaged.passUnretained(event)
+            }
+
             guard let userInfo else {
                 return Unmanaged.passUnretained(event)
             }
@@ -85,6 +98,12 @@ final class CGEventInputMonitor: InputMonitor {
 
         eventTap = nil
         runLoopSource = nil
+    }
+
+    private func reEnableTap() {
+        guard let eventTap else { return }
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+        logger.info("Re-enabled input event tap after disable event.")
     }
 
     private func handleCGEvent(type: CGEventType, event: CGEvent) {

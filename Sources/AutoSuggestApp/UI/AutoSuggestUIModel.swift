@@ -298,6 +298,9 @@ final class AutoSuggestUIModel: ObservableObject {
     @Published var config: AppConfig
     @Published var selectedSettingsRoute: SettingsRoute = .general
     @Published var permissionHealth: PermissionHealth = .empty
+    /// Set when Input Monitoring is granted but the tap could not be armed in this
+    /// process; the UI shows a one-click "Relaunch to finish enabling" action.
+    @Published var needsRelaunchToEnable: Bool = false
     @Published var quickPanelState: QuickPanelState = .empty
     @Published var modelHealth: ModelHealth = .empty
     @Published var diagnostics: DiagnosticsSnapshot = .empty

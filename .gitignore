@@ -30,6 +30,7 @@ playground.xcworkspace
 # .swiftpm
 
 .build/
+macos/build/
 
 # CocoaPods
 #
@@ -70,6 +71,8 @@ skills-lock.json
 # Agent-generated planning artifacts (kept locally, not committed)
 plans/
 docs/LAUNCH_AUDIT.md
+# ...but keep brainstorming/writing-plans workflow plans under version control
+!docs/superpowers/plans/
 
 # macOS
 .DS_Store

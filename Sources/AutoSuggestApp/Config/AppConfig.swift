@@ -436,8 +436,13 @@ struct ExclusionRule: Codable, Equatable {
     var contentPattern: String?
 }
 
+/// The remote manifest is an optional "is there a newer default model?" check.
+/// It lives in this repo at models/stable.json; until it is reachable the app
+/// falls back to `ModelManifest.initial` (the same Hugging Face OpenELM model),
+/// so a 404 here is non-fatal. (The previous URL pointed at a nonexistent
+/// `autosuggest/models` org and always 404'd.)
 private let defaultManifestURL =
-    URL(string: "https://raw.githubusercontent.com/autosuggest/models/main/manifest/stable.json")
+    URL(string: "https://raw.githubusercontent.com/2002Bishwajeet/autosuggest/main/models/stable.json")
         ?? URL(fileURLWithPath: "/dev/null")
 
 extension AppConfig {
