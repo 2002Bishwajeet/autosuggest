@@ -21,6 +21,8 @@ struct OnboardingFlowView: View {
     @State private var isDownloadingCoreML = false
     @State private var downloadError: String?
     @State private var isCoreMLInstalled: Bool
+    @State private var ollamaRunning = false
+    @State private var llamaRunning = false
     @State private var heartbeat = Date()
     @State private var copyFeedback: String?
     // Tracks whether Input Monitoring went from denied → granted this session,
@@ -305,6 +307,16 @@ struct OnboardingFlowView: View {
             }
             selectedModelSetupSection
         }
+        .task {
+            await refreshRuntimeReadiness()
+        }
+    }
+
+    private func refreshRuntimeReadiness() async {
+        async let ollama = RuntimeDetectionService.live.status(for: .ollama)
+        async let llama = RuntimeDetectionService.live.status(for: .llamaServer)
+        ollamaRunning = await ollama == .running
+        llamaRunning = await llama == .running
     }
 
     private var finishStep: some View {
@@ -380,11 +392,15 @@ struct OnboardingFlowView: View {
                     SetupStatusBadge(
                         title: selectedChoice.isReady(
                             config: localModelConfig,
-                            isCoreMLInstalled: isCoreMLInstalled
+                            isCoreMLInstalled: isCoreMLInstalled,
+                            ollamaRunning: ollamaRunning,
+                            llamaRunning: llamaRunning
                         ) ? "Ready" : "Needs setup",
                         isReady: selectedChoice.isReady(
                             config: localModelConfig,
-                            isCoreMLInstalled: isCoreMLInstalled
+                            isCoreMLInstalled: isCoreMLInstalled,
+                            ollamaRunning: ollamaRunning,
+                            llamaRunning: llamaRunning
                         )
                     )
                 }
@@ -813,42 +829,28 @@ struct OllamaDetectionView: View {
                 }
                 Spacer()
                 Button("Recheck") {
-                    detectOllama()
+                    Task { await refreshOllamaStatus() }
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
             }
         }
-        .onAppear {
-            detectOllama()
+        .task {
+            await refreshOllamaStatus()
         }
     }
 
-    private func detectOllama() {
+    private func refreshOllamaStatus() async {
         status = .checking
+        let result = await RuntimeDetectionService.live.status(for: .ollama)
+        status = Self.mapStatus(result)
+    }
 
-        // Check if ollama binary exists
-        let searchPaths = [
-            "/opt/homebrew/bin/ollama",
-            "/usr/local/bin/ollama",
-            "/usr/bin/ollama",
-        ]
-        let installed = searchPaths.contains { FileManager.default.fileExists(atPath: $0) }
-        guard installed else {
-            status = .notInstalled
-            return
-        }
-
-        // Check if ollama process is running
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        process.arguments = ["-x", "ollama"]
-        do {
-            try process.run()
-            process.waitUntilExit()
-            status = process.terminationStatus == 0 ? .running : .installedNotRunning
-        } catch {
-            status = .installedNotRunning
+    private static func mapStatus(_ status: RuntimeDetectionService.Status) -> OllamaStatus {
+        switch status {
+        case .notInstalled: .notInstalled
+        case .installedNotRunning: .installedNotRunning
+        case .running: .running
         }
     }
 }
@@ -909,12 +911,17 @@ private extension OnboardingModelChoice {
         }
     }
 
-    func isReady(config: LocalModelConfig, isCoreMLInstalled: Bool) -> Bool {
+    func isReady(
+        config: LocalModelConfig,
+        isCoreMLInstalled: Bool,
+        ollamaRunning: Bool,
+        llamaRunning: Bool
+    ) -> Bool {
         switch self {
         case .ollama:
-            isProcessRunning("ollama")
+            ollamaRunning
         case .llamaCpp:
-            isProcessRunning("llama-server") || isProcessRunning("llama.cpp")
+            llamaRunning
         case .coreML:
             isCoreMLInstalled || config.isModelPresent
         }
@@ -928,19 +935,6 @@ private extension OnboardingModelChoice {
             "Keep your llama.cpp server running on \(config.llamaCpp.baseURL) when you want suggestions."
         case .coreML:
             "AutoSuggest will use the local CoreML package you downloaded or configured in Settings."
-        }
-    }
-
-    private func isProcessRunning(_ processName: String) -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        process.arguments = ["-x", processName]
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
-            return false
         }
     }
 }
