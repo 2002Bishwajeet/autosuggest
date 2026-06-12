@@ -108,7 +108,7 @@ final class AppCoordinator {
         do {
             try await bootstrapInitialModelIfNeeded()
         } catch {
-            lastModelError = error.localizedDescription
+            lastModelError = Self.friendlyModelSetupMessage(for: error)
             uiModel.showBanner(
                 kind: .warning,
                 title: "Model setup needs attention",
