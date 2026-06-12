@@ -411,6 +411,7 @@ final class AppCoordinator {
     private func handleDidBecomeActive() {
         // Cheap TCC re-check + immediate UI update (no disk I/O).
         refreshPresentation()
+        refreshOllama()
 
         let nowGranted = permissionManager.hasInputMonitoringPermission()
         let tapActive = typingPipeline?.inputMonitorIsActive ?? false
