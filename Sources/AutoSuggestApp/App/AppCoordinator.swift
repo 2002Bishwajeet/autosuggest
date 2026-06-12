@@ -612,13 +612,13 @@ final class AppCoordinator {
                     message: "Downloaded and activated \(updatedSource.modelID) \(updatedSource.version)."
                 )
             } catch {
-                lastModelError = error.localizedDescription
+                lastModelError = Self.friendlyModelSetupMessage(for: error)
                 setModelDownloadState(active: false)
                 refreshPresentation()
                 uiModel?.showBanner(
                     kind: .error,
                     title: "Model download failed",
-                    message: error.localizedDescription
+                    message: Self.friendlyModelSetupMessage(for: error)
                 )
             }
         }
@@ -642,12 +642,12 @@ final class AppCoordinator {
                 )
             } catch {
                 setModelDownloadState(active: false)
-                lastModelError = error.localizedDescription
+                lastModelError = Self.friendlyModelSetupMessage(for: error)
                 refreshPresentation()
                 uiModel?.showBanner(
                     kind: .warning,
                     title: "Model retry failed",
-                    message: error.localizedDescription
+                    message: Self.friendlyModelSetupMessage(for: error)
                 )
             }
         }
