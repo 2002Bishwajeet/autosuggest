@@ -24,12 +24,12 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
     }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
-        let personalHint = await personalizationEngine.bestMatch(for: context)
-        let prompt = if let personalHint, !personalHint.isEmpty {
-            "\(context)\n\nPrefer continuation style similar to: \(personalHint)"
-        } else {
-            context
-        }
+        // The text before the caret IS the completion prompt. We intentionally do
+        // NOT append a personalization hint as instruction text here — on a raw
+        // completion endpoint the model echoes such instructions straight into the
+        // suggestion, corrupting it. (Personalization still feeds the accept-loop
+        // via PersonalizationEngine.)
+        let prompt = context
 
         guard let url = URL(string: "\(baseURL)/api/generate") else {
             throw URLError(.badURL)
