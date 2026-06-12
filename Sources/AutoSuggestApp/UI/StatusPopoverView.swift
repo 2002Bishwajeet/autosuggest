@@ -12,88 +12,86 @@ struct StatusPopoverView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                if let banner = uiModel.banner {
-                    BannerView(banner: banner, onDismiss: uiModel.dismissBanner)
-                }
+        VStack(alignment: .leading, spacing: 14) {
+            if let banner = uiModel.banner {
+                BannerView(banner: banner, onDismiss: uiModel.dismissBanner)
+            }
 
-                HStack(spacing: 10) {
-                    StatusDot(status: statusIndicator)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("AutoSuggest")
-                            .font(.title3.weight(.semibold))
-                        Text(uiModel.quickPanelState.statusHeadline)
-                            .font(.subheadline)
+            HStack(spacing: 10) {
+                StatusDot(status: statusIndicator)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("AutoSuggest")
+                        .font(.title3.weight(.semibold))
+                    Text(uiModel.quickPanelState.statusHeadline)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let pauseReason = uiModel.quickPanelState.pauseReason {
+                SimplePanel {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label(pauseReason, systemImage: "pause.circle")
                             .foregroundStyle(.secondary)
-                    }
-                }
-
-                if let pauseReason = uiModel.quickPanelState.pauseReason {
-                    SimplePanel {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Label(pauseReason, systemImage: "pause.circle")
+                        if let remedy = uiModel.quickPanelState.pauseRemedy {
+                            Text(remedy)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
-                            if let remedy = uiModel.quickPanelState.pauseRemedy {
-                                Text(remedy)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
                         }
                     }
                 }
+            }
 
-                Toggle("AutoSuggest", isOn: Binding(
-                    get: { uiModel.config.enabled },
-                    set: { uiModel.toggleEnabled($0) }
-                ))
-                .toggleStyle(.switch)
+            Toggle("AutoSuggest", isOn: Binding(
+                get: { uiModel.config.enabled },
+                set: { uiModel.toggleEnabled($0) }
+            ))
+            .toggleStyle(.switch)
 
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 8) {
-                        statusRow("Runtime", value: uiModel.quickPanelState.activeRuntimeLabel)
-                        statusRow("Model", value: uiModel.quickPanelState.activeModelLabel)
-                        statusRow("Permissions", value: uiModel.permissionHealth.summary)
-                        statusRow(
-                            "Latency",
-                            value: uiModel.metrics.avgLatencyMs > 0
-                                ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms"
-                                : "No samples"
-                        )
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                } label: {
-                    SectionHeader("Status", systemImage: "chart.bar")
+            GroupBox {
+                VStack(alignment: .leading, spacing: 8) {
+                    statusRow("Runtime", value: uiModel.quickPanelState.activeRuntimeLabel)
+                    statusRow("Model", value: uiModel.quickPanelState.activeModelLabel)
+                    statusRow("Permissions", value: uiModel.permissionHealth.summary)
+                    statusRow(
+                        "Latency",
+                        value: uiModel.metrics.avgLatencyMs > 0
+                            ? "\(Int(uiModel.metrics.avgLatencyMs.rounded())) ms"
+                            : "No samples"
+                    )
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } label: {
+                SectionHeader("Status", systemImage: "chart.bar")
+            }
 
-                VStack(spacing: 6) {
-                    QuickActionButton(title: "Open Settings", systemImage: "gearshape") {
-                        uiModel.openSettings(.general)
-                    }
-                    .accessibilityHint("Opens the settings window")
-                    Divider().padding(.horizontal, 8)
-                    QuickActionButton(title: "Pause for 1 Hour", systemImage: "pause.circle") {
-                        uiModel.pauseForHour()
-                    }
-                    .accessibilityHint("Pauses suggestions for one hour")
-                    QuickActionButton(title: "Exclude Current App", systemImage: "minus.circle") {
-                        uiModel.excludeFrontmostApp()
-                    }
-                    .accessibilityHint("Adds the frontmost app to the exclusion list")
-                    QuickActionButton(title: "Retry Model", systemImage: "arrow.clockwise") {
-                        uiModel.retryModel()
-                    }
-                    .accessibilityHint("Retries loading the inference model")
-                    Divider().padding(.horizontal, 8)
-                    QuickActionButton(title: "Export Diagnostics", systemImage: "square.and.arrow.up") {
-                        uiModel.exportDiagnostics()
-                    }
-                    .accessibilityHint("Exports diagnostics data to a file")
-                    QuickActionButton(title: "Quit AutoSuggest", systemImage: "xmark.circle") {
-                        uiModel.quitApp()
-                    }
-                    .accessibilityHint("Quits the application")
+            VStack(spacing: 6) {
+                QuickActionButton(title: "Open Settings", systemImage: "gearshape") {
+                    uiModel.openSettings(.general)
                 }
+                .accessibilityHint("Opens the settings window")
+                Divider().padding(.horizontal, 8)
+                QuickActionButton(title: "Pause for 1 Hour", systemImage: "pause.circle") {
+                    uiModel.pauseForHour()
+                }
+                .accessibilityHint("Pauses suggestions for one hour")
+                QuickActionButton(title: "Exclude Current App", systemImage: "minus.circle") {
+                    uiModel.excludeFrontmostApp()
+                }
+                .accessibilityHint("Adds the frontmost app to the exclusion list")
+                QuickActionButton(title: "Retry Model", systemImage: "arrow.clockwise") {
+                    uiModel.retryModel()
+                }
+                .accessibilityHint("Retries loading the inference model")
+                Divider().padding(.horizontal, 8)
+                QuickActionButton(title: "Export Diagnostics", systemImage: "square.and.arrow.up") {
+                    uiModel.exportDiagnostics()
+                }
+                .accessibilityHint("Exports diagnostics data to a file")
+                QuickActionButton(title: "Quit AutoSuggest", systemImage: "xmark.circle") {
+                    uiModel.quitApp()
+                }
+                .accessibilityHint("Quits the application")
             }
         }
         .padding(16)

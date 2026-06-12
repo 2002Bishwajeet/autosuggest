@@ -112,7 +112,7 @@ final class AppCoordinator {
             uiModel.showBanner(
                 kind: .warning,
                 title: "Model setup needs attention",
-                message: error.localizedDescription
+                message: Self.friendlyModelSetupMessage(for: error)
             )
         }
 
@@ -949,6 +949,26 @@ final class AppCoordinator {
             return pauseReason
         }
         return "Suggestions are live"
+    }
+
+    /// Turns a model-acquisition failure into a clear, actionable banner message
+    /// instead of a raw error code (e.g. the `NSURLErrorDomain -1011` a failed
+    /// model download surfaces). Network/server failures point the user at the
+    /// runtimes that don't need a download.
+    nonisolated static func friendlyModelSetupMessage(for error: Error) -> String {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .timedOut,
+                 .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+                return "Couldn't reach the model download server. Start Ollama (recommended), or pick a model in Settings → Models."
+            case .badServerResponse, .fileDoesNotExist, .resourceUnavailable,
+                 .badURL, .unsupportedURL:
+                return "The default model download isn't available right now. Start Ollama (recommended), or choose a model in Settings → Models."
+            default:
+                return "Couldn't download the default model. Start Ollama (recommended), or choose a model in Settings → Models."
+            }
+        }
+        return "Couldn't set up the default model: \(error.localizedDescription). Start Ollama, or pick a model in Settings → Models."
     }
 
     /// Maps the same pause conditions evaluated by `derivePauseReason` to an actionable hint.

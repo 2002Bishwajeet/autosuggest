@@ -22,8 +22,11 @@ final class StatusBarController: NSObject {
 
         popover.behavior = .transient
         popover.animates = true
-        popover.contentSize = NSSize(width: 368, height: 408)
-        popover.contentViewController = NSHostingController(rootView: StatusPopoverView(uiModel: uiModel))
+        // Size the popover to fit the SwiftUI content so it never shows a
+        // scrollbar (the content sets its own 368pt width; height is intrinsic).
+        let popoverHost = NSHostingController(rootView: StatusPopoverView(uiModel: uiModel))
+        popoverHost.sizingOptions = [.preferredContentSize]
+        popover.contentViewController = popoverHost
 
         buildOverflowMenu()
         refreshAppearance()
