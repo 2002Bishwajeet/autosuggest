@@ -303,6 +303,10 @@ final class AutoSuggestUIModel: ObservableObject {
     @Published var needsRelaunchToEnable: Bool = false
     @Published var quickPanelState: QuickPanelState = .empty
     @Published var modelHealth: ModelHealth = .empty
+    @Published var ollamaRunning: Bool = false
+    @Published var ollamaInstalled: [OllamaModelService.InstalledModel] = []
+    /// model name -> in-flight pull progress
+    @Published var ollamaPulls: [String: OllamaModelService.PullProgress] = [:]
     @Published var diagnostics: DiagnosticsSnapshot = .empty
     @Published var metrics: MetricsSnapshot = .zero
     @Published var banner: AppBanner?
@@ -326,6 +330,11 @@ final class AutoSuggestUIModel: ObservableObject {
     var onMoveRuntime: ((Int, Int) -> Void)?
     var onSwitchToInstalledModel: ((InstalledModel) -> Void)?
     var onRollbackModel: (() -> Void)?
+    var onSetOllamaModel: ((String) -> Void)?
+    var onSetOllamaBaseURL: ((String) -> Void)?
+    var onPullOllamaModel: ((String) -> Void)?
+    var onDeleteOllamaModel: ((String) -> Void)?
+    var onRefreshOllama: (() -> Void)?
     var onSaveModelSource: ((ModelSourceDraft) -> Void)?
     var onToggleRuleEnabled: ((ExclusionRule, Bool) -> Void)?
     var onSaveExclusionRule: ((ExclusionRuleDraft, ExclusionRule?) -> Void)?
@@ -427,6 +436,26 @@ final class AutoSuggestUIModel: ObservableObject {
 
     func rollbackModel() {
         onRollbackModel?()
+    }
+
+    func setOllamaModel(_ name: String) {
+        onSetOllamaModel?(name)
+    }
+
+    func setOllamaBaseURL(_ url: String) {
+        onSetOllamaBaseURL?(url)
+    }
+
+    func pullOllamaModel(_ name: String) {
+        onPullOllamaModel?(name)
+    }
+
+    func deleteOllamaModel(_ name: String) {
+        onDeleteOllamaModel?(name)
+    }
+
+    func refreshOllama() {
+        onRefreshOllama?()
     }
 
     func saveModelSource(_ draft: ModelSourceDraft) {

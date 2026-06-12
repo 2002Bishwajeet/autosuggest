@@ -6,6 +6,7 @@ struct ModelsSettingsView: View {
     @State private var isSourceEditorPresented = false
     @State private var sourceDraft = ModelSourceDraft(source: .default)
     @State private var showRollbackConfirmation = false
+    @State private var selectedRuntimeTab: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -17,32 +18,66 @@ struct ModelsSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            SimplePanel {
-                Text("Runtime order")
-                    .font(.headline)
-                ForEach(Array(uiModel.config.localModel.runtimeOrder.enumerated()), id: \.offset) { index, runtime in
-                    HStack {
-                        Text(runtime)
-                        Spacer()
-                        Button {
-                            uiModel.moveRuntime(from: index, direction: -1)
-                        } label: {
-                            Image(systemName: "arrow.up")
-                        }
-                        .buttonStyle(.borderless)
-                        .disabled(index == 0)
-
-                        Button {
-                            uiModel.moveRuntime(from: index, direction: 1)
-                        } label: {
-                            Image(systemName: "arrow.down")
-                        }
-                        .buttonStyle(.borderless)
-                        .disabled(index == uiModel.config.localModel.runtimeOrder.count - 1)
-                    }
+            Picker("Runtime", selection: $selectedRuntimeTab) {
+                ForEach(uiModel.config.localModel.runtimeOrder, id: \.self) { rt in
+                    Text(rt).tag(rt)
                 }
             }
+            .pickerStyle(.segmented)
 
+            switch selectedRuntimeTab {
+            case "ollama":
+                OllamaModelPanel(uiModel: uiModel)
+            default:
+                coreMLAndSourcePanels
+            }
+
+            DisclosureGroup("Fallback order") {
+                runtimeOrderControls
+            }
+        }
+        .onAppear {
+            if selectedRuntimeTab.isEmpty {
+                selectedRuntimeTab = uiModel.config.localModel.runtimeOrder.first ?? "ollama"
+            }
+        }
+        .sheet(isPresented: $isSourceEditorPresented) {
+            ModelSourceEditorView(sourceDraft: sourceDraft) { savedDraft in
+                uiModel.saveModelSource(savedDraft)
+            }
+        }
+    }
+
+    private var runtimeOrderControls: some View {
+        SimplePanel {
+            Text("Runtime order")
+                .font(.headline)
+            ForEach(Array(uiModel.config.localModel.runtimeOrder.enumerated()), id: \.offset) { index, runtime in
+                HStack {
+                    Text(runtime)
+                    Spacer()
+                    Button {
+                        uiModel.moveRuntime(from: index, direction: -1)
+                    } label: {
+                        Image(systemName: "arrow.up")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(index == 0)
+
+                    Button {
+                        uiModel.moveRuntime(from: index, direction: 1)
+                    } label: {
+                        Image(systemName: "arrow.down")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(index == uiModel.config.localModel.runtimeOrder.count - 1)
+                }
+            }
+        }
+    }
+
+    private var coreMLAndSourcePanels: some View {
+        VStack(alignment: .leading, spacing: 14) {
             SimplePanel {
                 HStack {
                     SectionHeader("Model source", systemImage: "arrow.down.circle")
@@ -117,11 +152,6 @@ struct ModelsSettingsView: View {
                         }
                     }
                 }
-            }
-        }
-        .sheet(isPresented: $isSourceEditorPresented) {
-            ModelSourceEditorView(sourceDraft: sourceDraft) { savedDraft in
-                uiModel.saveModelSource(savedDraft)
             }
         }
     }

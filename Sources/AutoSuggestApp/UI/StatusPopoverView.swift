@@ -42,11 +42,16 @@ struct StatusPopoverView: View {
                 }
             }
 
-            Toggle("AutoSuggest", isOn: Binding(
-                get: { uiModel.config.enabled },
-                set: { uiModel.toggleEnabled($0) }
-            ))
-            .toggleStyle(.switch)
+            HStack {
+                Text("Suggestions")
+                Spacer()
+                Toggle("Suggestions", isOn: Binding(
+                    get: { uiModel.config.enabled },
+                    set: { uiModel.toggleEnabled($0) }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+            }
 
             GroupBox {
                 VStack(alignment: .leading, spacing: 8) {

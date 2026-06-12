@@ -239,14 +239,14 @@ struct ModelCompatibilityAdvisor {
     private func suggestedModels(recommendedMaxParamsB: Double) -> [String] {
         if recommendedMaxParamsB <= 1.5 {
             return [
-                "qwen2.5:1.5b (Ollama)",
+                "qwen2.5-coder:1.5b (Ollama)",
                 "TinyLlama 1.1B GGUF (llama.cpp)",
                 "autosuggest-small-1b (CoreML)",
             ]
         }
         if recommendedMaxParamsB <= 3.0 {
             return [
-                "qwen2.5:1.5b (Ollama)",
+                "qwen2.5-coder:1.5b (Ollama)",
                 "llama3.2:3b (Ollama)",
                 "Q4 3B GGUF variants (llama.cpp)",
             ]

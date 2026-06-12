@@ -149,7 +149,7 @@ struct LocalModelConfig: Codable {
             ?? ["ollama", "llama.cpp", "coreml"]
         fallbackRuntimeEnabled = try container.decode(Bool.self, forKey: .fallbackRuntimeEnabled)
         fallbackModelName = try container.decodeIfPresent(String.self, forKey: .fallbackModelName)
-            ?? "qwen2.5:1.5b"
+            ?? "qwen2.5-coder:1.5b"
         isModelPresent = try container.decode(Bool.self, forKey: .isModelPresent)
         manifestSourceURL = try container.decodeIfPresent(URL.self, forKey: .manifestSourceURL)
             ?? defaultManifestURL
@@ -158,7 +158,7 @@ struct LocalModelConfig: Codable {
         customSource = try container.decodeIfPresent(LocalModelCustomSourceConfig.self, forKey: .customSource)
             ?? .default
         ollama = try container.decodeIfPresent(OllamaRuntimeConfig.self, forKey: .ollama)
-            ?? OllamaRuntimeConfig(baseURL: "http://127.0.0.1:11434", modelName: "qwen2.5:1.5b")
+            ?? OllamaRuntimeConfig(baseURL: "http://127.0.0.1:11434", modelName: "qwen2.5-coder:1.5b")
         llamaCpp = try container.decodeIfPresent(LlamaCppRuntimeConfig.self, forKey: .llamaCpp)
             ?? LlamaCppRuntimeConfig(baseURL: "http://127.0.0.1:8080")
     }
@@ -457,14 +457,14 @@ extension AppConfig {
             preferredRuntime: "ollama",
             runtimeOrder: ["ollama", "llama.cpp", "coreml"],
             fallbackRuntimeEnabled: true,
-            fallbackModelName: "qwen2.5:1.5b",
+            fallbackModelName: "qwen2.5-coder:1.5b",
             isModelPresent: false,
             manifestSourceURL: defaultManifestURL,
             fallbackManifest: .initial,
             customSource: .default,
             ollama: OllamaRuntimeConfig(
                 baseURL: "http://127.0.0.1:11434",
-                modelName: "qwen2.5:1.5b"
+                modelName: "qwen2.5-coder:1.5b"
             ),
             llamaCpp: LlamaCppRuntimeConfig(
                 baseURL: "http://127.0.0.1:8080"

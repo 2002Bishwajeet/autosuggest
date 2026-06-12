@@ -108,7 +108,7 @@ final class AppCoordinator {
         do {
             try await bootstrapInitialModelIfNeeded()
         } catch {
-            lastModelError = error.localizedDescription
+            lastModelError = Self.friendlyModelSetupMessage(for: error)
             uiModel.showBanner(
                 kind: .warning,
                 title: "Model setup needs attention",
@@ -178,6 +178,11 @@ final class AppCoordinator {
         uiModel.onRollbackModel = { [weak self] in
             self?.rollbackModel()
         }
+        uiModel.onSetOllamaModel = { [weak self] name in self?.setOllamaModel(name) }
+        uiModel.onSetOllamaBaseURL = { [weak self] url in self?.setOllamaBaseURL(url) }
+        uiModel.onPullOllamaModel = { [weak self] name in self?.pullOllamaModel(name) }
+        uiModel.onDeleteOllamaModel = { [weak self] name in self?.deleteOllamaModel(name) }
+        uiModel.onRefreshOllama = { [weak self] in self?.refreshOllama() }
         uiModel.onSaveModelSource = { [weak self] draft in
             self?.saveModelSource(draft)
         }
@@ -407,6 +412,7 @@ final class AppCoordinator {
     private func handleDidBecomeActive() {
         // Cheap TCC re-check + immediate UI update (no disk I/O).
         refreshPresentation()
+        refreshOllama()
 
         let nowGranted = permissionManager.hasInputMonitoringPermission()
         let tapActive = typingPipeline?.inputMonitorIsActive ?? false
@@ -544,6 +550,81 @@ final class AppCoordinator {
         }
     }
 
+    private func ollamaService() -> OllamaModelService {
+        OllamaModelService(baseURL: currentConfig?.localModel.ollama.baseURL ?? "http://127.0.0.1:11434")
+    }
+
+    private func setOllamaModel(_ name: String) {
+        guard var currentConfig else { return }
+        currentConfig.localModel.ollama.modelName = name
+        self.currentConfig = currentConfig
+        Task { await configStore.updateLocalModel(currentConfig.localModel) }
+        rebuildRuntimePipelines(using: currentConfig)
+        setPipelineEnabledFromCurrentState()
+        Task { await refreshModelState() }
+        uiModel?.showBanner(kind: .success, title: "Model switched", message: "Now using \(name).")
+    }
+
+    private func setOllamaBaseURL(_ url: String) {
+        guard var currentConfig else { return }
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        currentConfig.localModel.ollama.baseURL = trimmed
+        self.currentConfig = currentConfig
+        Task { await configStore.updateLocalModel(currentConfig.localModel) }
+        rebuildRuntimePipelines(using: currentConfig)
+        setPipelineEnabledFromCurrentState()
+        refreshOllama()
+    }
+
+    private func refreshOllama() {
+        let service = ollamaService()
+        Task { @MainActor in
+            let running = await service.isRunning()
+            let installed = await (try? service.listInstalled()) ?? []
+            uiModel?.ollamaRunning = running
+            uiModel?.ollamaInstalled = installed
+        }
+    }
+
+    private func pullOllamaModel(_ name: String) {
+        let service = ollamaService()
+        Task { @MainActor in
+            do {
+                for try await progress in service.pull(name) {
+                    uiModel?.ollamaPulls[name] = progress
+                }
+                uiModel?.ollamaPulls[name] = nil
+                refreshOllama()
+                setOllamaModel(name)
+            } catch {
+                uiModel?.ollamaPulls[name] = nil
+                uiModel?.showBanner(
+                    kind: .error,
+                    title: "Download failed",
+                    message: Self.friendlyModelSetupMessage(for: error)
+                )
+            }
+        }
+    }
+
+    private func deleteOllamaModel(_ name: String) {
+        let service = ollamaService()
+        Task { @MainActor in
+            do {
+                try await service.delete(name)
+                refreshOllama()
+                uiModel?.showBanner(kind: .success, title: "Model deleted", message: "Removed \(name).")
+            } catch {
+                uiModel?.showBanner(
+                    kind: .error,
+                    title: "Delete failed",
+                    message: Self.friendlyModelSetupMessage(for: error)
+                )
+            }
+        }
+    }
+
     private func rollbackModel() {
         do {
             try modelManager.rollbackActiveModel()
@@ -612,13 +693,13 @@ final class AppCoordinator {
                     message: "Downloaded and activated \(updatedSource.modelID) \(updatedSource.version)."
                 )
             } catch {
-                lastModelError = error.localizedDescription
+                lastModelError = Self.friendlyModelSetupMessage(for: error)
                 setModelDownloadState(active: false)
                 refreshPresentation()
                 uiModel?.showBanner(
                     kind: .error,
                     title: "Model download failed",
-                    message: error.localizedDescription
+                    message: Self.friendlyModelSetupMessage(for: error)
                 )
             }
         }
@@ -642,12 +723,12 @@ final class AppCoordinator {
                 )
             } catch {
                 setModelDownloadState(active: false)
-                lastModelError = error.localizedDescription
+                lastModelError = Self.friendlyModelSetupMessage(for: error)
                 refreshPresentation()
                 uiModel?.showBanner(
                     kind: .warning,
                     title: "Model retry failed",
-                    message: error.localizedDescription
+                    message: Self.friendlyModelSetupMessage(for: error)
                 )
             }
         }
