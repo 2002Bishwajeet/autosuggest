@@ -21,6 +21,7 @@ enum OllamaSuggestedModels {
             blurb: "Best for code autocomplete — fast, no \"thinking\" delay (default)"
         ),
         .init(name: "qwen2.5-coder:0.5b", sizeGB: 0.40, blurb: "Smallest, fastest code model"),
+        .init(name: "gemma3:1b", sizeGB: 0.82, blurb: "Newest small Gemma — fast, no thinking, good general text"),
         .init(name: "qwen2.5:0.5b", sizeGB: 0.40, blurb: "Smallest general-purpose model"),
         .init(name: "llama3.2:1b", sizeGB: 1.30, blurb: "Tiny general-purpose alternative"),
         .init(name: "qwen3:1.7b", sizeGB: 1.36, blurb: "Newest Qwen, but a reasoning model — slower for autocomplete"),
