@@ -52,6 +52,14 @@ final class AppCoordinator {
     private var lastModelError: String?
     private var diagnosticsExportPath: String?
     private var lastModelSnapshot: ModelStateSnapshot?
+    private nonisolated(unsafe) var didBecomeActiveObserver: NSObjectProtocol?
+    private var lastInputMonitoringTrusted = false
+
+    deinit {
+        if let didBecomeActiveObserver {
+            NotificationCenter.default.removeObserver(didBecomeActiveObserver)
+        }
+    }
 
     func start() async {
         // Recover the user's clipboard if a previous run crashed mid-paste,
@@ -67,6 +75,15 @@ final class AppCoordinator {
         self.uiModel = uiModel
         bindUIModel(uiModel)
         statusBarController.configure(with: uiModel)
+
+        didBecomeActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.handleDidBecomeActive() }
+        }
+        lastInputMonitoringTrusted = permissionManager.hasInputMonitoringPermission()
 
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             onboardingManager.showIfNeeded(
@@ -384,6 +401,41 @@ final class AppCoordinator {
             typingPipeline.start()
         } else {
             typingPipeline.stop()
+        }
+    }
+
+    private func handleDidBecomeActive() {
+        // Cheap TCC re-check + immediate UI update (no disk I/O).
+        refreshPresentation()
+
+        let nowGranted = permissionManager.hasInputMonitoringPermission()
+        let tapActive = typingPipeline?.inputMonitorIsActive ?? false
+        let action = PermissionReArm.decide(
+            inputMonitoringNowGranted: nowGranted,
+            tapCurrentlyActive: tapActive
+        )
+        lastInputMonitoringTrusted = nowGranted
+
+        switch action {
+        case .none:
+            if tapActive { uiModel?.needsRelaunchToEnable = false }
+        case .rebuildAndVerify:
+            guard let currentConfig else { return }
+            rebuildRuntimePipelines(using: currentConfig)
+            setPipelineEnabledFromCurrentState()
+            // Verify after the run loop installs the fresh tap.
+            Task { @MainActor in
+                let armed = typingPipeline?.inputMonitorIsActive ?? false
+                uiModel?.needsRelaunchToEnable = !armed
+                if armed {
+                    uiModel?.showBanner(
+                        kind: .success,
+                        title: "AutoSuggest enabled",
+                        message: "Input Monitoring is now active."
+                    )
+                }
+                refreshPresentation()
+            }
         }
     }
 

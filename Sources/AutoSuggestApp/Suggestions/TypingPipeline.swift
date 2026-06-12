@@ -63,6 +63,10 @@ final class TypingPipeline {
         }
     }
 
+    var inputMonitorIsActive: Bool {
+        inputMonitor.isActive
+    }
+
     func start() {
         inputMonitor.start { [weak self] _ in
             Task { @MainActor in
