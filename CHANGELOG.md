@@ -1,6 +1,30 @@
 # Changelog
 
-## Unreleased
+## v0.2.0 — 2026-06-12
+
+Usability pass: the app feels responsive and trustworthy from first launch.
+
+### Fixed
+- Permissions update live — granting Accessibility / Input Monitoring is picked
+  up the moment you return to the app, with an honest "relaunch to finish"
+  prompt only when the event tap genuinely can't arm in-process (no more silent
+  "granted but nothing works")
+- Menu-bar ghost and app icon now render — the committed Xcode project was
+  missing the asset-catalog wiring, so local/Xcode builds shipped no icons
+- Settings tab switching and first-run no longer freeze — all filesystem and
+  subprocess work moved off the main thread
+- Model-setup failures show actionable guidance instead of a raw
+  `NSURLErrorDomain -1011`; the default model manifest now points at a real,
+  reachable model
+
+### Changed
+- Reworked first-run wizard reflects permission grants live (no fixed polling)
+- Softer brand-amber sidebar selection (was the harsh system accent)
+- Trimmed the menu-bar popover to essentials so it never needs to scroll
+- Decomposed the two ~930-line settings/onboarding view files into focused
+  per-view files (behavior-preserving); test suite 158 → 176
+
+## v0.1.0 — 2026-06-11
 
 Pre-launch hardening ahead of the first signed public release.
 
