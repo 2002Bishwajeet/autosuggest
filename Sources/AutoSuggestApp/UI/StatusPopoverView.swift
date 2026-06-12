@@ -79,15 +79,13 @@ struct StatusPopoverView: View {
                     uiModel.excludeFrontmostApp()
                 }
                 .accessibilityHint("Adds the frontmost app to the exclusion list")
-                QuickActionButton(title: "Retry Model", systemImage: "arrow.clockwise") {
-                    uiModel.retryModel()
+                if uiModel.modelHealth.lastError != nil {
+                    QuickActionButton(title: "Retry Model", systemImage: "arrow.clockwise") {
+                        uiModel.retryModel()
+                    }
+                    .accessibilityHint("Retries loading the inference model")
                 }
-                .accessibilityHint("Retries loading the inference model")
                 Divider().padding(.horizontal, 8)
-                QuickActionButton(title: "Export Diagnostics", systemImage: "square.and.arrow.up") {
-                    uiModel.exportDiagnostics()
-                }
-                .accessibilityHint("Exports diagnostics data to a file")
                 QuickActionButton(title: "Quit AutoSuggest", systemImage: "xmark.circle") {
                     uiModel.quitApp()
                 }
