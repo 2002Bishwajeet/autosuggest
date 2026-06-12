@@ -8,6 +8,7 @@ final class MockInputMonitor: InputMonitor, @unchecked Sendable {
     private var onEvent: ((InputEvent) -> Void)?
     var startCallCount = 0
     var stopCallCount = 0
+    var isActive = true
 
     func start(onEvent: @escaping (InputEvent) -> Void) {
         startCallCount += 1
@@ -31,6 +32,7 @@ final class MockShortcutMonitor: SuggestionShortcutMonitor {
     private var handler: ((SuggestionCommand) -> Bool)?
     var startCallCount = 0
     var stopCallCount = 0
+    var isActive = true
 
     func start(handler: @escaping (SuggestionCommand) -> Bool) {
         startCallCount += 1

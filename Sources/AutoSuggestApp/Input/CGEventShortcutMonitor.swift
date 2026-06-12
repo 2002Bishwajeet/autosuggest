@@ -11,6 +11,11 @@ final class CGEventShortcutMonitor: SuggestionShortcutMonitor {
     private var acceptKeyCodes: Set<UInt16> = [48, 36, 76]
     private var dismissKeyCodes: Set<UInt16> = [53]
 
+    var isActive: Bool {
+        guard let eventTap else { return false }
+        return CGEvent.tapIsEnabled(tap: eventTap)
+    }
+
     func start(handler: @escaping (SuggestionCommand) -> Bool) {
         guard !isStarted else { return }
         self.handler = handler
@@ -37,6 +42,14 @@ final class CGEventShortcutMonitor: SuggestionShortcutMonitor {
         let userInfo = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
 
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
+            if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                if let userInfo {
+                    let monitor = Unmanaged<CGEventShortcutMonitor>.fromOpaque(userInfo).takeUnretainedValue()
+                    monitor.reEnableTap()
+                }
+                return Unmanaged.passUnretained(event)
+            }
+
             guard let userInfo else {
                 return Unmanaged.passUnretained(event)
             }
@@ -77,6 +90,12 @@ final class CGEventShortcutMonitor: SuggestionShortcutMonitor {
         }
         eventTap = nil
         runLoopSource = nil
+    }
+
+    private func reEnableTap() {
+        guard let eventTap else { return }
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+        logger.info("Re-enabled shortcut event tap after disable event.")
     }
 
     private func handle(type: CGEventType, event: CGEvent) -> Bool {
