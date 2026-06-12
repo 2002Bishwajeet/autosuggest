@@ -333,6 +333,7 @@ final class AutoSuggestUIModel: ObservableObject {
     var onSetOllamaModel: ((String) -> Void)?
     var onSetOllamaBaseURL: ((String) -> Void)?
     var onPullOllamaModel: ((String) -> Void)?
+    var onDeleteOllamaModel: ((String) -> Void)?
     var onRefreshOllama: (() -> Void)?
     var onSaveModelSource: ((ModelSourceDraft) -> Void)?
     var onToggleRuleEnabled: ((ExclusionRule, Bool) -> Void)?
@@ -447,6 +448,10 @@ final class AutoSuggestUIModel: ObservableObject {
 
     func pullOllamaModel(_ name: String) {
         onPullOllamaModel?(name)
+    }
+
+    func deleteOllamaModel(_ name: String) {
+        onDeleteOllamaModel?(name)
     }
 
     func refreshOllama() {

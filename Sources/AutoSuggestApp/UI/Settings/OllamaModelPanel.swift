@@ -3,6 +3,7 @@ import SwiftUI
 struct OllamaModelPanel: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
     @State private var baseURLDraft: String = ""
+    @State private var modelToDelete: String?
 
     private var activeModel: String {
         uiModel.config.localModel.ollama.modelName
@@ -53,10 +54,29 @@ struct OllamaModelPanel: View {
                             } else {
                                 Button("Use") { uiModel.setOllamaModel(model.name) }
                                     .buttonStyle(.bordered).controlSize(.small)
+                                Button(role: .destructive) { modelToDelete = model.name } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(.borderless)
+                                .controlSize(.small)
+                                .help("Delete this model")
                             }
                         }
                     }
                 }
+            }
+            .confirmationDialog(
+                "Delete model?",
+                isPresented: Binding(get: { modelToDelete != nil }, set: { if !$0 { modelToDelete = nil } }),
+                presenting: modelToDelete
+            ) { name in
+                Button("Delete \(name)", role: .destructive) {
+                    uiModel.deleteOllamaModel(name)
+                    modelToDelete = nil
+                }
+                Button("Cancel", role: .cancel) { modelToDelete = nil }
+            } message: { name in
+                Text("This permanently removes \(name) from Ollama. You can re-download it anytime.")
             }
 
             // Suggested

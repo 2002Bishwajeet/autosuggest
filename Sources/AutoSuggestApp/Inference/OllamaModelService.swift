@@ -68,6 +68,18 @@ struct OllamaModelService {
         }
     }
 
+    func delete(_ model: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/delete") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(DeleteRequest(model: model))
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     static func parseTags(_ data: Data) throws -> [InstalledModel] {
         let decoded = try JSONDecoder().decode(TagsResponse.self, from: data)
         return decoded.models.map { InstalledModel(name: $0.name, sizeBytes: $0.size) }
@@ -82,4 +94,5 @@ struct OllamaModelService {
     private struct TagModel: Decodable { let name: String; let size: Int64 }
     private struct PullLine: Decodable { let status: String; let total: Int64?; let completed: Int64? }
     private struct PullRequest: Encodable { let model: String; let stream: Bool }
+    private struct DeleteRequest: Encodable { let model: String }
 }

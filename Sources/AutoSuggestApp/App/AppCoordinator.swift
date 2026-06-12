@@ -181,6 +181,7 @@ final class AppCoordinator {
         uiModel.onSetOllamaModel = { [weak self] name in self?.setOllamaModel(name) }
         uiModel.onSetOllamaBaseURL = { [weak self] url in self?.setOllamaBaseURL(url) }
         uiModel.onPullOllamaModel = { [weak self] name in self?.pullOllamaModel(name) }
+        uiModel.onDeleteOllamaModel = { [weak self] name in self?.deleteOllamaModel(name) }
         uiModel.onRefreshOllama = { [weak self] in self?.refreshOllama() }
         uiModel.onSaveModelSource = { [weak self] draft in
             self?.saveModelSource(draft)
@@ -601,6 +602,23 @@ final class AppCoordinator {
                 uiModel?.showBanner(
                     kind: .error,
                     title: "Download failed",
+                    message: Self.friendlyModelSetupMessage(for: error)
+                )
+            }
+        }
+    }
+
+    private func deleteOllamaModel(_ name: String) {
+        let service = ollamaService()
+        Task { @MainActor in
+            do {
+                try await service.delete(name)
+                refreshOllama()
+                uiModel?.showBanner(kind: .success, title: "Model deleted", message: "Removed \(name).")
+            } catch {
+                uiModel?.showBanner(
+                    kind: .error,
+                    title: "Delete failed",
                     message: Self.friendlyModelSetupMessage(for: error)
                 )
             }
