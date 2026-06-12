@@ -396,6 +396,22 @@ private struct SettingsDetailContent: View {
 
     private var permissionsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if uiModel.needsRelaunchToEnable {
+                HStack(spacing: 10) {
+                    Image(systemName: "arrow.clockwise.circle.fill")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Finish enabling AutoSuggest").font(.callout.weight(.semibold))
+                        Text("Input Monitoring was granted but needs a relaunch to take effect.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Relaunch") { uiModel.relaunchApp() }
+                        .buttonStyle(.borderedProminent)
+                }
+                .padding(12)
+                .background(AutoSuggestTheme.brand.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+            }
+
             // Accessibility row
             PermissionSettingsRow(
                 systemImage: "accessibility",
