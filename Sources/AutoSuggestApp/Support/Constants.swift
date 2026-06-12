@@ -55,5 +55,5 @@ enum Constants {
 
     static let defaultOllamaBaseURL = "http://127.0.0.1:11434"
     static let defaultLlamaCppBaseURL = "http://127.0.0.1:8080"
-    static let defaultOllamaModelName = "qwen2.5:1.5b"
+    static let defaultOllamaModelName = "qwen3:1.7b"
 }
