@@ -34,20 +34,20 @@ final class StatusBarController: NSObject {
 
         // Active state shows the brand ghost glyph; paused/permission states keep
         // their meaningful SF Symbols so the menu bar still communicates status.
-        if uiModel.permissionHealth.isReady, uiModel.config.enabled {
+        let state = MenuBarIconState.resolve(
+            permissionsReady: uiModel.permissionHealth.isReady,
+            enabled: uiModel.config.enabled
+        )
+        switch state {
+        case .active:
             button.image = Self.ghostMenuBarImage()
-        } else {
-            let symbolName = uiModel.permissionHealth.isReady ? "pause.circle" : "exclamationmark.shield"
-            if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "AutoSuggest") {
-                image.isTemplate = true
-                button.image = image.withSymbolConfiguration(NSImage.SymbolConfiguration(
-                    pointSize: 14,
-                    weight: .medium
-                ))
-            }
+        case .paused:
+            button.image = Self.symbolImage("pause.circle")
+        case .needsPermission:
+            button.image = Self.symbolImage("exclamationmark.shield")
         }
         button.title = ""
-        button.toolTip = uiModel.quickPanelState.statusHeadline
+        button.toolTip = state.tooltip
     }
 
     /// The amber-ghost brand glyph as a tintable menu-bar template image. Falls
@@ -62,6 +62,12 @@ final class StatusBarController: NSObject {
         let fallback = NSImage(systemSymbolName: "text.cursor", accessibilityDescription: "AutoSuggest")
         fallback?.isTemplate = true
         return fallback?.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .medium))
+    }
+
+    private static func symbolImage(_ name: String) -> NSImage? {
+        guard let image = NSImage(systemSymbolName: name, accessibilityDescription: "AutoSuggest") else { return nil }
+        image.isTemplate = true
+        return image.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .medium))
     }
 
     @objc private func handleStatusItemAction(_ sender: NSStatusBarButton) {
