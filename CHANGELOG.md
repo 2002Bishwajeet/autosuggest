@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.3.0 — 2026-06-12
+
+Real model management and an autocomplete experience that actually feels instant.
+
+### Added
+- Runtime-aware **Models** tab with a full **Ollama** panel: live running status,
+  installed models with one-click switch, curated suggestions with one-click
+  **download** (live `/api/pull` progress), **delete** (non-active models), and a
+  configurable base URL (works with a custom OpenWebUI endpoint)
+- Suggestions now render as **inline ghost text at the caret** instead of a
+  detached floating box
+
+### Changed
+- Default model is the fast, non-thinking **`qwen2.5-coder:1.5b`** — Qwen3 is a
+  reasoning model (~5 s latency, unfit for inline autocomplete); added `gemma3:1b`
+- **About** window uses the real app icon + clickable GitHub/Report-issue links
+  (was a placeholder glyph and a dead URL)
+- Cleaner Suggestions toggle in the menu-bar panel
+
+### Fixed
+- Model-setup / download failures show actionable guidance instead of a raw
+  `NSURLErrorDomain -1011` (including in the Diagnostics tab)
+- The completion prompt no longer appends a personalization hint that the model
+  echoed into the suggestion
+
 ## v0.2.0 — 2026-06-12
 
 Usability pass: the app feels responsive and trustworthy from first launch.
