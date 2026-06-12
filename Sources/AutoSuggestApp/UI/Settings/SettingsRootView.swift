@@ -12,19 +12,22 @@ struct SettingsRootView: View {
                         Button {
                             uiModel.selectedSettingsRoute = route
                         } label: {
-                            HStack {
+                            let isSelected = route == uiModel.selectedSettingsRoute
+                            HStack(spacing: 10) {
                                 Image(systemName: route.systemImage)
+                                    .foregroundStyle(isSelected ? AutoSuggestTheme.brand : Color.secondary)
+                                    .frame(width: 18)
                                 Text(route.title)
+                                    .foregroundStyle(Color.primary)
                                 Spacer()
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(route == uiModel
-                                        .selectedSettingsRoute ? Color(nsColor: .selectedContentBackgroundColor) :
-                                        .clear)
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(isSelected ? AutoSuggestTheme.brand.opacity(0.16) : Color.clear)
                             )
+                            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
