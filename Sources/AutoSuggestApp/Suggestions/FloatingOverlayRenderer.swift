@@ -58,29 +58,25 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
         panel.hidesOnDeactivate = false
 
-        let visual = NSVisualEffectView(frame: panel.contentView?.bounds ?? .zero)
-        visual.material = NSWorkspace.shared
-            .accessibilityDisplayShouldReduceTransparency ? .windowBackground : .hudWindow
-        visual.state = .active
-        visual.wantsLayer = true
-        visual.layer?.cornerRadius = 8
-        visual.layer?.masksToBounds = true
-        visual.autoresizingMask = [.width, .height]
-        visual.blendingMode = .behindWindow
-        visual.alphaValue = 0.96
+        // Inline-style ghost text: no box, no frosted chrome — just dimmed
+        // continuation text rendered right at the caret so it reads like in-field
+        // autocomplete (e.g. QuickType / Copilot) rather than a floating tooltip.
+        let container = NSView()
+        container.wantsLayer = true
 
         let textField = NSTextField(labelWithString: "")
-        textField.textColor = NSColor.secondaryLabelColor
-        textField.font = NSFont.systemFont(ofSize: 14, weight: .regular)
+        textField.textColor = NSColor.placeholderTextColor
+        textField.font = NSFont.systemFont(ofSize: 13, weight: .regular)
         textField.alignment = .natural
         textField.lineBreakMode = .byTruncatingTail
-        textField.frame = NSRect(x: 12, y: 7, width: 96, height: 18)
-        textField.autoresizingMask = [.width]
+        textField.isBezeled = false
+        textField.drawsBackground = false
+        textField.backgroundColor = .clear
+        textField.frame = NSRect(x: 0, y: 0, width: 96, height: 18)
+        textField.autoresizingMask = [.width, .height]
 
-        visual.addSubview(textField)
-        panel.contentView = visual
-        panel.hasShadow = true
-        panel.backgroundColor = .clear
+        container.addSubview(textField)
+        panel.contentView = container
 
         self.panel = panel
         self.textField = textField
@@ -88,13 +84,22 @@ final class FloatingOverlayRenderer: OverlayRenderer {
     }
 
     private func layoutPanel(panel: NSPanel, textField: NSTextField, text: String, caretRectInScreen: CGRect?) {
+        // Match the ghost-text size to the caret/line height so it sits on the
+        // same baseline as what the user is typing.
+        if let caret = caretRectInScreen, caret.height > 8, caret.height < 64 {
+            textField.font = NSFont.systemFont(ofSize: (caret.height * 0.72).rounded(), weight: .regular)
+        } else {
+            textField.font = NSFont.systemFont(ofSize: 13, weight: .regular)
+        }
+
         let measureAttributes: [NSAttributedString.Key: Any] = [.font: textField.font as Any]
         let measured = (text as NSString).size(withAttributes: measureAttributes)
-        let width = min(max(measured.width + 28, 100), 420)
-        let height: CGFloat = 32
+        let width = min(measured.width + 4, 560)
+        let height = max(measured.height, 14)
 
-        let anchor: CGPoint = if let caretRectInScreen, !caretRectInScreen.isEmpty {
-            CGPoint(x: caretRectInScreen.maxX + 4, y: caretRectInScreen.minY - 1)
+        // Hug the caret: start just after it and align vertically to its line.
+        let anchor: CGPoint = if let caret = caretRectInScreen, !caret.isEmpty {
+            CGPoint(x: caret.maxX + 1, y: caret.minY)
         } else {
             fallbackAnchor()
         }
@@ -111,7 +116,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         )
 
         panel.setFrame(targetFrame, display: true)
-        textField.frame = NSRect(x: 12, y: 7, width: width - 24, height: 18)
+        textField.frame = NSRect(x: 0, y: 0, width: width, height: height)
     }
 
     private func targetScreenFrame(for point: CGPoint) -> CGRect {
