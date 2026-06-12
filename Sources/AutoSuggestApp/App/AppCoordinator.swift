@@ -178,6 +178,10 @@ final class AppCoordinator {
         uiModel.onRollbackModel = { [weak self] in
             self?.rollbackModel()
         }
+        uiModel.onSetOllamaModel = { [weak self] name in self?.setOllamaModel(name) }
+        uiModel.onSetOllamaBaseURL = { [weak self] url in self?.setOllamaBaseURL(url) }
+        uiModel.onPullOllamaModel = { [weak self] name in self?.pullOllamaModel(name) }
+        uiModel.onRefreshOllama = { [weak self] in self?.refreshOllama() }
         uiModel.onSaveModelSource = { [weak self] draft in
             self?.saveModelSource(draft)
         }
@@ -541,6 +545,64 @@ final class AppCoordinator {
         } catch {
             lastModelError = error.localizedDescription
             refreshPresentation()
+        }
+    }
+
+    private func ollamaService() -> OllamaModelService {
+        OllamaModelService(baseURL: currentConfig?.localModel.ollama.baseURL ?? "http://127.0.0.1:11434")
+    }
+
+    private func setOllamaModel(_ name: String) {
+        guard var currentConfig else { return }
+        currentConfig.localModel.ollama.modelName = name
+        self.currentConfig = currentConfig
+        Task { await configStore.updateLocalModel(currentConfig.localModel) }
+        rebuildRuntimePipelines(using: currentConfig)
+        setPipelineEnabledFromCurrentState()
+        Task { await refreshModelState() }
+        uiModel?.showBanner(kind: .success, title: "Model switched", message: "Now using \(name).")
+    }
+
+    private func setOllamaBaseURL(_ url: String) {
+        guard var currentConfig else { return }
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        currentConfig.localModel.ollama.baseURL = trimmed
+        self.currentConfig = currentConfig
+        Task { await configStore.updateLocalModel(currentConfig.localModel) }
+        rebuildRuntimePipelines(using: currentConfig)
+        setPipelineEnabledFromCurrentState()
+        refreshOllama()
+    }
+
+    private func refreshOllama() {
+        let service = ollamaService()
+        Task { @MainActor in
+            let running = await service.isRunning()
+            let installed = await (try? service.listInstalled()) ?? []
+            uiModel?.ollamaRunning = running
+            uiModel?.ollamaInstalled = installed
+        }
+    }
+
+    private func pullOllamaModel(_ name: String) {
+        let service = ollamaService()
+        Task { @MainActor in
+            do {
+                for try await progress in service.pull(name) {
+                    uiModel?.ollamaPulls[name] = progress
+                }
+                uiModel?.ollamaPulls[name] = nil
+                refreshOllama()
+                setOllamaModel(name)
+            } catch {
+                uiModel?.ollamaPulls[name] = nil
+                uiModel?.showBanner(
+                    kind: .error,
+                    title: "Download failed",
+                    message: Self.friendlyModelSetupMessage(for: error)
+                )
+            }
         }
     }
 
