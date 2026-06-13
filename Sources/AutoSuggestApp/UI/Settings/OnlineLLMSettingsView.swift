@@ -34,12 +34,14 @@ struct OnlineLLMSettingsView: View {
                         get: { uiModel.config.onlineLLM.byok.selectedModel },
                         set: { uiModel.onUpdateOnlineLLMModel?($0) }
                     ))
+                    .textFieldStyle(.roundedBorder)
 
                     if uiModel.config.onlineLLM.byok.provider.requiresEndpointField {
                         TextField("Endpoint URL", text: Binding(
                             get: { uiModel.config.onlineLLM.byok.endpointURL ?? "" },
                             set: { uiModel.onUpdateOnlineLLMEndpoint?($0) }
                         ))
+                        .textFieldStyle(.roundedBorder)
                     }
 
                     Picker("Priority", selection: Binding(
@@ -53,12 +55,13 @@ struct OnlineLLMSettingsView: View {
                 }
 
                 SimplePanel {
-                    SectionHeader("API Key", systemImage: "key")
+                    SectionHeader("API key", systemImage: "key")
                     SecureField("Enter API key", text: $onlineLLMAPIKey)
+                        .textFieldStyle(.roundedBorder)
                         .onChange(of: onlineLLMAPIKey) { newValue in
                             uiModel.onUpdateOnlineLLMAPIKey?(newValue)
                         }
-                    Text("Stored securely in the system keychain.")
+                    Text("Stored securely in the system keychain. Leave blank to keep the current key.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

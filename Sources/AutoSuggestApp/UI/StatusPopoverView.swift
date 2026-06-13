@@ -99,18 +99,21 @@ struct StatusPopoverView: View {
         }
         .padding(16)
         .frame(width: 368)
-        .background(AutoSuggestTheme.surfacePrimary)
     }
 
     private func statusRow(_ label: String, value: String) -> some View {
-        HStack {
+        HStack(alignment: .firstTextBaseline) {
             Text(label)
                 .foregroundStyle(.secondary)
-                .font(.system(.body, design: .monospaced))
-            Spacer()
+            Spacer(minLength: 12)
             Text(value)
-                .font(.system(.body, design: .monospaced))
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+                .truncationMode(.middle)
+                .help(value)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
     }
 }
 

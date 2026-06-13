@@ -66,4 +66,92 @@ final class AutoSuggestUIModelTests: XCTestCase {
         )
         XCTAssertNil(remedy)
     }
+
+    // MARK: - RuntimeDisplayName
+
+    func testRuntimeDisplayNameMapsKnownIdentifiers() {
+        XCTAssertEqual(RuntimeDisplayName.label(for: "ollama"), "Ollama")
+        XCTAssertEqual(RuntimeDisplayName.label(for: "llama.cpp"), "llama.cpp")
+        XCTAssertEqual(RuntimeDisplayName.label(for: "coreml"), "Core ML")
+        XCTAssertEqual(RuntimeDisplayName.label(for: "online"), "Online LLM")
+    }
+
+    func testRuntimeDisplayNameIsCaseInsensitive() {
+        XCTAssertEqual(RuntimeDisplayName.label(for: "OLLAMA"), "Ollama")
+        XCTAssertEqual(RuntimeDisplayName.label(for: "CoreML"), "Core ML")
+    }
+
+    func testRuntimeDisplayNameReturnsUnknownIdentifierUnchanged() {
+        XCTAssertEqual(RuntimeDisplayName.label(for: "mystery-runtime"), "mystery-runtime")
+    }
+
+    // MARK: - ExclusionRule.displayTitle
+
+    func testExclusionRuleDisplayTitlePrefersBundleID() {
+        let rule = ExclusionRule(
+            enabled: true,
+            bundleID: "com.apple.dt.Xcode",
+            windowTitleContains: "Secret",
+            contentPattern: nil
+        )
+        XCTAssertEqual(rule.displayTitle, "com.apple.dt.Xcode")
+    }
+
+    func testExclusionRuleDisplayTitleFallsBackToWindowTitle() {
+        let rule = ExclusionRule(
+            enabled: true,
+            bundleID: nil,
+            windowTitleContains: "Password",
+            contentPattern: nil
+        )
+        XCTAssertEqual(rule.displayTitle, "Window title contains \u{201C}Password\u{201D}")
+    }
+
+    func testExclusionRuleDisplayTitleFallsBackToContentPattern() {
+        let rule = ExclusionRule(
+            enabled: true,
+            bundleID: nil,
+            windowTitleContains: nil,
+            contentPattern: "secret-\\d+"
+        )
+        XCTAssertEqual(rule.displayTitle, "Content matches /secret-\\d+/")
+    }
+
+    func testExclusionRuleDisplayTitleGenericWhenEmpty() {
+        let rule = ExclusionRule(
+            enabled: true,
+            bundleID: nil,
+            windowTitleContains: nil,
+            contentPattern: nil
+        )
+        XCTAssertEqual(rule.displayTitle, "Custom rule")
+    }
+
+    func testExclusionRuleDisplayTitleTreatsEmptyStringsAsAbsent() {
+        let rule = ExclusionRule(
+            enabled: true,
+            bundleID: "",
+            windowTitleContains: "",
+            contentPattern: "abc"
+        )
+        XCTAssertEqual(rule.displayTitle, "Content matches /abc/")
+    }
+
+    // MARK: - MetricsSnapshot acceptance rate
+
+    func testAcceptanceRateTextWithNoSuggestions() {
+        XCTAssertEqual(MetricsSnapshot.zero.acceptanceRateText, "No suggestions yet")
+    }
+
+    func testAcceptanceRateTextComputesPercentage() {
+        let metrics = MetricsSnapshot(
+            suggestionsShown: 4,
+            suggestionsAccepted: 1,
+            suggestionsDismissed: 3,
+            suggestionErrors: 0,
+            insertionFailures: 0,
+            avgLatencyMs: 0
+        )
+        XCTAssertEqual(metrics.acceptanceRateText, "25% accepted")
+    }
 }

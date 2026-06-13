@@ -276,6 +276,46 @@ struct ModelSourceDraft: Equatable, Identifiable {
     }
 }
 
+/// Friendly, human-readable display names for the runtime identifier strings
+/// stored in `config.localModel.runtimeOrder` (e.g. "ollama", "llama.cpp",
+/// "coreml", "online"). Unknown identifiers are returned unchanged so the UI
+/// never shows an empty label.
+enum RuntimeDisplayName {
+    static func label(for runtimeID: String) -> String {
+        switch runtimeID.lowercased() {
+        case "ollama":
+            "Ollama"
+        case "llama.cpp", "llamacpp", "llamaserver":
+            "llama.cpp"
+        case "coreml", "core ml":
+            "Core ML"
+        case "online":
+            "Online LLM"
+        default:
+            runtimeID
+        }
+    }
+}
+
+extension ExclusionRule {
+    /// A human-readable one-line summary of what the rule matches, used as the
+    /// row title in the exclusions list. Prefers the bundle ID, then a window
+    /// title condition, then a content-pattern condition, falling back to a
+    /// generic label when (defensively) nothing is set.
+    var displayTitle: String {
+        if let bundleID, !bundleID.isEmpty {
+            return bundleID
+        }
+        if let windowTitleContains, !windowTitleContains.isEmpty {
+            return "Window title contains \u{201C}\(windowTitleContains)\u{201D}"
+        }
+        if let contentPattern, !contentPattern.isEmpty {
+            return "Content matches /\(contentPattern)/"
+        }
+        return "Custom rule"
+    }
+}
+
 extension MetricsSnapshot {
     static let zero = MetricsSnapshot(
         suggestionsShown: 0,

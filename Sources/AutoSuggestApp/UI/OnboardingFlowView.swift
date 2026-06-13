@@ -94,16 +94,19 @@ struct OnboardingFlowView: View {
                         moveForward()
                     }
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
                 } else if currentStep == .finish {
                     Button("Finish") {
                         onComplete()
                     }
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
                 } else {
                     Button("Continue") {
                         moveForward()
                     }
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
                     .disabled(currentStep == .permissions && (!permissionsReady || inputMonitoringJustGranted))
                 }
             }
@@ -185,7 +188,7 @@ struct OnboardingFlowView: View {
                 SettingsCard {
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: "checkmark.shield")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(AutoSuggestTheme.success)
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Permissions already granted")
                                 .font(.headline)
@@ -219,7 +222,8 @@ struct OnboardingFlowView: View {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "arrow.counterclockwise.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AutoSuggestTheme.warning)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Relaunch required")
                             .font(.headline)
@@ -234,15 +238,14 @@ struct OnboardingFlowView: View {
                         permissionManager.relaunchApp()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.orange)
                 }
                 .padding(16)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.orange.opacity(0.08))
+                    RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
+                        .fill(AutoSuggestTheme.warning.opacity(0.08))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
+                                .stroke(AutoSuggestTheme.warning.opacity(0.2), lineWidth: 1)
                         )
                 )
             }
@@ -277,7 +280,8 @@ struct OnboardingFlowView: View {
             if permissionsReady && !inputMonitoringJustGranted {
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(AutoSuggestTheme.success)
+                        .accessibilityHidden(true)
                     Text("All permissions granted — you're ready to continue.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -371,7 +375,7 @@ struct OnboardingFlowView: View {
             SettingsCard {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: selectedChoice == .coreML ? "cube.transparent" : "cpu")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.accentColor)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(selectedChoice.displayTitle) is selected")
                             .font(.headline)
@@ -468,8 +472,10 @@ struct OnboardingFlowView: View {
                     }
 
                     if let downloadError {
-                        Text(downloadError)
-                            .foregroundStyle(.orange)
+                        Label(downloadError, systemImage: "exclamationmark.triangle.fill")
+                            .font(.callout)
+                            .foregroundStyle(AutoSuggestTheme.warning)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     HStack {

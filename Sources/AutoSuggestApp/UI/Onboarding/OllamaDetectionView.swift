@@ -21,7 +21,8 @@ struct OllamaDetectionView: View {
                         .foregroundStyle(.secondary)
                 case .notInstalled:
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AutoSuggestTheme.error)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Ollama not installed")
                             .font(.headline)
@@ -31,7 +32,8 @@ struct OllamaDetectionView: View {
                     }
                 case .installedNotRunning:
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AutoSuggestTheme.warning)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Ollama installed but not running")
                             .font(.headline)
@@ -41,7 +43,8 @@ struct OllamaDetectionView: View {
                     }
                 case .running:
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(AutoSuggestTheme.success)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Ollama is running")
                             .font(.headline)

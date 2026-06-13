@@ -9,17 +9,22 @@ struct PermissionDetailRow: View {
     let primaryAction: (String, () -> Void)
     let secondaryAction: (String, () -> Void)
 
+    private var accent: Color {
+        ready ? AutoSuggestTheme.success : AutoSuggestTheme.warning
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             // Status icon
             ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(ready ? Color.green.opacity(0.12) : Color.orange.opacity(0.10))
+                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+                    .fill(accent.opacity(0.12))
                     .frame(width: 44, height: 44)
                 Image(systemName: ready ? "checkmark.shield.fill" : systemImage)
                     .font(.system(size: 20))
-                    .foregroundStyle(ready ? .green : .orange)
+                    .foregroundStyle(accent)
             }
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -30,11 +35,8 @@ struct PermissionDetailRow: View {
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(
-                            Capsule()
-                                .fill(ready ? Color.green.opacity(0.12) : Color.orange.opacity(0.12))
-                        )
-                        .foregroundStyle(ready ? .green : .orange)
+                        .background(Capsule().fill(accent.opacity(0.12)))
+                        .foregroundStyle(accent)
                 }
 
                 Text(description)
@@ -57,12 +59,12 @@ struct PermissionDetailRow: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
                         .stroke(
-                            ready ? Color.green.opacity(0.2) : Color(nsColor: .separatorColor),
+                            ready ? AutoSuggestTheme.success.opacity(0.2) : Color(nsColor: .separatorColor),
                             lineWidth: 1
                         )
                 )
@@ -88,24 +90,26 @@ struct OnboardingChoiceCard: View {
                 HStack {
                     Spacer()
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? Color.blue : Color.secondary)
+                        .foregroundStyle(selected ? Color.accentColor : Color.secondary)
                 }
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusLarge, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusLarge, style: .continuous)
                             .stroke(
-                                selected ? Color.blue : Color(nsColor: .separatorColor),
+                                selected ? Color.accentColor : Color(nsColor: .separatorColor),
                                 lineWidth: selected ? 1.5 : 0.5
                             )
                     )
             )
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -114,15 +118,16 @@ struct SetupStatusBadge: View {
     let isReady: Bool
 
     var body: some View {
+        let accent = isReady ? AutoSuggestTheme.success : AutoSuggestTheme.warning
         Text(title)
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
                 Capsule(style: .continuous)
-                    .fill(isReady ? Color.green.opacity(0.16) : Color.orange.opacity(0.16))
+                    .fill(accent.opacity(0.16))
             )
-            .foregroundStyle(isReady ? Color.green : Color.orange)
+            .foregroundStyle(accent)
     }
 }
 
@@ -219,7 +224,7 @@ struct ShortcutActionCard: View {
         SettingsCard {
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: systemImage)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.accentColor)
                 Text(title)
                     .font(.headline)
                 Text(detail)

@@ -9,27 +9,12 @@ struct SettingsRootView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(SettingsRoute.allCases) { route in
-                        Button {
+                        SettingsSidebarRow(
+                            route: route,
+                            isSelected: route == uiModel.selectedSettingsRoute
+                        ) {
                             uiModel.selectedSettingsRoute = route
-                        } label: {
-                            let isSelected = route == uiModel.selectedSettingsRoute
-                            HStack(spacing: 10) {
-                                Image(systemName: route.systemImage)
-                                    .foregroundStyle(isSelected ? AutoSuggestTheme.brand : Color.secondary)
-                                    .frame(width: 18)
-                                Text(route.title)
-                                    .foregroundStyle(Color.primary)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(isSelected ? AutoSuggestTheme.brand.opacity(0.16) : Color.clear)
-                            )
-                            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         }
-                        .buttonStyle(.plain)
                     }
                     Spacer(minLength: 0)
                 }
@@ -52,6 +37,50 @@ struct SettingsRootView: View {
             }
         }
         .background(Color(nsColor: .windowBackgroundColor))
+    }
+}
+
+/// A single navigation row in the Settings sidebar. Selection follows the
+/// user's system accent color (HIG Rule 9.3) and the row carries the selected
+/// accessibility trait and a hover affordance.
+private struct SettingsSidebarRow: View {
+    let route: SettingsRoute
+    let isSelected: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: route.systemImage)
+                    .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                    .frame(width: 18)
+                Text(route.title)
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(rowBackground)
+            .contentShape(RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    @ViewBuilder
+    private var rowBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+        if isSelected {
+            shape.fill(Color.accentColor)
+        } else if isHovered {
+            shape.fill(Color.primary.opacity(0.06))
+        } else {
+            shape.fill(Color.clear)
+        }
     }
 }
 

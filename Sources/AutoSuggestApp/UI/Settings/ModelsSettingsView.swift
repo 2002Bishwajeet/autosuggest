@@ -20,10 +20,11 @@ struct ModelsSettingsView: View {
 
             Picker("Runtime", selection: $selectedRuntimeTab) {
                 ForEach(uiModel.config.localModel.runtimeOrder, id: \.self) { rt in
-                    Text(rt).tag(rt)
+                    Text(RuntimeDisplayName.label(for: rt)).tag(rt)
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
 
             switch selectedRuntimeTab {
             case "ollama":
@@ -54,7 +55,10 @@ struct ModelsSettingsView: View {
                 .font(.headline)
             ForEach(Array(uiModel.config.localModel.runtimeOrder.enumerated()), id: \.offset) { index, runtime in
                 HStack {
-                    Text(runtime)
+                    Text("\(index + 1).")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    Text(RuntimeDisplayName.label(for: runtime))
                     Spacer()
                     Button {
                         uiModel.moveRuntime(from: index, direction: -1)
@@ -63,6 +67,7 @@ struct ModelsSettingsView: View {
                     }
                     .buttonStyle(.borderless)
                     .disabled(index == 0)
+                    .accessibilityLabel("Move \(RuntimeDisplayName.label(for: runtime)) up")
 
                     Button {
                         uiModel.moveRuntime(from: index, direction: 1)
@@ -71,6 +76,7 @@ struct ModelsSettingsView: View {
                     }
                     .buttonStyle(.borderless)
                     .disabled(index == uiModel.config.localModel.runtimeOrder.count - 1)
+                    .accessibilityLabel("Move \(RuntimeDisplayName.label(for: runtime)) down")
                 }
             }
         }
@@ -142,13 +148,23 @@ struct ModelsSettingsView: View {
                     .padding(.vertical, 8)
                 } else {
                     ForEach(uiModel.modelHealth.installedModels, id: \.path.path) { model in
+                        let isActive = uiModel.modelHealth.activeModelPath?.path == model.path.path
                         HStack {
                             Text("\(model.id) \(model.version)")
-                            Spacer()
-                            Button("Use") {
-                                uiModel.switchToInstalledModel(model)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help("\(model.id) \(model.version)")
+                            Spacer(minLength: 8)
+                            if isActive {
+                                Label("In use", systemImage: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(AutoSuggestTheme.brand)
+                                    .labelStyle(.titleAndIcon)
+                            } else {
+                                Button("Use") {
+                                    uiModel.switchToInstalledModel(model)
+                                }
                             }
-                            .disabled(uiModel.modelHealth.activeModelPath?.path == model.path.path)
                         }
                     }
                 }
@@ -178,21 +194,30 @@ private struct ModelSourceEditorView: View {
             .pickerStyle(.segmented)
 
             TextField("Model ID", text: $draft.modelID)
+                .textFieldStyle(.roundedBorder)
             TextField("Version", text: $draft.version)
+                .textFieldStyle(.roundedBorder)
             TextField("SHA256 checksum", text: $draft.sha256)
+                .textFieldStyle(.roundedBorder)
 
             if draft.sourceType == .directURL {
                 TextField("Direct URL", text: $draft.directURL)
+                    .textFieldStyle(.roundedBorder)
             } else {
                 TextField("Repo", text: $draft.huggingFaceRepoID)
+                    .textFieldStyle(.roundedBorder)
                 TextField("Revision", text: $draft.huggingFaceRevision)
+                    .textFieldStyle(.roundedBorder)
                 TextField("File Path", text: $draft.huggingFaceFilePath)
+                    .textFieldStyle(.roundedBorder)
                 SecureField("Optional token", text: $draft.huggingFaceToken)
+                    .textFieldStyle(.roundedBorder)
             }
 
             if let message = draft.validationMessage() {
-                Text(message)
-                    .foregroundStyle(.orange)
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(AutoSuggestTheme.warning)
             }
 
             HStack {
@@ -200,11 +225,13 @@ private struct ModelSourceEditorView: View {
                 Button("Cancel") {
                     dismiss()
                 }
+                .keyboardShortcut(.cancelAction)
                 Button("Save & Download") {
                     onSave(draft)
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
                 .disabled(draft.validationMessage() != nil)
             }
         }
