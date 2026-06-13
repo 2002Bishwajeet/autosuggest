@@ -266,10 +266,61 @@ jobs:
           # ditto preserves resource forks / quarantine metadata better than zip -r.
           ditto -c -k --keepParent "$APP_PATH" "$GITHUB_WORKSPACE/AutoSuggest.zip"
 
+      # Sparkle appcast generation. Gated on the EdDSA private key secret so the
+      # release pipeline keeps working before auto-update is activated: when
+      # SPARKLE_EDDSA_PRIVATE_KEY is unset this whole step is skipped and the
+      # release publishes without an appcast. See docs/SPARKLE_SETUP.md.
+      #
+      # `generate_appcast` reads the private key from stdin (--ed-key-file -),
+      # scans a directory of release archives, and emits a SIGNED appcast.xml
+      # (it writes the EdDSA signature + length into each <enclosure>). The
+      # resulting appcast.xml MUST be uploaded to the host that serves the
+      # SUFeedURL in Info.plist (e.g. the Cloudflare Pages site) for clients to
+      # discover this update — publishing it to the GitHub Release here is for
+      # convenience/inspection; the SUFeedURL host is the source of truth.
+      - name: Generate & sign Sparkle appcast
+        if: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY != '' }}
+        env:
+          SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          # Sparkle ships its tools (generate_appcast, generate_keys, sign_update)
+          # as a separate "Sparkle binary utilities" artifact. Fetch them.
+          SPARKLE_TOOLS_VERSION="2.6.4"
+          curl -fsSL -o sparkle-tools.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_TOOLS_VERSION}/Sparkle-${SPARKLE_TOOLS_VERSION}.tar.xz"
+          mkdir -p sparkle-tools
+          tar -xf sparkle-tools.tar.xz -C sparkle-tools
+          GENERATE_APPCAST="$(find sparkle-tools -name generate_appcast -type f | head -1)"
+          if [ -z "$GENERATE_APPCAST" ]; then
+            echo "::error::generate_appcast not found in the Sparkle tools archive"
+            exit 1
+          fi
+
+          # Stage the archives Sparkle should advertise. Use the notarized ZIP
+          # (Sparkle's preferred delta/update format) and the DMG.
+          mkdir -p appcast-stage
+          cp "$GITHUB_WORKSPACE/AutoSuggest.zip" appcast-stage/
+          cp "$GITHUB_WORKSPACE/AutoSuggest.dmg" appcast-stage/ || true
+
+          # Feed the private key on stdin so it never lands on disk.
+          printf '%s' "$SPARKLE_EDDSA_PRIVATE_KEY" \
+            | "$GENERATE_APPCAST" --ed-key-file - appcast-stage
+
+          if [ ! -f appcast-stage/appcast.xml ]; then
+            echo "::error::generate_appcast did not produce appcast.xml"
+            exit 1
+          fi
+          cp appcast-stage/appcast.xml "$GITHUB_WORKSPACE/appcast.xml"
+          echo "Generated signed appcast.xml. Upload it to the SUFeedURL host (e.g. Cloudflare Pages) to publish this update."
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          # appcast.xml is only present when the Sparkle step ran (secret set);
+          # action-gh-release silently skips missing glob entries.
           files: |
             AutoSuggest.dmg
             AutoSuggest.zip
+            appcast.xml
