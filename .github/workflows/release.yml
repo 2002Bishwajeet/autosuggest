@@ -358,6 +358,9 @@ jobs:
           git checkout -f main
           cp "$GITHUB_WORKSPACE/appcast.xml" website/appcast.xml
           git add website/appcast.xml
-          git commit -m "chore(release): publish Sparkle appcast for ${GITHUB_REF_NAME} [skip ci]" \
+          # NOTE: no [skip ci] — Cloudflare Pages honors it and would skip
+          # deploying the appcast. ci.yml's paths-ignore keeps the Swift CI from
+          # running on this website-only commit instead.
+          git commit -m "chore(release): publish Sparkle appcast for ${GITHUB_REF_NAME}" \
             || { echo "appcast unchanged; nothing to publish"; exit 0; }
           git push origin main

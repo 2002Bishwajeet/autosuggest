@@ -2,6 +2,14 @@ name: CI
 on:
   push:
     branches: [main]
+    # Skip the Swift build/test for content-only commits (e.g. the release
+    # workflow's appcast publish to website/, docs, markdown). Cloudflare Pages
+    # still deploys those — which is why that commit is NOT marked [skip ci]
+    # ([skip ci] would also make Pages skip the deploy).
+    paths-ignore:
+      - 'website/**'
+      - 'docs/**'
+      - '**.md'
   pull_request:
     branches: [main]
 jobs:
