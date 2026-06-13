@@ -26,7 +26,7 @@ struct GeneralSettingsView: View {
 
                 Toggle("Strict undo semantics", isOn: Binding(
                     get: { uiModel.config.insertion.strictUndoSemantics },
-                    set: { _ in uiModel.updateStrictUndo(!uiModel.config.insertion.strictUndoSemantics) }
+                    set: { uiModel.updateStrictUndo($0) }
                 ))
                 Text("When enabled, only clipboard-paste insertion is used, giving a cleaner Cmd+Z experience.")
                     .font(.caption)

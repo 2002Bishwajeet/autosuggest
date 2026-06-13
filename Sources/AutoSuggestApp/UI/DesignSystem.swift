@@ -25,9 +25,18 @@ enum AutoSuggestTheme {
 
     static let border = Color(nsColor: .separatorColor)
 
+    /// Semantic status colors. These map to SwiftUI's adaptive colors, which
+    /// already vary across Light/Dark and respond to Increase Contrast, so they
+    /// stay legible in every appearance.
     static let success = Color.green
     static let warning = Color.orange
     static let error = Color.red
+    static let info = Color.blue
+
+    /// Selection / interactive accent. Follows the user's system accent color
+    /// rather than a fixed brand hue, per the HIG (Rule 9.3). Use `brand` only
+    /// for deliberate brand moments (the menu-bar glyph, the About links).
+    static let accentInteractive = Color.accentColor
 
     // MARK: - Spacing
 

@@ -9,6 +9,8 @@ struct PermissionsSettingsView: View {
             if uiModel.needsRelaunchToEnable {
                 HStack(spacing: 10) {
                     Image(systemName: "arrow.clockwise.circle.fill")
+                        .foregroundStyle(AutoSuggestTheme.brand)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Finish enabling AutoSuggest").font(.callout.weight(.semibold))
                         Text("Input Monitoring was granted but needs a relaunch to take effect.")
@@ -19,31 +21,30 @@ struct PermissionsSettingsView: View {
                         .buttonStyle(.borderedProminent)
                 }
                 .padding(12)
-                .background(AutoSuggestTheme.brand.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                .background(
+                    AutoSuggestTheme.brand.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+                )
             }
 
             // Accessibility row
             PermissionSettingsRow(
                 systemImage: "accessibility",
                 title: "Accessibility",
-                description: "Required to read text context and insert completions into any text field.",
+                description: "Lets AutoSuggest read the text around your cursor and insert completions into any text field.",
                 granted: uiModel.permissionHealth.accessibilityTrusted,
-                primaryLabel: "Show Prompt",
-                secondaryLabel: "Open Settings",
-                primaryAction: { uiModel.openAccessibilitySettings() },
-                secondaryAction: { uiModel.openAccessibilitySettings() }
+                primaryLabel: "Open System Settings",
+                primaryAction: { uiModel.openAccessibilitySettings() }
             )
 
             // Input Monitoring row
             PermissionSettingsRow(
                 systemImage: "keyboard",
                 title: "Input Monitoring",
-                description: "Required to detect Tab, Enter, and Esc for accepting or dismissing suggestions. Needs a relaunch after granting.",
+                description: "Lets AutoSuggest detect Tab, Enter, and Esc so you can accept or dismiss suggestions. AutoSuggest must relaunch after you grant this.",
                 granted: uiModel.permissionHealth.inputMonitoringTrusted,
-                primaryLabel: "Register & Open",
-                secondaryLabel: "Open Settings",
-                primaryAction: { uiModel.openInputMonitoringSettings() },
-                secondaryAction: { uiModel.openInputMonitoringSettings() }
+                primaryLabel: "Open System Settings",
+                primaryAction: { uiModel.openInputMonitoringSettings() }
             )
 
             // Relaunch / recheck controls
@@ -58,7 +59,6 @@ struct PermissionsSettingsView: View {
                         uiModel.relaunchApp()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.orange)
                 }
             }
 
@@ -67,7 +67,7 @@ struct PermissionsSettingsView: View {
 
                 Toggle("PII filtering", isOn: Binding(
                     get: { uiModel.config.privacy.piiFilteringEnabled },
-                    set: { _ in uiModel.updatePIIFiltering(!uiModel.config.privacy.piiFilteringEnabled) }
+                    set: { uiModel.updatePIIFiltering($0) }
                 ))
                 Text("Strips emails, phone numbers, and card numbers from personalization data.")
                     .font(.caption)
@@ -77,13 +77,16 @@ struct PermissionsSettingsView: View {
 
                 Toggle("Local telemetry", isOn: Binding(
                     get: { uiModel.config.telemetry.enabled },
-                    set: { _ in uiModel.updateTelemetryEnabled(!uiModel.config.telemetry.enabled) }
+                    set: { uiModel.updateTelemetryEnabled($0) }
                 ))
 
-                Toggle("Local only export", isOn: Binding(
+                Toggle("Local-only export", isOn: Binding(
                     get: { uiModel.config.telemetry.localStoreOnly },
-                    set: { _ in uiModel.updateTelemetryLocalOnly(!uiModel.config.telemetry.localStoreOnly) }
+                    set: { uiModel.updateTelemetryLocalOnly($0) }
                 ))
+                Text("Keeps all telemetry on this Mac and never sends it anywhere.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             SimplePanel {
@@ -120,20 +123,23 @@ private struct PermissionSettingsRow: View {
     let description: String
     let granted: Bool
     let primaryLabel: String
-    let secondaryLabel: String
     let primaryAction: () -> Void
-    let secondaryAction: () -> Void
+
+    private var accent: Color {
+        granted ? AutoSuggestTheme.success : AutoSuggestTheme.warning
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(granted ? Color.green.opacity(0.1) : Color.orange.opacity(0.09))
+                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+                    .fill(accent.opacity(0.12))
                     .frame(width: 40, height: 40)
                 Image(systemName: granted ? "checkmark.shield.fill" : systemImage)
                     .font(.system(size: 18))
-                    .foregroundStyle(granted ? .green : .orange)
+                    .foregroundStyle(accent)
             }
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
@@ -143,34 +149,34 @@ private struct PermissionSettingsRow: View {
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(granted ? Color.green.opacity(0.1) : Color.orange.opacity(0.1)))
-                        .foregroundStyle(granted ? .green : .orange)
+                        .background(Capsule().fill(accent.opacity(0.14)))
+                        .foregroundStyle(accent)
                 }
                 Text(description)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if !granted {
-                    HStack(spacing: 8) {
-                        Button(primaryLabel, action: primaryAction)
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
-                        Button(secondaryLabel, action: secondaryAction)
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                    }
-                    .padding(.top, 2)
+                    Button(primaryLabel, action: primaryAction)
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .padding(.top, 2)
                 }
             }
         }
         .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(granted ? Color.green.opacity(0.18) : Color(nsColor: .separatorColor), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
+                        .stroke(
+                            granted ? AutoSuggestTheme.success.opacity(0.2) : Color(nsColor: .separatorColor),
+                            lineWidth: 1
+                        )
                 )
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(granted ? "Granted" : "Required"). \(description)")
     }
 }

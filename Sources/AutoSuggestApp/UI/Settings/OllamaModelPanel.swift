@@ -21,9 +21,7 @@ struct OllamaModelPanel: View {
                         .disabled(baseURLDraft.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
                 HStack(spacing: 8) {
-                    Circle()
-                        .fill(uiModel.ollamaRunning ? Color.green : Color.secondary)
-                        .frame(width: 8, height: 8)
+                    StatusDot(status: uiModel.ollamaRunning ? .active : .inactive)
                     Text(uiModel.ollamaRunning ? "Ollama is running" : "Ollama not reachable")
                         .font(.caption).foregroundStyle(.secondary)
                     if !uiModel.ollamaRunning {
@@ -33,6 +31,7 @@ struct OllamaModelPanel: View {
                     Button("Recheck") { uiModel.refreshOllama() }
                         .buttonStyle(.borderless).controlSize(.small)
                 }
+                .accessibilityElement(children: .combine)
             }
 
             // Installed
@@ -46,20 +45,29 @@ struct OllamaModelPanel: View {
                     ForEach(uiModel.ollamaInstalled, id: \.name) { model in
                         HStack {
                             Text(model.name)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help(model.name)
                             Text(sizeText(model.sizeBytes)).font(.caption).foregroundStyle(.tertiary)
-                            Spacer()
+                                .lineLimit(1)
+                                .layoutPriority(1)
+                            Spacer(minLength: 8)
                             if model.name == activeModel {
                                 Label("Active", systemImage: "checkmark.circle.fill")
                                     .font(.caption).foregroundStyle(AutoSuggestTheme.brand)
+                                    .layoutPriority(1)
                             } else {
                                 Button("Use") { uiModel.setOllamaModel(model.name) }
                                     .buttonStyle(.bordered).controlSize(.small)
+                                    .layoutPriority(1)
                                 Button(role: .destructive) { modelToDelete = model.name } label: {
                                     Image(systemName: "trash")
                                 }
                                 .buttonStyle(.borderless)
                                 .controlSize(.small)
                                 .help("Delete this model")
+                                .accessibilityLabel("Delete \(model.name)")
+                                .layoutPriority(1)
                             }
                         }
                     }
@@ -102,24 +110,31 @@ struct OllamaModelPanel: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(s.name).font(.body.monospaced())
+                        .lineLimit(1).truncationMode(.middle)
                     Text(s.blurb).font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
-                Spacer()
+                Spacer(minLength: 8)
                 Text(String(format: "%.2f GB", s.sizeGB)).font(.caption).foregroundStyle(.tertiary)
+                    .layoutPriority(1)
                 if pull != nil {
                     ProgressView().controlSize(.small)
                 } else if installed {
                     if s.name == activeModel {
                         Label("Active", systemImage: "checkmark.circle.fill")
                             .font(.caption).foregroundStyle(AutoSuggestTheme.brand)
+                            .layoutPriority(1)
                     } else {
                         Button("Use") { uiModel.setOllamaModel(s.name) }
                             .buttonStyle(.bordered).controlSize(.small)
+                            .layoutPriority(1)
                     }
                 } else {
                     Button("Download") { uiModel.pullOllamaModel(s.name) }
                         .buttonStyle(.borderedProminent).controlSize(.small)
                         .disabled(!uiModel.ollamaRunning)
+                        .help(uiModel.ollamaRunning ? "Download this model" : "Start Ollama to download models")
+                        .layoutPriority(1)
                 }
             }
             if let pull {

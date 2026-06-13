@@ -28,6 +28,10 @@ struct ExclusionsSettingsView: View {
             }
 
             SimplePanel {
+                SectionHeader("Quick add", systemImage: "bolt")
+                Text("Add a common code editor to the exclusion list in one click.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 HStack {
                     Button("VS Code") { uiModel.applyExclusionPreset("com.microsoft.VSCode") }
                     Button("Xcode") { uiModel.applyExclusionPreset("com.apple.dt.Xcode") }
@@ -55,11 +59,13 @@ struct ExclusionsSettingsView: View {
                 } else {
                     ForEach(Array(filteredRules.enumerated()), id: \.offset) { _, rule in
                         HStack {
-                            Circle()
-                                .fill(rule.enabled ? AutoSuggestTheme.success : AutoSuggestTheme.textTertiary)
-                                .frame(width: 6, height: 6)
-                            Text(rule.bundleID ?? "Custom rule")
-                            Spacer()
+                            StatusDot(status: rule.enabled ? .active : .inactive)
+                            Text(rule.displayTitle)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help(rule.displayTitle)
+                                .foregroundStyle(rule.enabled ? .primary : .secondary)
+                            Spacer(minLength: 8)
                             Button(rule.enabled ? "Disable" : "Enable") {
                                 uiModel.toggleRuleEnabled(rule, enabled: !rule.enabled)
                             }
@@ -130,12 +136,19 @@ private struct ExclusionRuleEditorView: View {
                 .font(.title3.weight(.semibold))
             Toggle("Rule enabled", isOn: $draft.enabled)
             TextField("Bundle ID", text: $draft.bundleID)
+                .textFieldStyle(.roundedBorder)
             TextField("Window title contains", text: $draft.windowTitleContains)
+                .textFieldStyle(.roundedBorder)
             TextField("Content regex", text: $draft.contentPattern)
+                .textFieldStyle(.roundedBorder)
+            Text("Fill in at least one condition. A rule with multiple conditions matches only when all are met.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             if let message = draft.validationMessage() {
-                Text(message)
-                    .foregroundStyle(.orange)
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(AutoSuggestTheme.warning)
             }
 
             HStack {
@@ -143,11 +156,13 @@ private struct ExclusionRuleEditorView: View {
                 Button("Cancel") {
                     dismiss()
                 }
+                .keyboardShortcut(.cancelAction)
                 Button("Save") {
                     onSave(draft)
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
                 .disabled(draft.validationMessage() != nil)
             }
         }

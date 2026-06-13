@@ -9,7 +9,7 @@ struct SettingsCard<Content: View>: View {
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor))
             )
     }
@@ -25,7 +25,7 @@ struct SimplePanel<Content: View>: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
         )
     }
@@ -50,12 +50,14 @@ struct BannerView: View {
                 Image(systemName: "xmark")
             }
             .buttonStyle(.borderless)
+            .accessibilityLabel("Dismiss")
         }
         .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
         )
+        .accessibilityElement(children: .combine)
     }
 
     private var symbolName: String {
@@ -74,13 +76,13 @@ struct BannerView: View {
     private var symbolColor: Color {
         switch banner.kind {
         case .info:
-            .blue
+            AutoSuggestTheme.info
         case .success:
-            .green
+            AutoSuggestTheme.success
         case .warning:
-            .orange
+            AutoSuggestTheme.warning
         case .error:
-            .red
+            AutoSuggestTheme.error
         }
     }
 }
