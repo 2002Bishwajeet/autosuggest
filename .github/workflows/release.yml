@@ -304,15 +304,21 @@ jobs:
           cp "$GITHUB_WORKSPACE/AutoSuggest.dmg" appcast-stage/ || true
 
           # Feed the private key on stdin so it never lands on disk.
+          # --download-url-prefix makes each <enclosure url> point at the GitHub
+          # Release asset for THIS tag (where AutoSuggest.zip is published),
+          # instead of a bare filename — without it Sparkle can't locate the
+          # download and the update silently fails.
           printf '%s' "$SPARKLE_EDDSA_PRIVATE_KEY" \
-            | "$GENERATE_APPCAST" --ed-key-file - appcast-stage
+            | "$GENERATE_APPCAST" --ed-key-file - \
+                --download-url-prefix "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/" \
+                appcast-stage
 
           if [ ! -f appcast-stage/appcast.xml ]; then
             echo "::error::generate_appcast did not produce appcast.xml"
             exit 1
           fi
           cp appcast-stage/appcast.xml "$GITHUB_WORKSPACE/appcast.xml"
-          echo "Generated signed appcast.xml. Upload it to the SUFeedURL host (e.g. Cloudflare Pages) to publish this update."
+          echo "Generated signed appcast.xml; the 'Publish appcast to website' step commits it to website/ for Cloudflare Pages."
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -324,3 +330,28 @@ jobs:
             AutoSuggest.dmg
             AutoSuggest.zip
             appcast.xml
+
+      # Publish the signed appcast to the Cloudflare Pages site so it is served
+      # at the SUFeedURL (https://autosuggest.cloudx.run/appcast.xml). Commits
+      # website/appcast.xml to main; Pages redeploys automatically. Runs last and
+      # is non-fatal: if main has branch protection blocking the Actions bot, the
+      # release still succeeds and appcast.xml remains attached to the Release for
+      # a manual upload. Gated on the same secret as appcast generation.
+      - name: Publish appcast to website (Cloudflare Pages)
+        if: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY != '' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          # Force-switch to main; build artifacts are untracked and the only
+          # tracked modification is the workflow-regenerated xcodeproj, which we
+          # intentionally discard here. appcast.xml lives at the workspace root
+          # (untracked) and is preserved across the checkout.
+          git checkout -f main
+          cp "$GITHUB_WORKSPACE/appcast.xml" website/appcast.xml
+          git add website/appcast.xml
+          git commit -m "chore(release): publish Sparkle appcast for ${GITHUB_REF_NAME} [skip ci]" \
+            || { echo "appcast unchanged; nothing to publish"; exit 0; }
+          git push origin main

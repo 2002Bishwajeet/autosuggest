@@ -64,17 +64,10 @@ with the public key string from step (a). (If you regenerate
 `AutoSuggestDesktop.xcodeproj`, the Info.plist is referenced, not copied, so this
 edit persists.)
 
-### (c) Set the real `SUFeedURL`
+### (c) `SUFeedURL` — already set (no action)
 
-Still in `Info.plist`, replace the placeholder feed URL:
-
-```xml
-<key>SUFeedURL</key>
-<string>https://autosuggest.app/appcast.xml</string>
-```
-
-with the real, HTTPS URL where you will host `appcast.xml` (e.g. your Cloudflare
-Pages site). This must match where you actually upload the appcast in step (e).
+`Info.plist` already points at `https://autosuggest.cloudx.run/appcast.xml`
+(your Cloudflare Pages domain). Only touch this if the domain changes.
 
 ### (d) Add the PRIVATE key as a GitHub secret
 
@@ -92,29 +85,30 @@ next tagged release: it downloads the Sparkle tools, runs `generate_appcast`
 `<enclosure>`. The signed `appcast.xml` is attached to the GitHub Release for
 inspection.
 
-### (e) Host `appcast.xml` at the `SUFeedURL`
+### (e) Appcast hosting — automated (no action)
 
-The GitHub Release copy of `appcast.xml` is for convenience only. For clients to
-actually discover updates, **upload `appcast.xml` to the host that serves your
-`SUFeedURL`** (the Cloudflare Pages site, or wherever you pointed `SUFeedURL` in
-step (c)). The download URLs inside the appcast (`<enclosure url=…>`) point at
-your release archives, so make sure those archives are reachable at the URLs the
-appcast references (typically the GitHub Release asset URLs).
+On each tagged release the workflow generates the signed `appcast.xml` (with
+each `<enclosure url>` pointing at that release's GitHub asset, via
+`--download-url-prefix`) and **commits it to `website/appcast.xml`**, which
+Cloudflare Pages serves at the `SUFeedURL`. No manual upload.
 
-Confirm activation by fetching the feed and checking it parses:
+(If `main` ever has branch protection that blocks the Actions bot, that final
+step is non-fatal — the release still publishes with `appcast.xml` attached as a
+Release asset, and you can drop it into `website/appcast.xml` manually.)
+
+Confirm after your first activated release:
 
 ```sh
-curl -fsSL https://YOUR-HOST/appcast.xml | head -40
+curl -fsSL https://autosuggest.cloudx.run/appcast.xml | head -40
 ```
 
-You should see a `<rss>` document with `<item>` entries whose `<enclosure>` tags
-carry `sparkle:edSignature` and `length` attributes.
+You should see a `<rss>` document whose `<enclosure>` tags carry
+`sparkle:edSignature` + `length`, with `url`s on `github.com/.../releases/download/…`.
 
 ## Quick verification after activation
 
-1. Tag a release (`git tag vX.Y.Z && git push --tags`) — the workflow signs and
-   publishes the appcast.
-2. Upload `appcast.xml` to the `SUFeedURL` host.
-3. Install the **previous** signed/notarized build, then use the status
-   popover's **Check for Updates…** — Sparkle should offer the new version and
-   verify it against `SUPublicEDKey` before installing.
+1. Tag a release (`git tag vX.Y.Z && git push --tags`) — the workflow signs the
+   appcast and auto-publishes it to `website/appcast.xml`.
+2. Install the **previous** signed/notarized build, then use the status popover's
+   **Check for Updates…** — Sparkle should offer the new version and verify it
+   against `SUPublicEDKey` before installing.
