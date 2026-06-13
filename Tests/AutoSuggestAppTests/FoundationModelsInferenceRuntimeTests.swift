@@ -11,6 +11,7 @@ final class FoundationModelsInferenceRuntimeTests: XCTestCase {
         private(set) var receivedPrompt: String?
         private(set) var receivedMaxTokens: Int?
         private(set) var callCount = 0
+        private(set) var prewarmCallCount = 0
 
         init(isModelAvailable: Bool = true, result: Result<String, Error> = .success("")) {
             self.isModelAvailable = isModelAvailable
@@ -22,6 +23,20 @@ final class FoundationModelsInferenceRuntimeTests: XCTestCase {
             receivedPrompt = prompt
             receivedMaxTokens = maxTokens
             return try result.get()
+        }
+
+        func prewarm() {
+            prewarmCallCount += 1
+        }
+    }
+
+    /// A responder that does NOT override `prewarm()`, exercising the protocol's
+    /// default no-op extension (mocks/tests must not break when prewarm is added).
+    @MainActor
+    private final class NoPrewarmResponder: FoundationModelResponding {
+        var isModelAvailable = true
+        func respond(toPrompt _: String, maxTokens _: Int) async throws -> String {
+            ""
         }
     }
 
@@ -133,5 +148,93 @@ final class FoundationModelsInferenceRuntimeTests: XCTestCase {
         let suggestion = try await runtime.generateSuggestion(context: "")
         XCTAssertEqual(suggestion.completion, "")
         XCTAssertEqual(responder.callCount, 0, "Should short-circuit empty context")
+    }
+
+    // MARK: - inlineTrimmed (Tweak 1: trim completions for inline display)
+
+    func testInlineTrimmedKeepsOnlyFirstLine() {
+        let multiline = "first line\nsecond line\nthird"
+        XCTAssertEqual(FoundationModelsInferenceRuntime.inlineTrimmed(multiline), "first line")
+    }
+
+    func testInlineTrimmedHandlesCarriageReturnNewlines() {
+        let multiline = "first line\r\nsecond line"
+        XCTAssertEqual(FoundationModelsInferenceRuntime.inlineTrimmed(multiline), "first line")
+    }
+
+    func testInlineTrimmedCutsLongLineAtFirstSentenceTerminator() {
+        // A single long line (> 80 chars) with multiple sentences → cut at the
+        // first terminator, keeping the punctuation.
+        let long = "This is the first sentence. And here is a much longer second sentence that pushes the whole thing past eighty characters."
+        XCTAssertGreaterThan(long.count, 80)
+        XCTAssertEqual(
+            FoundationModelsInferenceRuntime.inlineTrimmed(long),
+            "This is the first sentence."
+        )
+    }
+
+    func testInlineTrimmedCutsLongLineAtQuestionMark() {
+        let long = "Are you sure about this whole thing? Because there is a lot more that follows after the question here."
+        XCTAssertGreaterThan(long.count, 80)
+        XCTAssertEqual(
+            FoundationModelsInferenceRuntime.inlineTrimmed(long),
+            "Are you sure about this whole thing?"
+        )
+    }
+
+    func testInlineTrimmedLeavesShortLineUnchangedEvenWithSentenceTerminator() {
+        // Under the 80-char threshold → no sentence cut, returned as-is.
+        let short = "Hi there. More."
+        XCTAssertLessThanOrEqual(short.count, 80)
+        XCTAssertEqual(FoundationModelsInferenceRuntime.inlineTrimmed(short), "Hi there. More.")
+    }
+
+    func testInlineTrimmedLeavesLongSingleSentenceUnchanged() {
+        // Long, but no internal sentence terminator → returned as-is (modulo the
+        // trailing whitespace that is always dropped).
+        let long = String(repeating: "word ", count: 30).trimmingCharacters(in: .whitespaces)
+        XCTAssertGreaterThan(long.count, 80)
+        XCTAssertEqual(FoundationModelsInferenceRuntime.inlineTrimmed(long), long)
+    }
+
+    func testInlineTrimmedEmptyStaysEmpty() {
+        XCTAssertEqual(FoundationModelsInferenceRuntime.inlineTrimmed(""), "")
+    }
+
+    func testInlineTrimmedDropsTrailingWhitespaceButKeepsLeadingSpace() {
+        // Leading space is preserved (inline continuations often need it); only
+        // trailing whitespace and anything past the first newline are dropped.
+        let value = " the completion  \nignored"
+        XCTAssertEqual(FoundationModelsInferenceRuntime.inlineTrimmed(value), " the completion")
+    }
+
+    func testInlineTrimmedPreservesLeadingSpaceContinuation() {
+        // The classic " world" continuation after "hello" must survive intact.
+        XCTAssertEqual(FoundationModelsInferenceRuntime.inlineTrimmed(" world"), " world")
+    }
+
+    @MainActor
+    func testGenerateSuggestionAppliesInlineTrim() async throws {
+        let responder = MockResponder(result: .success("first line\nsecond line"))
+        let runtime = FoundationModelsInferenceRuntime(responder: responder)
+        let suggestion = try await runtime.generateSuggestion(context: "hello")
+        XCTAssertEqual(suggestion.completion, "first line")
+        XCTAssertGreaterThan(suggestion.confidence, 0)
+    }
+
+    // MARK: - prewarm (Tweak 2: mask cold start)
+
+    @MainActor
+    func testPrewarmCallsThroughToResponder() {
+        let responder = MockResponder()
+        let runtime = FoundationModelsInferenceRuntime(responder: responder)
+        runtime.prewarm()
+        XCTAssertEqual(responder.prewarmCallCount, 1, "prewarm() must delegate to the responder")
+    }
+
+    @MainActor
+    func testPrewarmWithDefaultNoOpResponderDoesNotCrash() {
+        let runtime = FoundationModelsInferenceRuntime(responder: NoPrewarmResponder())
+        runtime.prewarm() // protocol default no-op; must be safe.
     }
 }

@@ -20,6 +20,16 @@ protocol FoundationModelResponding {
     /// Throws on generation/runtime errors (guardrail refusal, context overflow,
     /// rate limiting, etc.) which the runtime maps to an empty suggestion.
     func respond(toPrompt prompt: String, maxTokens: Int) async throws -> String
+
+    /// Best-effort, non-throwing warm-up of the underlying model so the first
+    /// real request avoids the ~1.3s cold-start penalty. The default is a no-op
+    /// so mocks and SDK-less toolchains are unaffected.
+    func prewarm()
+}
+
+extension FoundationModelResponding {
+    /// Default no-op: only the SDK-backed responder warms a real model.
+    func prewarm() {}
 }
 
 /// FoundationModels (macOS 26 Apple Intelligence) on-device completion runtime.
@@ -63,11 +73,13 @@ struct FoundationModelsInferenceRuntime: InferenceRuntime {
                 toPrompt: prompt,
                 maxTokens: Self.maxResponseTokens
             )
-            let trimmed = completion.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty {
+            // The model can emit multi-sentence prose; inline ghost text wants a
+            // single short continuation, so trim before building the Suggestion.
+            let inline = Self.inlineTrimmed(completion)
+            if inline.isEmpty {
                 return Suggestion(completion: "", confidence: 0)
             }
-            return Suggestion(completion: completion, confidence: 0.8)
+            return Suggestion(completion: inline, confidence: 0.8)
         } catch {
             // Generation/runtime errors (guardrail refusal, context overflow,
             // rate limiting, etc.) → return empty so InferenceEngine falls
@@ -78,11 +90,61 @@ struct FoundationModelsInferenceRuntime: InferenceRuntime {
         }
     }
 
+    /// Best-effort, non-blocking warm-up so the first real completion avoids the
+    /// model's ~1.3s cold start. Delegates to the responder; a no-op for mocks
+    /// and SDK-less toolchains.
+    @MainActor
+    func prewarm() {
+        responder.prewarm()
+    }
+
     /// Keep only a safe trailing prefix of the context (the text nearest the
     /// caret is the most relevant continuation signal).
     static func truncatedPrompt(_ context: String) -> String {
         guard context.count > maxPromptCharacters else { return context }
         return String(context.suffix(maxPromptCharacters))
+    }
+
+    /// Length above which a single line is considered "long" and eligible for a
+    /// sentence-boundary cut.
+    static let inlineLineLengthThreshold = 80
+
+    /// Sentence terminators (terminator + following space) used to cut an
+    /// overlong line down to its first sentence for inline display.
+    private static let sentenceTerminators = [". ", "! ", "? "]
+
+    /// Shape a raw model completion into a single inline ghost-text line:
+    /// 1. Take only up to the first newline (CR or LF).
+    /// 2. Drop trailing whitespace from that line. A leading space is preserved
+    ///    on purpose — inline completions are continuations and often need it.
+    /// 3. If the line is long (> `inlineLineLengthThreshold`) and contains a
+    ///    sentence terminator, cut at the first one (keeping the punctuation).
+    /// Empty stays empty (preserving the existing empty→fallthrough behavior).
+    static func inlineTrimmed(_ completion: String) -> String {
+        let firstLine = completion
+            .split(whereSeparator: \.isNewline)
+            .first
+            .map(String.init) ?? ""
+        // Trim trailing whitespace only; keep any leading space (it is part of
+        // the continuation and matters at the insertion point).
+        var line = String(firstLine.reversed().drop(while: \.isWhitespace).reversed())
+
+        if line.count > inlineLineLengthThreshold {
+            var earliest: String.Index?
+            for terminator in sentenceTerminators {
+                if let range = line.range(of: terminator) {
+                    if earliest == nil || range.lowerBound < earliest! {
+                        earliest = range.lowerBound
+                    }
+                }
+            }
+            if let cut = earliest {
+                // Keep the terminating punctuation, drop the following space.
+                line = String(line[...cut])
+            }
+        }
+
+        return line
     }
 }
 
@@ -116,6 +178,15 @@ struct FoundationModelsInferenceRuntime: InferenceRuntime {
             )
             let response = try await session.respond(to: prompt, options: options)
             return response.content
+        }
+
+        /// Warm the model so the first real request skips the cold-start penalty.
+        /// Best-effort: only warms when the model is actually available, and
+        /// swallows any error (warm-up failure must never affect normal flow).
+        func prewarm() {
+            guard isModelAvailable else { return }
+            let session = LanguageModelSession(instructions: Self.instructions)
+            session.prewarm()
         }
     }
 

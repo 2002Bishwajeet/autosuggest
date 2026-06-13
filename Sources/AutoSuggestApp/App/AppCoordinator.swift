@@ -273,6 +273,8 @@ final class AppCoordinator {
             )
         )
 
+        prewarmFoundationModelsIfAvailable(config: config.localModel)
+
         if let policyEngine, let inferenceEngine {
             orchestrator = SuggestionOrchestrator(
                 policyEngine: policyEngine,
@@ -298,6 +300,21 @@ final class AppCoordinator {
                 batteryMode: config.battery.mode
             )
         }
+    }
+
+    /// Fire-and-forget warm-up of the FoundationModels on-device LLM to mask its
+    /// ~1.3s cold start. Gated to when the SDK + OS + user config make it usable;
+    /// never blocks the main thread and never crashes if it is unavailable.
+    private func prewarmFoundationModelsIfAvailable(config: LocalModelConfig) {
+        guard config.foundationModelsEnabled else { return }
+        #if canImport(FoundationModels)
+            if #available(macOS 26.0, *) {
+                let runtime = FoundationModelsInferenceRuntime(
+                    responder: LanguageModelSessionResponder()
+                )
+                Task { @MainActor in runtime.prewarm() }
+            }
+        #endif
     }
 
     private func startMetricsRefreshLoop() {
