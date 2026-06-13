@@ -14,12 +14,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		4DFC9D801D93FAEA9F1CA870 /* agent-a91147629b7cc7355 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "agent-a91147629b7cc7355"; path = ..; sourceTree = SOURCE_ROOT; };
 		5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSuggestDesktopApp.swift; sourceTree = "<group>"; };
 		611527A03C860AE957A05D05 /* AutoSuggest.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AutoSuggest.entitlements; sourceTree = "<group>"; };
 		66336980298A0B9E153FE6CB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8ADC06CF1F0B1059038BB5EA /* AutoSuggestDesktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AutoSuggestDesktop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D82DCE7503827F59F87934E3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		ED5E7049E3196A333B5BAC9A /* autosuggest */ = {isa = PBXFileReference; lastKnownFileType = folder; name = autosuggest; path = ..; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,7 +66,7 @@
 		6AC0500082C24F7E2D5D6BCE /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				4DFC9D801D93FAEA9F1CA870 /* agent-a91147629b7cc7355 */,
+				ED5E7049E3196A333B5BAC9A /* autosuggest */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -163,7 +163,7 @@
 				CODE_SIGN_ENTITLEMENTS = AutoSuggestDesktop/AutoSuggest.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = AutoSuggestDesktop/Info.plist;
@@ -171,7 +171,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.4.0;
+				MARKETING_VERSION = 0.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.autosuggest.desktop;
 				PRODUCT_NAME = AutoSuggest;
 				SDKROOT = macosx;
@@ -186,7 +186,7 @@
 				CODE_SIGN_ENTITLEMENTS = AutoSuggestDesktop/AutoSuggest.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = AutoSuggestDesktop/Info.plist;
@@ -194,7 +194,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.4.0;
+				MARKETING_VERSION = 0.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.autosuggest.desktop;
 				PRODUCT_NAME = AutoSuggest;
 				SDKROOT = macosx;

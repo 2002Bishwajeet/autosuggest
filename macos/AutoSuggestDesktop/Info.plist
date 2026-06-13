@@ -39,11 +39,11 @@
          tagged release. Binaries are downloaded from the GitHub Release assets. -->
     <key>SUFeedURL</key>
     <string>https://autosuggest.cloudx.run/appcast.xml</string>
-    <!-- PLACEHOLDER: replace with the EdDSA (ed25519) PUBLIC key produced by
-         Sparkle's `generate_keys`. Sparkle verifies every downloaded update
-         against this key. Do NOT commit a private key. -->
+    <!-- EdDSA (ed25519) PUBLIC key from Sparkle's generate_keys. Sparkle verifies
+         every downloaded update against it; the matching PRIVATE key lives only in
+         the maintainer's Keychain + the SPARKLE_EDDSA_PRIVATE_KEY CI secret. -->
     <key>SUPublicEDKey</key>
-    <string>REPLACE_WITH_EDDSA_PUBLIC_KEY</string>
+    <string>RSkV/8EETWJhFj4aBBFRWupsbnJfKIWxiKynh0ieDwk=</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
     <!-- Check for updates once per day (in seconds). -->
