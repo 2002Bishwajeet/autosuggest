@@ -71,6 +71,9 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: XcodeGen version
+        run: xcodegen --version
+
       - name: Generate Xcode project
         working-directory: macos
         run: xcodegen generate
