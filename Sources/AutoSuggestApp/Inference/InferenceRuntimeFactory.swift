@@ -9,7 +9,8 @@ struct InferenceRuntimeFactory {
     func makeRuntimes(
         config: LocalModelConfig,
         onlineLLMConfig: OnlineLLMConfig? = nil,
-        onlineAPIKey: String? = nil
+        onlineAPIKey: String? = nil,
+        piiFilteringEnabled: Bool = true
     ) -> [InferenceRuntime] {
         let order = config.runtimeOrder.isEmpty
             ? ["foundationmodels", "coreml", "ollama", "llama.cpp"]
@@ -78,7 +79,8 @@ struct InferenceRuntimeFactory {
                 provider: onlineLLMConfig.byok.provider,
                 model: onlineLLMConfig.byok.selectedModel,
                 endpointURL: onlineLLMConfig.byok.endpointURL,
-                apiKey: apiKey
+                apiKey: apiKey,
+                sanitize: Self.makeSanitizer(piiFilteringEnabled: piiFilteringEnabled)
             )
             switch onlineLLMConfig.byok.priority {
             case .primary:
@@ -99,5 +101,14 @@ struct InferenceRuntimeFactory {
             return false
         }
         return full.scheme == "http" || full.scheme == "https"
+    }
+
+    /// Returns a Sendable sanitizer closure. Extracting to a named function avoids
+    /// a Swift type-checker limitation with `@Sendable` on inline ternary expressions.
+    private static func makeSanitizer(piiFilteringEnabled: Bool) -> @Sendable (String) -> String {
+        if piiFilteringEnabled {
+            return { PIIFilter().sanitize($0) }
+        }
+        return { $0 }
     }
 }

@@ -281,7 +281,8 @@ final class AppCoordinator {
             runtimes: runtimeFactory.makeRuntimes(
                 config: config.localModel,
                 onlineLLMConfig: config.onlineLLM,
-                onlineAPIKey: onlineAPIKey
+                onlineAPIKey: onlineAPIKey,
+                piiFilteringEnabled: config.privacy.piiFilteringEnabled
             )
         )
 

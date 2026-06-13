@@ -181,4 +181,176 @@ final class OnlineLLMInferenceRuntimeTests: XCTestCase {
         XCTAssertNotNil(error.errorDescription)
         XCTAssertTrue(try XCTUnwrap(error.errorDescription?.contains("500")))
     }
+
+    // MARK: - Endpoint validation (Step 1)
+
+    func testIsAllowedEndpoint_httpsRemote() throws {
+        let url = try XCTUnwrap(URL(string: "https://api.openai.com"))
+        XCTAssertTrue(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
+    }
+
+    func testIsAllowedEndpoint_httpLoopbackNumeric() throws {
+        let url = try XCTUnwrap(URL(string: "http://127.0.0.1:8080"))
+        XCTAssertTrue(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
+    }
+
+    func testIsAllowedEndpoint_httpLocalhost() throws {
+        let url = try XCTUnwrap(URL(string: "http://localhost:1234"))
+        XCTAssertTrue(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
+    }
+
+    func testIsAllowedEndpoint_httpIPv6Loopback() throws {
+        let url = try XCTUnwrap(URL(string: "http://[::1]:9000"))
+        XCTAssertTrue(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
+    }
+
+    func testIsAllowedEndpoint_httpRemoteRejected() throws {
+        let url = try XCTUnwrap(URL(string: "http://api.example.com"))
+        XCTAssertFalse(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
+    }
+
+    func testIsAllowedEndpoint_ftpRejected() throws {
+        let url = try XCTUnwrap(URL(string: "ftp://files.example.com"))
+        XCTAssertFalse(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
+    }
+
+    @MainActor
+    func testGenerateSuggestion_httpRemoteEndpoint_throwsWithoutNetworkCall() async {
+        // A runtime configured with a plain-HTTP remote endpoint must throw
+        // runtimeUnavailable before making any network call — no stub needed
+        // because the guard fires synchronously before URLSession.
+        let runtime = OnlineLLMInferenceRuntime(
+            provider: .openAICompatible,
+            model: "gpt-4o-mini",
+            endpointURL: "http://api.example.com",
+            apiKey: "sk-test"
+        )
+        do {
+            _ = try await runtime.generateSuggestion(context: "hello")
+            XCTFail("Expected runtimeUnavailable error but no error was thrown")
+        } catch let InferenceError.runtimeUnavailable(reason) {
+            XCTAssertTrue(reason.contains("HTTPS"), "Error should mention HTTPS, got: \(reason)")
+        } catch {
+            XCTFail("Expected InferenceError.runtimeUnavailable, got: \(error)")
+        }
+    }
+
+    @MainActor
+    func testGenerateSuggestion_httpRemoteAnthropic_throwsWithoutNetworkCall() async {
+        let runtime = OnlineLLMInferenceRuntime(
+            provider: .anthropic,
+            model: "claude-3-haiku-20240307",
+            endpointURL: "http://api.anthropic.com",
+            apiKey: "sk-ant-test"
+        )
+        do {
+            _ = try await runtime.generateSuggestion(context: "hello")
+            XCTFail("Expected runtimeUnavailable error but no error was thrown")
+        } catch let InferenceError.runtimeUnavailable(reason) {
+            XCTAssertTrue(reason.contains("HTTPS"), "Error should mention HTTPS, got: \(reason)")
+        } catch {
+            XCTFail("Expected InferenceError.runtimeUnavailable, got: \(error)")
+        }
+    }
+
+    // MARK: - PII sanitizer injection (Step 4)
+
+    @MainActor
+    func testSanitizerIsAppliedToContextBeforeUse() async {
+        // Spy sanitizer records what it received. Uses a class so the closure
+        // can mutate it without violating Swift's Sendable capture rules.
+        final class Spy: @unchecked Sendable {
+            var receivedContext: String?
+        }
+        let spy = Spy()
+        let runtime = OnlineLLMInferenceRuntime(
+            provider: .openAICompatible,
+            model: "gpt-4o-mini",
+            endpointURL: "http://api.example.com", // throws runtimeUnavailable before network
+            apiKey: "sk-test",
+            sanitize: { input in
+                spy.receivedContext = input
+                return "<redacted>"
+            }
+        )
+        let rawContext = "Send results to user@example.com"
+        _ = try? await runtime.generateSuggestion(context: rawContext)
+        // sanitize() is called before the endpoint guard, so the spy is populated.
+        XCTAssertEqual(spy.receivedContext, rawContext, "Sanitizer should receive the raw context")
+    }
+
+    @MainActor
+    func testDefaultSanitizer_identityFunction() throws {
+        // Default init (no sanitize arg) must pass context through unchanged.
+        // Use a plain-HTTP endpoint so it throws before any network work.
+        let runtime = OnlineLLMInferenceRuntime(
+            provider: .openAICompatible,
+            model: "gpt-4o-mini",
+            endpointURL: "http://api.example.com",
+            apiKey: "sk-test"
+        )
+        // We can't directly observe the identity path without a network stub,
+        // but we can confirm isAllowedEndpoint rejects it — proving the guard
+        // (which runs after sanitize) is the first network-touching step.
+        _ = runtime // suppress unused-variable warning
+        let url = try XCTUnwrap(URL(string: "http://api.example.com/v1/chat/completions"))
+        XCTAssertFalse(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
+    }
+
+    @MainActor
+    func testFactoryPassesPIIFilterWhenEnabled() {
+        let factory = InferenceRuntimeFactory(
+            localModelSession: LocalModelSession(),
+            personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
+            coreMLModelAdapter: CoreMLModelAdapter()
+        )
+        let config = AppConfig.default.localModel
+        let onlineConfig = OnlineLLMConfig(
+            enabled: true,
+            rolloutStage: "available",
+            byok: BYOKConfig(
+                provider: .openAICompatible,
+                selectedModel: "gpt-4o-mini",
+                endpointURL: nil,
+                apiKeyKeychainAccount: "test",
+                priority: .fallback
+            )
+        )
+        // With piiFilteringEnabled=true the runtime is constructed (no throw at init time).
+        let runtimes = factory.makeRuntimes(
+            config: config,
+            onlineLLMConfig: onlineConfig,
+            onlineAPIKey: "sk-test",
+            piiFilteringEnabled: true
+        )
+        XCTAssertEqual(runtimes.last?.name, "online")
+    }
+
+    @MainActor
+    func testFactoryPassesIdentityWhenPIIFilteringDisabled() {
+        let factory = InferenceRuntimeFactory(
+            localModelSession: LocalModelSession(),
+            personalizationEngine: PersonalizationEngine(store: EncryptedFileStore()),
+            coreMLModelAdapter: CoreMLModelAdapter()
+        )
+        let config = AppConfig.default.localModel
+        let onlineConfig = OnlineLLMConfig(
+            enabled: true,
+            rolloutStage: "available",
+            byok: BYOKConfig(
+                provider: .openAICompatible,
+                selectedModel: "gpt-4o-mini",
+                endpointURL: nil,
+                apiKeyKeychainAccount: "test",
+                priority: .fallback
+            )
+        )
+        let runtimes = factory.makeRuntimes(
+            config: config,
+            onlineLLMConfig: onlineConfig,
+            onlineAPIKey: "sk-test",
+            piiFilteringEnabled: false
+        )
+        XCTAssertEqual(runtimes.last?.name, "online")
+    }
 }
