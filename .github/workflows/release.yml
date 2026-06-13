@@ -302,11 +302,12 @@ jobs:
             exit 1
           fi
 
-          # Stage the archives Sparkle should advertise. Use the notarized ZIP
-          # (Sparkle's preferred delta/update format) and the DMG.
+          # Stage ONLY the notarized ZIP — Sparkle's update format. Do NOT add the
+          # DMG: generate_appcast rejects two archives of the same bundle version
+          # ("Duplicate updates are not supported"). The DMG stays a manual
+          # drag-install asset on the GitHub Release, not a Sparkle update.
           mkdir -p appcast-stage
           cp "$GITHUB_WORKSPACE/AutoSuggest.zip" appcast-stage/
-          cp "$GITHUB_WORKSPACE/AutoSuggest.dmg" appcast-stage/ || true
 
           # Feed the private key on stdin so it never lands on disk.
           # --download-url-prefix makes each <enclosure url> point at the GitHub
