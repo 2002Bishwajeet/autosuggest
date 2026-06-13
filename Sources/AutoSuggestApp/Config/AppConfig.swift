@@ -1,7 +1,7 @@
 import Foundation
 
 struct AppConfig: Codable {
-    static let currentConfigVersion = 3
+    static let currentConfigVersion = 4
 
     var configVersion: Int
     var enabled: Bool
@@ -67,7 +67,8 @@ struct AppConfig: Codable {
                 encryptedStorageEnabled: true,
                 piiFilteringEnabled: true,
                 trainingAllowlistBundleIDs: [],
-                trainingDataCollectionEnabled: false
+                trainingDataCollectionEnabled: false,
+                personalizationEnabled: true
             )
         telemetry = try container.decodeIfPresent(TelemetryConfig.self, forKey: .telemetry)
             ?? TelemetryConfig(enabled: false, localStoreOnly: true)
@@ -377,24 +378,28 @@ struct PrivacyConfig: Codable {
     var piiFilteringEnabled: Bool
     var trainingAllowlistBundleIDs: [String]
     var trainingDataCollectionEnabled: Bool
+    var personalizationEnabled: Bool
 
     private enum CodingKeys: String, CodingKey {
         case encryptedStorageEnabled
         case piiFilteringEnabled
         case trainingAllowlistBundleIDs
         case trainingDataCollectionEnabled
+        case personalizationEnabled
     }
 
     init(
         encryptedStorageEnabled: Bool,
         piiFilteringEnabled: Bool,
         trainingAllowlistBundleIDs: [String],
-        trainingDataCollectionEnabled: Bool = false
+        trainingDataCollectionEnabled: Bool = false,
+        personalizationEnabled: Bool = true
     ) {
         self.encryptedStorageEnabled = encryptedStorageEnabled
         self.piiFilteringEnabled = piiFilteringEnabled
         self.trainingAllowlistBundleIDs = trainingAllowlistBundleIDs
         self.trainingDataCollectionEnabled = trainingDataCollectionEnabled
+        self.personalizationEnabled = personalizationEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -406,6 +411,10 @@ struct PrivacyConfig: Codable {
             Bool.self,
             forKey: .trainingDataCollectionEnabled
         ) ?? false
+        personalizationEnabled = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .personalizationEnabled
+        ) ?? true
     }
 }
 
@@ -487,7 +496,8 @@ extension AppConfig {
             encryptedStorageEnabled: true,
             piiFilteringEnabled: true,
             trainingAllowlistBundleIDs: [],
-            trainingDataCollectionEnabled: false
+            trainingDataCollectionEnabled: false,
+            personalizationEnabled: true
         ),
         telemetry: TelemetryConfig(
             enabled: false,

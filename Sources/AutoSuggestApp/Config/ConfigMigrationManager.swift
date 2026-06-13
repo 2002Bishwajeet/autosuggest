@@ -24,8 +24,19 @@ struct ConfigMigrationManager {
         if version < 3 {
             migrateV2toV3(&config)
         }
+        if version < 4 {
+            migrateV3toV4(&config)
+        }
 
         config.configVersion = AppConfig.currentConfigVersion
+    }
+
+    private func migrateV3toV4(_ config: inout AppConfig) {
+        // V4 introduces personalizationEnabled. Default to true (enabled) for
+        // all existing configs; the flag is already decoded with ?? true so this
+        // migration is purely a belt-and-suspenders assignment.
+        config.privacy.personalizationEnabled = true
+        logger.info("Migrated config v3->v4: personalizationEnabled set to true.")
     }
 
     private func migrateV2toV3(_ config: inout AppConfig) {
