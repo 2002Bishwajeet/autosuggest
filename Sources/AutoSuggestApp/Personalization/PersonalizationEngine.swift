@@ -10,12 +10,28 @@ actor PersonalizationEngine {
     private let piiFilter = PIIFilter()
     private let fileName = "personalization.json.enc"
     private var cache: PersonalizationRecord?
+    private var enabled = true
 
     init(store: EncryptedFileStore) {
         self.store = store
     }
 
+    func setEnabled(_ value: Bool) {
+        enabled = value
+    }
+
+    func stats() async -> (uniqueCount: Int, totalAcceptances: Int) {
+        let state = await loadState()
+        return (state.acceptedCompletions.count, state.acceptedCompletions.values.reduce(0, +))
+    }
+
+    func clearAll() async {
+        cache = PersonalizationRecord(acceptedCompletions: [:])
+        await store.save(PersonalizationRecord(acceptedCompletions: [:]), to: fileName)
+    }
+
     func recordAcceptedSuggestion(_ completion: String) async {
+        guard enabled else { return }
         var state = await loadState()
         let sanitized = piiFilter.sanitize(completion)
         let key = normalizeCompletion(sanitized)
@@ -26,6 +42,7 @@ actor PersonalizationEngine {
     }
 
     func bestMatch(for context: String) async -> String? {
+        guard enabled else { return nil }
         let state = await loadState()
         let lowerContext = context.lowercased()
         let candidates = state.acceptedCompletions

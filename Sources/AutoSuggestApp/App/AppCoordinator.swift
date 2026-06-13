@@ -119,6 +119,7 @@ final class AppCoordinator {
         rebuildRuntimePipelines(using: currentConfig ?? config)
         await refreshModelState()
         setPipelineEnabledFromCurrentState()
+        await personalizationEngine.setEnabled(config.privacy.personalizationEnabled)
         startMetricsRefreshLoop()
         logger.info("Startup complete.")
     }
@@ -227,6 +228,15 @@ final class AppCoordinator {
         }
         uiModel.onClearTrainingData = { [weak self] in
             self?.clearTrainingData()
+        }
+        uiModel.onUpdatePersonalization = { [weak self] enabled in
+            self?.updatePersonalization(enabled)
+        }
+        uiModel.onClearPersonalization = { [weak self] in
+            self?.clearPersonalizationData()
+        }
+        uiModel.onRefreshPersonalizationStats = { [weak self] in
+            self?.refreshPersonalizationStats()
         }
         uiModel.onQuitApp = {
             NSApp.terminate(nil)
@@ -984,6 +994,34 @@ final class AppCoordinator {
                 title: "Training data cleared",
                 message: "All locally stored training pairs have been removed."
             )
+        }
+    }
+
+    private func updatePersonalization(_ enabled: Bool) {
+        mutateConfig { config in
+            config.privacy.personalizationEnabled = enabled
+        } persist: { [weak self] configStore in
+            await configStore.updatePrivacy(self?.currentConfig?.privacy ?? AppConfig.default.privacy)
+        }
+        Task { await personalizationEngine.setEnabled(enabled) }
+    }
+
+    private func clearPersonalizationData() {
+        Task { @MainActor in
+            await personalizationEngine.clearAll()
+            refreshPersonalizationStats()
+            uiModel?.showBanner(
+                kind: .success,
+                title: "Personalization data cleared",
+                message: "All locally stored acceptance history has been removed."
+            )
+        }
+    }
+
+    private func refreshPersonalizationStats() {
+        Task { @MainActor in
+            let stats = await personalizationEngine.stats()
+            uiModel?.personalizationStats = (unique: stats.uniqueCount, total: stats.totalAcceptances)
         }
     }
 

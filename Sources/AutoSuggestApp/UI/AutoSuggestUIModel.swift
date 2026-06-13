@@ -351,6 +351,7 @@ final class AutoSuggestUIModel: ObservableObject {
     @Published var metrics: MetricsSnapshot = .zero
     @Published var banner: AppBanner?
     @Published var onboardingModelChoice: OnboardingModelChoice = .ollama
+    @Published var personalizationStats: (unique: Int, total: Int) = (0, 0)
 
     var onSetEnabled: ((Bool) -> Void)?
     var onOpenSettings: ((SettingsRoute) -> Void)?
@@ -390,6 +391,9 @@ final class AutoSuggestUIModel: ObservableObject {
     var onUpdateTrainingDataCollection: ((Bool) -> Void)?
     var onExportTrainingData: (() -> Void)?
     var onClearTrainingData: (() -> Void)?
+    var onUpdatePersonalization: ((Bool) -> Void)?
+    var onClearPersonalization: (() -> Void)?
+    var onRefreshPersonalizationStats: (() -> Void)?
     var onQuitApp: (() -> Void)?
 
     init(config: AppConfig) {
@@ -455,6 +459,10 @@ final class AutoSuggestUIModel: ObservableObject {
 
     func updatePIIFiltering(_ enabled: Bool) {
         onUpdatePIIFiltering?(enabled)
+    }
+
+    func updatePersonalization(_ enabled: Bool) {
+        onUpdatePersonalization?(enabled)
     }
 
     func updateTelemetryEnabled(_ enabled: Bool) {
