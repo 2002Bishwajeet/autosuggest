@@ -347,6 +347,7 @@ final class AutoSuggestUIModel: ObservableObject {
     @Published var ollamaInstalled: [OllamaModelService.InstalledModel] = []
     /// model name -> in-flight pull progress
     @Published var ollamaPulls: [String: OllamaModelService.PullProgress] = [:]
+    @Published var llamaCppReachable: Bool = false
     @Published var diagnostics: DiagnosticsSnapshot = .empty
     @Published var metrics: MetricsSnapshot = .zero
     @Published var banner: AppBanner?
@@ -376,6 +377,8 @@ final class AutoSuggestUIModel: ObservableObject {
     var onPullOllamaModel: ((String) -> Void)?
     var onDeleteOllamaModel: ((String) -> Void)?
     var onRefreshOllama: (() -> Void)?
+    var onRefreshLlamaCpp: (() -> Void)?
+    var onSetLlamaCppBaseURL: ((String) -> Void)?
     var onSaveModelSource: ((ModelSourceDraft) -> Void)?
     var onToggleRuleEnabled: ((ExclusionRule, Bool) -> Void)?
     var onSaveExclusionRule: ((ExclusionRuleDraft, ExclusionRule?) -> Void)?
@@ -504,6 +507,14 @@ final class AutoSuggestUIModel: ObservableObject {
 
     func refreshOllama() {
         onRefreshOllama?()
+    }
+
+    func refreshLlamaCpp() {
+        onRefreshLlamaCpp?()
+    }
+
+    func setLlamaCppBaseURL(_ url: String) {
+        onSetLlamaCppBaseURL?(url)
     }
 
     func saveModelSource(_ draft: ModelSourceDraft) {

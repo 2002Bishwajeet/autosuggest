@@ -184,6 +184,8 @@ final class AppCoordinator {
         uiModel.onPullOllamaModel = { [weak self] name in self?.pullOllamaModel(name) }
         uiModel.onDeleteOllamaModel = { [weak self] name in self?.deleteOllamaModel(name) }
         uiModel.onRefreshOllama = { [weak self] in self?.refreshOllama() }
+        uiModel.onRefreshLlamaCpp = { [weak self] in self?.refreshLlamaCpp() }
+        uiModel.onSetLlamaCppBaseURL = { [weak self] url in self?.setLlamaCppBaseURL(url) }
         uiModel.onSaveModelSource = { [weak self] draft in
             self?.saveModelSource(draft)
         }
@@ -612,6 +614,30 @@ final class AppCoordinator {
             uiModel?.ollamaRunning = running
             uiModel?.ollamaInstalled = installed
         }
+    }
+
+    private func refreshLlamaCpp() {
+        guard let baseURL = currentConfig?.localModel.llamaCpp.baseURL else { return }
+        let runtime = LlamaCppInferenceRuntime(
+            baseURL: baseURL,
+            personalizationEngine: personalizationEngine
+        )
+        Task { @MainActor in
+            let reachable = await runtime.isAvailable()
+            uiModel?.llamaCppReachable = reachable
+        }
+    }
+
+    private func setLlamaCppBaseURL(_ url: String) {
+        guard var currentConfig else { return }
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        currentConfig.localModel.llamaCpp.baseURL = trimmed
+        self.currentConfig = currentConfig
+        Task { await configStore.updateLocalModel(currentConfig.localModel) }
+        rebuildRuntimePipelines(using: currentConfig)
+        setPipelineEnabledFromCurrentState()
+        refreshLlamaCpp()
     }
 
     private func pullOllamaModel(_ name: String) {
