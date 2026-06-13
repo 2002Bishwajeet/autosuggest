@@ -11,6 +11,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Install SwiftFormat
         run: brew install swiftformat
+      - name: SwiftFormat version
+        run: swiftformat --version
       - name: Lint
         # Paths before the flag: SwiftFormat 0.61+ rejects `--lint <paths>`.
         run: swiftformat Sources Tests --lint

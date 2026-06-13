@@ -113,4 +113,34 @@ final class PolicyEngineTests: XCTestCase {
         )
         XCTAssertFalse(engine.shouldSuggest(in: context))
     }
+
+    func testExclusionRegexMatchingUnchangedAfterCaching() {
+        // Verify that the precompiled-pattern cache does not change match semantics.
+        let pattern = "secret\\s+key"
+        let rules = [
+            ExclusionRule(
+                enabled: true,
+                bundleID: nil,
+                windowTitleContains: nil,
+                contentPattern: pattern
+            ),
+        ]
+        let engine = PolicyEngine(defaults: .default, userRules: rules)
+        let matchCtx = PolicyContext(
+            bundleID: "com.apple.Notes",
+            axRole: "AXTextArea",
+            isSecureField: false,
+            windowTitle: nil,
+            textPrefix: "my SECRET   key is here"
+        )
+        let noMatchCtx = PolicyContext(
+            bundleID: "com.apple.Notes",
+            axRole: "AXTextArea",
+            isSecureField: false,
+            windowTitle: nil,
+            textPrefix: "nothing sensitive"
+        )
+        XCTAssertFalse(engine.shouldSuggest(in: matchCtx), "Should exclude: text matches cached regex")
+        XCTAssertTrue(engine.shouldSuggest(in: noMatchCtx), "Should allow: text does not match pattern")
+    }
 }

@@ -34,6 +34,7 @@ struct PolicyContext {
 struct PolicyEngine {
     private let defaults: PolicyRules
     private let userRules: [ExclusionRule]
+    private let compiledPatterns: [String: NSRegularExpression]
     private let codeLikePatterns = [
         "func ",
         "class ",
@@ -64,6 +65,14 @@ struct PolicyEngine {
     init(defaults: PolicyRules, userRules: [ExclusionRule] = []) {
         self.defaults = defaults
         self.userRules = userRules
+        var compiled: [String: NSRegularExpression] = [:]
+        for rule in userRules {
+            if let pattern = rule.contentPattern, compiled[pattern] == nil,
+               let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) {
+                compiled[pattern] = regex
+            }
+        }
+        compiledPatterns = compiled
     }
 
     func shouldSuggest(in context: PolicyContext) -> Bool {
@@ -109,7 +118,7 @@ struct PolicyEngine {
     }
 
     private func matchesRegex(pattern: String, in text: String) -> Bool {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+        guard let regex = compiledPatterns[pattern] else {
             return text.localizedCaseInsensitiveContains(pattern)
         }
         let range = NSRange(text.startIndex..., in: text)
