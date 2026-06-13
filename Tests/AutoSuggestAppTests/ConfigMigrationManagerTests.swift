@@ -13,7 +13,9 @@ final class ConfigMigrationManagerTests: XCTestCase {
         let manager = ConfigMigrationManager()
         manager.migrate(&config)
 
-        XCTAssertEqual(config.localModel.runtimeOrder, ["ollama", "llama.cpp", "coreml"])
+        // v0->v1 reorders to Ollama-first; v2->v3 then prepends FoundationModels
+        // because the result is a known prior default.
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "ollama", "llama.cpp", "coreml"])
         XCTAssertEqual(config.localModel.preferredRuntime, "ollama")
     }
 
@@ -26,21 +28,27 @@ final class ConfigMigrationManagerTests: XCTestCase {
         let manager = ConfigMigrationManager()
         manager.migrate(&config)
 
-        XCTAssertEqual(config.localModel.runtimeOrder, ["llama.cpp", "ollama", "coreml"])
+        // v0->v1 leaves this custom order alone; v2->v3 only appends
+        // FoundationModels (never reorders a customized order).
+        XCTAssertEqual(config.localModel.runtimeOrder, ["llama.cpp", "ollama", "coreml", "foundationmodels"])
         XCTAssertEqual(config.localModel.preferredRuntime, "llama.cpp")
     }
 
-    func testMigrateV1IsNoop() {
+    func testMigrateV1PreservesRuntimeAndAppliesV3() {
         var config = AppConfig.default
         config.configVersion = 1
-        let originalOrder = config.localModel.runtimeOrder
-        let originalRuntime = config.localModel.preferredRuntime
+        // A v1 config carried the v1 default order (FoundationModels did not exist).
+        config.localModel.runtimeOrder = ["ollama", "llama.cpp", "coreml"]
+        config.localModel.preferredRuntime = "ollama"
 
         let manager = ConfigMigrationManager()
         manager.migrate(&config)
 
-        XCTAssertEqual(config.localModel.runtimeOrder, originalOrder)
-        XCTAssertEqual(config.localModel.preferredRuntime, originalRuntime)
+        // v1->v2 is a no-op for runtime order; v2->v3 prepends FoundationModels
+        // to the recognized prior default.
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "ollama", "llama.cpp", "coreml"])
+        XCTAssertEqual(config.localModel.preferredRuntime, "ollama")
+        XCTAssertTrue(config.localModel.foundationModelsEnabled)
     }
 
     func testMigrateSetsCurrentVersion() {
@@ -53,6 +61,145 @@ final class ConfigMigrationManagerTests: XCTestCase {
         XCTAssertEqual(config.configVersion, AppConfig.currentConfigVersion)
     }
 
+    // MARK: - V2 -> V3 FoundationModels migration (A6 / A8)
+
+    func testMigrateV2toV3PrependsToOldDefaultOrder() {
+        var config = AppConfig.default
+        config.configVersion = 2
+        config.localModel.runtimeOrder = ["ollama", "llama.cpp", "coreml"]
+        config.localModel.foundationModelsEnabled = false
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "ollama", "llama.cpp", "coreml"])
+        XCTAssertTrue(config.localModel.foundationModelsEnabled, "Migration must enable FoundationModels")
+    }
+
+    func testMigrateV2toV3PrependsToLegacyCoreMLFirstDefault() {
+        var config = AppConfig.default
+        config.configVersion = 2
+        // The other recognized prior default (v0 order). It is a "known default"
+        // so v2->v3 still prepends rather than appends.
+        config.localModel.runtimeOrder = ["coreml", "ollama", "llama.cpp"]
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "coreml", "ollama", "llama.cpp"])
+    }
+
+    func testMigrateV2toV3LeavesCustomizedOrderUntouchedExceptAppend() {
+        var config = AppConfig.default
+        config.configVersion = 2
+        // A user-customized order (not a recognized default).
+        config.localModel.runtimeOrder = ["coreml", "llama.cpp", "ollama"]
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+
+        // Existing order preserved verbatim; FoundationModels appended (never
+        // reordered/clobbered).
+        XCTAssertEqual(config.localModel.runtimeOrder, ["coreml", "llama.cpp", "ollama", "foundationmodels"])
+        XCTAssertTrue(config.localModel.foundationModelsEnabled)
+    }
+
+    func testMigrateV2toV3DoesNotDuplicateWhenAlreadyPresent() {
+        var config = AppConfig.default
+        config.configVersion = 2
+        config.localModel.runtimeOrder = ["foundationmodels", "ollama", "coreml"]
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "ollama", "coreml"])
+        XCTAssertEqual(
+            config.localModel.runtimeOrder.count(where: { $0 == "foundationmodels" }),
+            1,
+            "FoundationModels must appear exactly once"
+        )
+    }
+
+    func testMigrateV2toV3IsIdempotent() {
+        var config = AppConfig.default
+        config.configVersion = 2
+        config.localModel.runtimeOrder = ["ollama", "llama.cpp", "coreml"]
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+        let afterFirst = config.localModel.runtimeOrder
+
+        // Force the version back and migrate again — must add nothing.
+        config.configVersion = 2
+        manager.migrate(&config)
+
+        XCTAssertEqual(config.localModel.runtimeOrder, afterFirst)
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "ollama", "llama.cpp", "coreml"])
+    }
+
+    // MARK: - V0 / V1 config preservation (must never break legacy configs)
+
+    func testLegacyV0ConfigDecodesAndMigratesWithoutLoss() throws {
+        // A pre-FoundationModels config JSON (no configVersion → defaults to 0,
+        // no foundationModelsEnabled key, no runtimeOrder key).
+        let json = """
+        {
+          "enabled": true,
+          "distribution": { "notarizationEnabled": false, "releaseChannel": "unsigned-pre-mvp" },
+          "localModel": {
+            "autoDownloadOnFirstRun": false,
+            "preferredRuntime": "coreml",
+            "fallbackRuntimeEnabled": true,
+            "isModelPresent": false,
+            "manifest": {
+              "modelID": "legacy", "version": "0.0.1", "fileName": "legacy.zip",
+              "downloadURL": "https://example.com/legacy.zip", "sha256": "abc"
+            }
+          },
+          "onlineLLM": { "enabled": false, "rolloutStage": "post-mvp" }
+        }
+        """
+        var config = try JSONDecoder().decode(AppConfig.self, from: Data(json.utf8))
+
+        // Decode defaults preserved: missing key defaults to true / v1 order.
+        XCTAssertEqual(config.configVersion, 0)
+        XCTAssertTrue(config.localModel.foundationModelsEnabled)
+        XCTAssertEqual(config.localModel.runtimeOrder, ["ollama", "llama.cpp", "coreml"])
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+
+        // Legacy fields untouched; FoundationModels prepended to the recognized default.
+        XCTAssertEqual(config.localModel.fallbackManifest.modelID, "legacy")
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "ollama", "llama.cpp", "coreml"])
+        XCTAssertEqual(config.configVersion, AppConfig.currentConfigVersion)
+    }
+
+    func testFoundationModelsEnabledDefaultsTrueOnLegacyDecode() throws {
+        // A v2 config JSON without the new key still decodes with the flag true.
+        let json = """
+        {
+          "configVersion": 2,
+          "enabled": true,
+          "distribution": { "notarizationEnabled": false, "releaseChannel": "x" },
+          "localModel": {
+            "autoDownloadOnFirstRun": false,
+            "preferredRuntime": "ollama",
+            "runtimeOrder": ["ollama", "llama.cpp", "coreml"],
+            "fallbackRuntimeEnabled": true,
+            "isModelPresent": false,
+            "fallbackManifest": {
+              "modelID": "m", "version": "1.0", "fileName": "m.mlpackage",
+              "downloadURL": "https://example.com/m.mlpackage", "sha256": "abc"
+            }
+          },
+          "onlineLLM": { "enabled": false, "rolloutStage": "available" }
+        }
+        """
+        let config = try JSONDecoder().decode(AppConfig.self, from: Data(json.utf8))
+        XCTAssertTrue(config.localModel.foundationModelsEnabled)
+    }
+
     // MARK: - ConfigValidator
 
     func testValidateRemovesUnknownRuntimes() {
@@ -63,6 +210,17 @@ final class ConfigMigrationManagerTests: XCTestCase {
         validator.validate(&config)
 
         XCTAssertEqual(config.localModel.runtimeOrder, ["ollama", "coreml"])
+    }
+
+    func testValidateKeepsFoundationModelsInOrder() {
+        // Regression guard: the validator must NOT strip "foundationmodels".
+        var config = AppConfig.default
+        config.localModel.runtimeOrder = ["foundationmodels", "coreml", "ollama", "llama.cpp"]
+
+        let validator = ConfigValidator()
+        validator.validate(&config)
+
+        XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "coreml", "ollama", "llama.cpp"])
     }
 
     func testValidateResetsEmptyRuntimeOrder() {

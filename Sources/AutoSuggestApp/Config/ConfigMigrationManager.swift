@@ -3,6 +3,15 @@ import Foundation
 struct ConfigMigrationManager {
     private let logger = Logger(scope: "ConfigMigrationManager")
 
+    /// Runtime orders shipped as defaults before FoundationModels existed. A
+    /// config whose order matches one of these is "untouched default" and is
+    /// safe to upgrade by prepending FoundationModels; anything else is treated
+    /// as user-customized.
+    private static let knownPriorDefaultOrders: [[String]] = [
+        ["ollama", "llama.cpp", "coreml"], // v1/v2 default
+        ["coreml", "ollama", "llama.cpp"], // v0 default
+    ]
+
     func migrate(_ config: inout AppConfig) {
         let version = config.configVersion
 
@@ -12,8 +21,38 @@ struct ConfigMigrationManager {
         if version < 2 {
             migrateV1toV2(&config)
         }
+        if version < 3 {
+            migrateV2toV3(&config)
+        }
 
         config.configVersion = AppConfig.currentConfigVersion
+    }
+
+    private func migrateV2toV3(_ config: inout AppConfig) {
+        // V3 introduces the FoundationModels (Apple Intelligence) runtime.
+        config.localModel.foundationModelsEnabled = true
+
+        var order = config.localModel.runtimeOrder
+
+        // Already present (e.g. running migration twice): nothing to do beyond
+        // the flag above. This keeps the step idempotent.
+        guard !order.contains("foundationmodels") else {
+            logger.info("Migrated config v2->v3: FoundationModels already in order; flag set.")
+            return
+        }
+
+        if Self.knownPriorDefaultOrders.contains(order) {
+            // Untouched default order → make FoundationModels primary.
+            order.insert("foundationmodels", at: 0)
+            logger.info("Migrated config v2->v3: prepended FoundationModels to default runtime order.")
+        } else {
+            // User-customized order → respect their choice; only ensure it is
+            // reachable by appending it last. Never reorder/clobber.
+            order.append("foundationmodels")
+            logger.info("Migrated config v2->v3: appended FoundationModels to customized runtime order.")
+        }
+
+        config.localModel.runtimeOrder = order
     }
 
     private func migrateV1toV2(_ config: inout AppConfig) {
@@ -37,7 +76,7 @@ struct ConfigMigrationManager {
 }
 
 struct ConfigValidator {
-    private static let knownRuntimes: Set<String> = ["coreml", "ollama", "llama.cpp", "online"]
+    private static let knownRuntimes: Set<String> = ["foundationmodels", "coreml", "ollama", "llama.cpp", "online"]
     private let logger = Logger(scope: "ConfigValidator")
 
     func validate(_ config: inout AppConfig) {
