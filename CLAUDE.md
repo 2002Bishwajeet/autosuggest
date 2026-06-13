@@ -14,7 +14,7 @@ executable `AutoSuggestRunner`) plus an xcodegen-generated Xcode app shell in
 
 ```sh
 swift build                            # exit 0 on success (~1 min cold, seconds warm)
-swift test                             # full suite (274 tests, ~70s on Apple Silicon)
+swift test                             # full suite (286 tests, ~70s on Apple Silicon)
 swiftformat Sources Tests --lint       # formatter gate — must report 0 files require formatting
 cd macos && xcodegen generate          # regenerate the Xcode app project from project.yml
 ```

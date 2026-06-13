@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.0 — 2026-06-14
+
+Automatic updates arrive — plus privacy hardening and a big internal cleanup.
+
+### Added
+- **Automatic updates** (Sparkle): AutoSuggest now checks for new versions daily
+  and offers a one-click **Check for Updates…** in the menu-bar popover — no more
+  manual re-downloads. Every update is EdDSA-signed and verified before it installs.
+
+### Changed
+- **AppCoordinator** split from a single 1248-line file into focused domain files
+  (Models / Settings / Exclusions / System / Presentation). Behavior-preserving;
+  just far easier to maintain.
+
+### Security
+- **BYOK online LLM** (still disabled) hardened ahead of any future enablement:
+  endpoints must be HTTPS (loopback allowed for local proxies), and typed context
+  is PII-filtered before any cloud request.
+
 ## v0.4.0 — 2026-06-13
 
 On-device Apple Intelligence, native-feeling inline suggestions, and more model control.
