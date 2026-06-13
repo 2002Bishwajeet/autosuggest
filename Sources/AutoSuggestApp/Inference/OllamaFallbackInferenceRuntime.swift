@@ -51,11 +51,12 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
         let response: URLResponse
         do {
             (data, response) = try await URLSession.shared.data(for: request)
-        } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
-            throw InferenceError.runtimeUnavailable("Ollama is not running. Start it with: ollama serve")
+        } catch let urlError as URLError where Self.isNotReachable(urlError) {
+            throw InferenceError.ollamaNotReachable
         }
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw Self.mapErrorResponse(statusCode: status, body: data, model: model)
         }
 
         let decoded = try JSONDecoder().decode(OllamaGenerateResponse.self, from: data)
@@ -65,6 +66,44 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
         }
         return Suggestion(completion: completion, confidence: 0.64)
     }
+
+    // MARK: - Error Mapping (pure, unit-tested)
+
+    /// URLError codes that mean "the Ollama daemon could not be reached" — i.e.
+    /// it isn't running, or the base URL points nowhere. A refused connection on
+    /// localhost is usually `.cannotConnectToHost`, but a hung/stale daemon or a
+    /// wrong host surfaces as one of the others, so they all collapse to the same
+    /// friendly "Ollama isn't running" message rather than a raw URLError.
+    static func isNotReachable(_ error: URLError) -> Bool {
+        switch error.code {
+        case .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed,
+             .timedOut, .notConnectedToInternet, .networkConnectionLost,
+             .resourceUnavailable:
+            true
+        default:
+            false
+        }
+    }
+
+    /// Maps a non-2xx Ollama `/api/generate` response to a precise error. Ollama
+    /// returns HTTP 404 with `{"error":"model \"x\" not found, try pulling it
+    /// first"}` when the model isn't installed; we surface that distinctly from a
+    /// generic server error so the user is told to pull the model rather than
+    /// being shown an opaque -1011-style failure.
+    static func mapErrorResponse(statusCode: Int, body: Data, model: String) -> InferenceError {
+        let message = (try? JSONDecoder().decode(OllamaErrorResponse.self, from: body))?.error
+        if let message, message.lowercased().contains("not found") || message.lowercased().contains("try pulling") {
+            return .ollamaModelNotInstalled(model: model)
+        }
+        if statusCode == 404 {
+            return .ollamaModelNotInstalled(model: model)
+        }
+        return .providerError(statusCode: statusCode, message: message ?? "Ollama returned an error")
+    }
+}
+
+private struct OllamaErrorResponse: Decodable {
+    let error: String
 }
 
 private struct OllamaGenerateRequest: Encodable {
