@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.4.0 — 2026-06-13
+
+On-device Apple Intelligence, native-feeling inline suggestions, and more model control.
+
+### Added
+- **FoundationModels runtime** (macOS 26 Apple Intelligence): fully on-device
+  completions with no model download and no local server, added ahead of the
+  runtime chain and gated by on-device availability — removes "model not set up"
+  friction on eligible Macs (falls back to Ollama/llama.cpp/Core ML otherwise)
+- **Personalization** controls in Settings: a toggle, a stat of what's stored,
+  and a Clear button for the local (encrypted, PII-filtered) acceptance history
+- Dedicated **Core ML** and **llama.cpp** model panels — parity with the Ollama
+  panel; the llama.cpp panel adds an endpoint field and a reachability "Test
+  endpoint" check
+
+### Changed
+- Inline ghost text now matches the field's **font and baseline** via the
+  Accessibility API and reads in Apple's dim-grey, suppresses itself when the
+  app's own inline prediction is active, and unlocks Accessibility text in
+  Chromium/Electron apps
+- HIG pass: colors routed through semantic tokens (correct in Light/Dark and
+  Increase Contrast), the Settings sidebar follows the system accent, friendlier
+  copy, and VoiceOver labels on icon-only controls
+- `PolicyEngine` caches compiled exclusion-rule regexes (no per-keystroke
+  recompile); `swift-transformers` pinned to `.upToNextMinor`
+
+### Fixed
+- Ollama / Core ML failures now surface as **distinct, actionable** errors
+  (daemon not running vs. model not pulled vs. Core ML load failure) instead of
+  a shared opaque `-1011`
+- Duplicate permission-row buttons, and toggle bindings that re-toggled the
+  current value instead of the new one
+
 ## v0.3.0 — 2026-06-12
 
 Real model management and an autocomplete experience that actually feels instant.
