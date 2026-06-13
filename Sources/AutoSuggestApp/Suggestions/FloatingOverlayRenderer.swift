@@ -4,17 +4,33 @@ import Foundation
 
 @MainActor
 final class FloatingOverlayRenderer: OverlayRenderer {
+    /// B3 — the dim-grey ghost color. Single tunable constant.
+    ///
+    /// Validated against Apple's native inline-prediction grey: macOS renders
+    /// inline predictions in a placeholder-weight grey, which `placeholderTextColor`
+    /// matches most closely (it is the dynamic system grey Apple uses for
+    /// in-field placeholder/prediction text). `tertiaryLabelColor` reads
+    /// noticeably lighter/more translucent at small point sizes, so it drifts
+    /// from the native ghost. Kept here as a one-line swap if Apple retunes it.
+    static let ghostTextColor: NSColor = .placeholderTextColor
+
     private let logger = Logger(scope: "FloatingOverlayRenderer")
     private var panel: NSPanel?
     private var textField: NSTextField?
     private var hideGeneration = 0
 
-    func showSuggestion(_ text: String, caretRectInScreen: CGRect?) {
+    func showSuggestion(_ text: String, caretRectInScreen: CGRect?, font: NSFont?) {
         ensurePanel()
         guard let panel, let textField else { return }
 
         textField.stringValue = text
-        layoutPanel(panel: panel, textField: textField, text: text, caretRectInScreen: caretRectInScreen)
+        layoutPanel(
+            panel: panel,
+            textField: textField,
+            text: text,
+            caretRectInScreen: caretRectInScreen,
+            axFont: font
+        )
         hideGeneration += 1
         if !panel.isVisible {
             panel.alphaValue = 0
@@ -65,7 +81,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         container.wantsLayer = true
 
         let textField = NSTextField(labelWithString: "")
-        textField.textColor = NSColor.placeholderTextColor
+        textField.textColor = Self.ghostTextColor
         textField.font = NSFont.systemFont(ofSize: 13, weight: .regular)
         textField.alignment = .natural
         textField.lineBreakMode = .byTruncatingTail
@@ -83,40 +99,49 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         logger.info("Overlay panel created.")
     }
 
-    private func layoutPanel(panel: NSPanel, textField: NSTextField, text: String, caretRectInScreen: CGRect?) {
-        // Match the ghost-text size to the caret/line height so it sits on the
-        // same baseline as what the user is typing.
-        if let caret = caretRectInScreen, caret.height > 8, caret.height < 64 {
-            textField.font = NSFont.systemFont(ofSize: (caret.height * 0.72).rounded(), weight: .regular)
+    private func layoutPanel(
+        panel: NSPanel,
+        textField: NSTextField,
+        text: String,
+        caretRectInScreen: CGRect?,
+        axFont: NSFont?
+    ) {
+        // B1: render in the real field font when AX exposed one; otherwise fall
+        // back to the caret-height heuristic (both handled by resolvedFont).
+        let font = GhostTextLayout.resolvedFont(axFont: axFont, caretRect: caretRectInScreen)
+        textField.font = font
+
+        let measureAttributes: [NSAttributedString.Key: Any] = [.font: font]
+        var measured = (text as NSString).size(withAttributes: measureAttributes)
+        measured.width = min(measured.width, 556) // cap (≈560 frame after +4)
+
+        // B2: baseline-aligned target frame from the pure layout function.
+        let targetFrame: NSRect
+        if let caret = caretRectInScreen, !caret.isEmpty {
+            targetFrame = GhostTextLayout.ghostFrame(caretRect: caret, font: font, measuredSize: measured)
         } else {
-            textField.font = NSFont.systemFont(ofSize: 13, weight: .regular)
+            let anchor = fallbackAnchor()
+            targetFrame = NSRect(
+                x: anchor.x,
+                y: anchor.y,
+                width: max(measured.width + 4, 1),
+                height: max(measured.height, 14)
+            )
         }
 
-        let measureAttributes: [NSAttributedString.Key: Any] = [.font: textField.font as Any]
-        let measured = (text as NSString).size(withAttributes: measureAttributes)
-        let width = min(measured.width + 4, 560)
-        let height = max(measured.height, 14)
-
-        // Hug the caret: start just after it and align vertically to its line.
-        let anchor: CGPoint = if let caret = caretRectInScreen, !caret.isEmpty {
-            CGPoint(x: caret.maxX + 1, y: caret.minY)
-        } else {
-            fallbackAnchor()
-        }
-
-        var targetFrame = NSRect(x: anchor.x, y: anchor.y, width: width, height: height)
-        let screenFrame = targetScreenFrame(for: targetFrame.origin)
-        targetFrame.origin.x = min(
-            max(targetFrame.origin.x, screenFrame.minX + 4),
-            screenFrame.maxX - targetFrame.width - 4
+        var clampedFrame = targetFrame
+        let screenFrame = targetScreenFrame(for: clampedFrame.origin)
+        clampedFrame.origin.x = min(
+            max(clampedFrame.origin.x, screenFrame.minX + 4),
+            screenFrame.maxX - clampedFrame.width - 4
         )
-        targetFrame.origin.y = min(
-            max(targetFrame.origin.y, screenFrame.minY + 4),
-            screenFrame.maxY - targetFrame.height - 4
+        clampedFrame.origin.y = min(
+            max(clampedFrame.origin.y, screenFrame.minY + 4),
+            screenFrame.maxY - clampedFrame.height - 4
         )
 
-        panel.setFrame(targetFrame, display: true)
-        textField.frame = NSRect(x: 0, y: 0, width: width, height: height)
+        panel.setFrame(clampedFrame, display: true)
+        textField.frame = NSRect(x: 0, y: 0, width: clampedFrame.width, height: clampedFrame.height)
     }
 
     private func targetScreenFrame(for point: CGPoint) -> CGRect {
