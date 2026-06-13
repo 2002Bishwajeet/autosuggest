@@ -90,6 +90,12 @@ struct StatusPopoverView: View {
                     }
                     .accessibilityHint("Retries loading the inference model")
                 }
+                if uiModel.canCheckForUpdates {
+                    QuickActionButton(title: "Check for Updates…", systemImage: "arrow.down.circle") {
+                        uiModel.checkForUpdates()
+                    }
+                    .accessibilityHint("Checks for a new version of AutoSuggest")
+                }
                 Divider().padding(.horizontal, 8)
                 QuickActionButton(title: "Quit AutoSuggest", systemImage: "xmark.circle") {
                     uiModel.quitApp()

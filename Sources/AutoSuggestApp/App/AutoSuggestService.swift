@@ -5,6 +5,15 @@ import Foundation
 public final class AutoSuggestService {
     private let coordinator = AppCoordinator()
 
+    /// Host hook invoked when the user chooses "Check for Updates…" from the
+    /// status popover. The library has no updater of its own (auto-update is an
+    /// app-bundle concern); the host app target wires this to Sparkle. Set this
+    /// before calling `start()` so it is in place when the UI binds.
+    public var onCheckForUpdates: (() -> Void)? {
+        get { coordinator.onCheckForUpdates }
+        set { coordinator.onCheckForUpdates = newValue }
+    }
+
     public init() {}
 
     public func start() async {
