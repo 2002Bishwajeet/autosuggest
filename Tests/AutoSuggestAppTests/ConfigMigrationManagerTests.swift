@@ -137,6 +137,73 @@ final class ConfigMigrationManagerTests: XCTestCase {
         XCTAssertEqual(config.localModel.runtimeOrder, ["foundationmodels", "ollama", "llama.cpp", "coreml"])
     }
 
+    // MARK: - V3 -> V4 personalizationEnabled migration
+
+    func testMigrateV3toV4SetsPersonalizationEnabled() {
+        var config = AppConfig.default
+        config.configVersion = 3
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+
+        XCTAssertTrue(config.privacy.personalizationEnabled, "v3->v4 must set personalizationEnabled to true")
+        XCTAssertEqual(config.configVersion, AppConfig.currentConfigVersion)
+    }
+
+    func testMigrateV3toV4IsIdempotent() {
+        var config = AppConfig.default
+        config.configVersion = 3
+
+        let manager = ConfigMigrationManager()
+        manager.migrate(&config)
+
+        // Force back and migrate again — flag stays true, no crash.
+        config.configVersion = 3
+        manager.migrate(&config)
+
+        XCTAssertTrue(config.privacy.personalizationEnabled)
+    }
+
+    func testPersonalizationEnabledDefaultsTrueOnLegacyDecode() throws {
+        // A v3 JSON without personalizationEnabled decodes with the flag = true.
+        let json = """
+        {
+          "configVersion": 3,
+          "enabled": true,
+          "distribution": { "notarizationEnabled": false, "releaseChannel": "x" },
+          "localModel": {
+            "autoDownloadOnFirstRun": false,
+            "preferredRuntime": "ollama",
+            "runtimeOrder": ["foundationmodels", "ollama", "llama.cpp", "coreml"],
+            "fallbackRuntimeEnabled": true,
+            "isModelPresent": false,
+            "fallbackManifest": {
+              "modelID": "m", "version": "1.0", "fileName": "m.mlpackage",
+              "downloadURL": "https://example.com/m.mlpackage", "sha256": "abc"
+            }
+          },
+          "onlineLLM": { "enabled": false, "rolloutStage": "available" },
+          "privacy": {
+            "encryptedStorageEnabled": true,
+            "piiFilteringEnabled": true,
+            "trainingAllowlistBundleIDs": [],
+            "trainingDataCollectionEnabled": false
+          }
+        }
+        """
+        let config = try JSONDecoder().decode(AppConfig.self, from: Data(json.utf8))
+        XCTAssertTrue(config.privacy.personalizationEnabled, "Missing key should default to true")
+    }
+
+    func testPersonalizationEnabledRoundTrips() throws {
+        var config = AppConfig.default
+        config.privacy.personalizationEnabled = false
+
+        let data = try JSONEncoder().encode(config)
+        let decoded = try JSONDecoder().decode(AppConfig.self, from: data)
+        XCTAssertFalse(decoded.privacy.personalizationEnabled, "false value must survive encode/decode round-trip")
+    }
+
     // MARK: - V0 / V1 config preservation (must never break legacy configs)
 
     func testLegacyV0ConfigDecodesAndMigratesWithoutLoss() throws {

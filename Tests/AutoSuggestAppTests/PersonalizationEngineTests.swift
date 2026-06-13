@@ -36,4 +36,67 @@ final class PersonalizationEngineTests: XCTestCase {
         let result = await engine.bestMatch(for: "context")
         XCTAssertNotNil(result, "bestMatch should return a suggestion after recording")
     }
+
+    // MARK: - stats(), clearAll(), setEnabled()
+
+    func testStatsReflectsRecordedCompletions() async {
+        let engine = PersonalizationEngine(store: EncryptedFileStore())
+        // Clear first so we start from a known state
+        await engine.clearAll()
+
+        await engine.recordAcceptedSuggestion("alpha")
+        await engine.recordAcceptedSuggestion("beta")
+        await engine.recordAcceptedSuggestion("alpha") // duplicate → count = 2
+
+        let stats = await engine.stats()
+        XCTAssertEqual(stats.uniqueCount, 2, "Should have 2 unique completions")
+        XCTAssertEqual(stats.totalAcceptances, 3, "Should have 3 total acceptances")
+    }
+
+    func testClearAllEmptiesStore() async {
+        let engine = PersonalizationEngine(store: EncryptedFileStore())
+        await engine.recordAcceptedSuggestion("something")
+
+        await engine.clearAll()
+
+        let stats = await engine.stats()
+        XCTAssertEqual(stats.uniqueCount, 0, "clearAll should remove all completions")
+        XCTAssertEqual(stats.totalAcceptances, 0, "clearAll should zero totals")
+    }
+
+    func testSetEnabledFalseBlocksRecord() async {
+        let engine = PersonalizationEngine(store: EncryptedFileStore())
+        await engine.clearAll()
+
+        await engine.setEnabled(false)
+        await engine.recordAcceptedSuggestion("should not be recorded")
+
+        let stats = await engine.stats()
+        XCTAssertEqual(stats.uniqueCount, 0, "record should be a no-op when disabled")
+    }
+
+    func testSetEnabledFalseMakesBestMatchReturnNil() async {
+        let engine = PersonalizationEngine(store: EncryptedFileStore())
+        await engine.clearAll()
+        await engine.setEnabled(true)
+        await engine.recordAcceptedSuggestion("hello world")
+
+        await engine.setEnabled(false)
+        let result = await engine.bestMatch(for: "hello")
+        XCTAssertNil(result, "bestMatch should return nil when disabled")
+    }
+
+    func testSetEnabledTrueRestoresRecordBehavior() async {
+        let engine = PersonalizationEngine(store: EncryptedFileStore())
+        await engine.clearAll()
+
+        await engine.setEnabled(false)
+        await engine.recordAcceptedSuggestion("ignored")
+        await engine.setEnabled(true)
+        await engine.recordAcceptedSuggestion("recorded")
+
+        let stats = await engine.stats()
+        XCTAssertEqual(stats.uniqueCount, 1, "Only entry recorded while enabled should be present")
+        XCTAssertEqual(stats.totalAcceptances, 1)
+    }
 }
