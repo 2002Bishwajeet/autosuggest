@@ -173,7 +173,7 @@ struct ModelsSettingsView: View {
     }
 }
 
-private struct ModelSourceEditorView: View {
+struct ModelSourceEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft: ModelSourceDraft
     let onSave: (ModelSourceDraft) -> Void
