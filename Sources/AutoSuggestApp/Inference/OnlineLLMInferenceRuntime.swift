@@ -6,15 +6,32 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
     private let model: String
     private let endpointURL: String
     private let apiKey: String
+    private let sanitize: @Sendable (String) -> String
     private let logger = Logger(scope: "OnlineLLMInferenceRuntime")
 
     private static let systemPrompt = "You are an autocomplete engine. Complete the user's text naturally. Only output the completion, nothing else."
 
-    init(provider: OnlineLLMProvider, model: String, endpointURL: String?, apiKey: String) {
+    /// BYOK endpoints must be HTTPS, except loopback for local proxies.
+    static func isAllowedEndpoint(_ url: URL) -> Bool {
+        if url.scheme?.lowercased() == "https" { return true }
+        if url.scheme?.lowercased() == "http",
+           let host = url.host?.lowercased(),
+           host == "127.0.0.1" || host == "localhost" || host == "::1" { return true }
+        return false
+    }
+
+    init(
+        provider: OnlineLLMProvider,
+        model: String,
+        endpointURL: String?,
+        apiKey: String,
+        sanitize: @Sendable @escaping (String) -> String = { $0 }
+    ) {
         self.provider = provider
         self.model = model.isEmpty ? provider.defaultModel : model
         self.endpointURL = (endpointURL?.isEmpty ?? true) ? provider.defaultEndpoint : endpointURL!
         self.apiKey = apiKey
+        self.sanitize = sanitize
     }
 
     func isAvailable() async -> Bool {
@@ -22,11 +39,12 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
     }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
+        let context = sanitize(context)
         switch provider {
         case .anthropic:
-            try await requestAnthropic(context: context)
+            return try await requestAnthropic(context: context)
         case .openAICompatible, .openRouter, .custom:
-            try await requestOpenAICompatible(context: context)
+            return try await requestOpenAICompatible(context: context)
         }
     }
 
@@ -38,6 +56,9 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
             : "\(endpointURL)/v1/chat/completions"
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
+        }
+        guard Self.isAllowedEndpoint(url) else {
+            throw InferenceError.runtimeUnavailable("BYOK endpoint must use HTTPS (or localhost for proxies).")
         }
 
         var request = URLRequest(url: url)
@@ -88,6 +109,9 @@ struct OnlineLLMInferenceRuntime: InferenceRuntime {
             : "\(endpointURL)/v1/messages"
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
+        }
+        guard Self.isAllowedEndpoint(url) else {
+            throw InferenceError.runtimeUnavailable("BYOK endpoint must use HTTPS (or localhost for proxies).")
         }
 
         var request = URLRequest(url: url)
