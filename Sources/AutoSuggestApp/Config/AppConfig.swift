@@ -1,7 +1,7 @@
 import Foundation
 
 struct AppConfig: Codable {
-    static let currentConfigVersion = 2
+    static let currentConfigVersion = 3
 
     var configVersion: Int
     var enabled: Bool
@@ -99,6 +99,7 @@ struct LocalModelConfig: Codable {
     var customSource: LocalModelCustomSourceConfig
     var ollama: OllamaRuntimeConfig
     var llamaCpp: LlamaCppRuntimeConfig
+    var foundationModelsEnabled: Bool
 
     private enum CodingKeys: String, CodingKey {
         case autoDownloadOnFirstRun
@@ -112,6 +113,7 @@ struct LocalModelConfig: Codable {
         case customSource
         case ollama
         case llamaCpp
+        case foundationModelsEnabled
         case manifest
     }
 
@@ -126,7 +128,8 @@ struct LocalModelConfig: Codable {
         fallbackManifest: ModelManifest,
         customSource: LocalModelCustomSourceConfig,
         ollama: OllamaRuntimeConfig,
-        llamaCpp: LlamaCppRuntimeConfig
+        llamaCpp: LlamaCppRuntimeConfig,
+        foundationModelsEnabled: Bool = true
     ) {
         self.autoDownloadOnFirstRun = autoDownloadOnFirstRun
         self.preferredRuntime = preferredRuntime
@@ -139,6 +142,7 @@ struct LocalModelConfig: Codable {
         self.customSource = customSource
         self.ollama = ollama
         self.llamaCpp = llamaCpp
+        self.foundationModelsEnabled = foundationModelsEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -161,6 +165,8 @@ struct LocalModelConfig: Codable {
             ?? OllamaRuntimeConfig(baseURL: "http://127.0.0.1:11434", modelName: "qwen2.5-coder:1.5b")
         llamaCpp = try container.decodeIfPresent(LlamaCppRuntimeConfig.self, forKey: .llamaCpp)
             ?? LlamaCppRuntimeConfig(baseURL: "http://127.0.0.1:8080")
+        foundationModelsEnabled = try container.decodeIfPresent(Bool.self, forKey: .foundationModelsEnabled)
+            ?? true
     }
 
     func encode(to encoder: Encoder) throws {
@@ -176,6 +182,7 @@ struct LocalModelConfig: Codable {
         try container.encode(customSource, forKey: .customSource)
         try container.encode(ollama, forKey: .ollama)
         try container.encode(llamaCpp, forKey: .llamaCpp)
+        try container.encode(foundationModelsEnabled, forKey: .foundationModelsEnabled)
     }
 }
 
@@ -455,7 +462,7 @@ extension AppConfig {
         localModel: LocalModelConfig(
             autoDownloadOnFirstRun: false,
             preferredRuntime: "ollama",
-            runtimeOrder: ["ollama", "llama.cpp", "coreml"],
+            runtimeOrder: ["foundationmodels", "coreml", "ollama", "llama.cpp"],
             fallbackRuntimeEnabled: true,
             fallbackModelName: "qwen2.5-coder:1.5b",
             isModelPresent: false,
@@ -468,7 +475,8 @@ extension AppConfig {
             ),
             llamaCpp: LlamaCppRuntimeConfig(
                 baseURL: "http://127.0.0.1:8080"
-            )
+            ),
+            foundationModelsEnabled: true
         ),
         onlineLLM: OnlineLLMConfig(
             enabled: false,

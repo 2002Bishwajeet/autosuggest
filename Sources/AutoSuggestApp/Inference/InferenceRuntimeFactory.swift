@@ -11,12 +11,30 @@ struct InferenceRuntimeFactory {
         onlineLLMConfig: OnlineLLMConfig? = nil,
         onlineAPIKey: String? = nil
     ) -> [InferenceRuntime] {
-        let order = config.runtimeOrder.isEmpty ? ["coreml", "ollama", "llama.cpp"] : config.runtimeOrder
+        let order = config.runtimeOrder.isEmpty
+            ? ["foundationmodels", "coreml", "ollama", "llama.cpp"]
+            : config.runtimeOrder
         var runtimes: [InferenceRuntime] = []
         let logger = Logger(scope: "InferenceRuntimeFactory")
 
         for runtimeName in order {
             switch runtimeName.lowercased() {
+            case "foundationmodels", "foundation-models", "applellm":
+                // macOS 26 Apple Intelligence on-device LLM. Registered only when
+                // the SDK is present, the OS supports it, and the user has it
+                // enabled. Runtime availability (eligibility / Apple Intelligence
+                // on / assets ready) is gated further at request time via
+                // isAvailable(), so non-eligible users transparently fall through.
+                guard config.foundationModelsEnabled else { continue }
+                #if canImport(FoundationModels)
+                    if #available(macOS 26.0, *) {
+                        runtimes.append(
+                            FoundationModelsInferenceRuntime(
+                                responder: LanguageModelSessionResponder()
+                            )
+                        )
+                    }
+                #endif
             case "coreml":
                 runtimes.append(
                     CoreMLInferenceRuntime(
