@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import XCTest
 @testable import AutoSuggestApp
@@ -65,7 +66,9 @@ final class MockTextContextProvider: TextContextProvider, @unchecked Sendable {
         text: String,
         bundleID: String = "com.test.app",
         windowTitle: String? = "Test Window",
-        caretRect: CGRect? = CGRect(x: 100, y: 100, width: 1, height: 16)
+        caretRect: CGRect? = CGRect(x: 100, y: 100, width: 1, height: 16),
+        caretFont: NSFont? = nil,
+        nativeInlineSuggestionPresent: Bool = false
     ) {
         nextContext = TextContext(
             policyContext: PolicyContext(
@@ -78,7 +81,9 @@ final class MockTextContextProvider: TextContextProvider, @unchecked Sendable {
             textBeforeCaret: text,
             fullText: text,
             selectedRange: nil,
-            caretRectInScreen: caretRect
+            caretRectInScreen: caretRect,
+            caretFont: caretFont,
+            nativeInlineSuggestionPresent: nativeInlineSuggestionPresent
         )
     }
 }
@@ -88,12 +93,14 @@ final class MockTextContextProvider: TextContextProvider, @unchecked Sendable {
 @MainActor
 final class MockOverlayRenderer: OverlayRenderer {
     var currentSuggestionText: String?
+    var lastFont: NSFont?
     var showCallCount = 0
     var hideCallCount = 0
 
-    func showSuggestion(_ text: String, caretRectInScreen: CGRect?) {
+    func showSuggestion(_ text: String, caretRectInScreen: CGRect?, font: NSFont?) {
         showCallCount += 1
         currentSuggestionText = text
+        lastFont = font
     }
 
     func hideSuggestion() {

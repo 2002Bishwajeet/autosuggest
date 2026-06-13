@@ -5,10 +5,29 @@ import Foundation
 final class AXTextContextProvider: TextContextProvider {
     private let logger = Logger(scope: "AXTextContextProvider")
 
+    /// Bundle-ID prefixes/markers for Chromium-class apps whose AX text stays
+    /// hidden until we opt the app element into accessibility (B6).
+    private static let chromiumBundleMarkers = [
+        "com.google.Chrome",
+        "com.microsoft.edgemac",
+        "com.brave.Browser",
+        "com.vivaldi.Vivaldi",
+        "company.thebrowser.Browser", // Arc
+        "com.github.Electron",
+        "com.tinyspeck.slackmacgap", // Slack
+        "com.hnc.Discord",
+        "notion.id", // Notion
+        "com.electron", // generic Electron prefix
+    ]
+
     func currentContext() -> TextContext? {
-        guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
+        guard let frontApp = NSWorkspace.shared.frontmostApplication,
+              let bundleID = frontApp.bundleIdentifier else {
             return nil
         }
+
+        // B6: unlock AX text in Chromium/Electron apps before reading.
+        enableElectronAccessibilityIfNeeded(bundleID: bundleID, pid: frontApp.processIdentifier)
 
         let systemWide = AXUIElementCreateSystemWide()
         guard let focusedElement = copyUIElementAttribute(
@@ -26,6 +45,8 @@ final class AXTextContextProvider: TextContextProvider {
         let textBeforeCaret = extractTextBeforeCaret(fullValue: fullValue, selectedRange: selectedRange)
         let caretRect = extractCaretRect(from: focusedElement, selectedRange: selectedRange)
         let windowTitle = extractFocusedWindowTitle(systemWideElement: systemWide)
+        let caretFont = extractCaretFont(from: focusedElement, selectedRange: selectedRange)
+        let nativeSuggestionPresent = detectNativeInlineSuggestion(from: focusedElement)
 
         return TextContext(
             policyContext: PolicyContext(
@@ -38,7 +59,9 @@ final class AXTextContextProvider: TextContextProvider {
             textBeforeCaret: textBeforeCaret,
             fullText: fullValue,
             selectedRange: selectedRange,
-            caretRectInScreen: caretRect
+            caretRectInScreen: caretRect,
+            caretFont: caretFont,
+            nativeInlineSuggestionPresent: nativeSuggestionPresent
         )
     }
 
@@ -186,6 +209,93 @@ final class AXTextContextProvider: TextContextProvider {
         )
         guard result == .success, let textRef else { return nil }
         return (textRef as? String)
+    }
+
+    // MARK: - B1: real field font
+
+    /// Reads the focused field's font via the `AXAttributedStringForRange`
+    /// parameterized attribute over the caret/selection range, then extracts
+    /// the `.font` / `kCTFontAttributeName` attribute (B1). Returns `nil` when AX
+    /// exposes no styled text or no font; the renderer then falls back to the
+    /// caret-height heuristic.
+    func extractCaretFont(from element: AXUIElement, selectedRange: NSRange?) -> NSFont? {
+        guard let selectedRange else { return nil }
+        // A zero-length caret range yields no glyphs; read one character around
+        // the caret so the attributed run carries a font.
+        let probeLength = max(selectedRange.length, 1)
+        let probeLocation = selectedRange.length == 0 && selectedRange.location > 0
+            ? selectedRange.location - 1
+            : selectedRange.location
+        var range = CFRange(location: probeLocation, length: probeLength)
+        guard let rangeValue = AXValueCreate(.cfRange, &range) else { return nil }
+
+        var attrRef: CFTypeRef?
+        let result = AXUIElementCopyParameterizedAttributeValue(
+            element,
+            "AXAttributedStringForRange" as CFString,
+            rangeValue,
+            &attrRef
+        )
+        guard result == .success, let attrRef else { return nil }
+
+        // The value is a CFAttributedString, bridged to NSAttributedString.
+        if let nsAttr = attrRef as? NSAttributedString {
+            return AXFontExtraction.font(from: nsAttr)
+        }
+        if let cfAttr = AXHelpers.castToCFAttributedString(attrRef) {
+            // Bridge CFAttributedString -> NSAttributedString.
+            let nsAttr = cfAttr as NSAttributedString
+            return AXFontExtraction.font(from: nsAttr)
+        }
+        return nil
+    }
+
+    // MARK: - B5: native inline-suggestion detection (best-effort)
+
+    /// Best-effort AX read of whether Apple's own native inline prediction is
+    /// already showing on the focused element (B5 PRIMARY signal). Reads the
+    /// completion-markup attributes the RE spike found readable
+    /// (`AXIsSuggestion` / `AXCompletionText` family). Best-effort: any failure
+    /// returns `false` (we show our overlay) and the per-app backstop covers the
+    /// gap. Never logs the suggestion text (privacy invariant).
+    func detectNativeInlineSuggestion(from element: AXUIElement) -> Bool {
+        // Boolean marker attribute: present + true means a suggestion is active.
+        if let flag = copyAttribute(named: "AXIsSuggestion", from: element) as? NSNumber,
+           flag.boolValue {
+            return true
+        }
+        // Some fields expose the active completion as a non-empty string.
+        if let completion = copyAttribute(named: "AXCompletionText", from: element) as? String,
+           !completion.isEmpty {
+            return true
+        }
+        // TextKit2 inline-prediction marker seen on native NSTextViews.
+        if let inline = copyAttribute(named: "AXInlinePredictionText", from: element) as? String,
+           !inline.isEmpty {
+            return true
+        }
+        return false
+    }
+
+    // MARK: - B6: Electron / Chromium AX coverage
+
+    /// Many Chromium/Electron apps hide their AX text tree until the app element
+    /// is explicitly opted in. On detecting such an app we set
+    /// `AXManualAccessibility` (and the older `AXEnhancedUserInterface`) = true
+    /// on the application element to unlock AX text (B6). Idempotent and cheap;
+    /// when it has no effect we keep the existing "no overlay when AX empty"
+    /// behavior — no regressions.
+    ///
+    /// For apps that still refuse, launch them with the Chromium flag
+    /// `--force-renderer-accessibility=complete` (documented for users).
+    private func enableElectronAccessibilityIfNeeded(bundleID: String, pid: pid_t) {
+        guard Self.chromiumBundleMarkers.contains(where: { bundleID.hasPrefix($0) }) else {
+            return
+        }
+        let appElement = AXUIElementCreateApplication(pid)
+        let trueValue = kCFBooleanTrue as CFTypeRef
+        AXUIElementSetAttributeValue(appElement, "AXManualAccessibility" as CFString, trueValue)
+        AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, trueValue)
     }
 
     private func boundsForSelectedMarkerRange(element: AXUIElement) -> CGRect? {

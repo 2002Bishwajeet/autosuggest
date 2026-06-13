@@ -132,10 +132,27 @@ final class TypingPipeline {
         if let context = currentContext, !isSuggestion(candidate, validFor: context) {
             return
         }
+        // B5: don't stack our ghost on top of Apple's native inline prediction.
+        // Suppress if the AX read detected an active native suggestion, or the
+        // focused app is on the double-ghost backstop list.
+        if let context = currentContext {
+            let suppress = OverlaySuppressionDecision.shouldSuppressOverlay(
+                nativeCompletionPresent: context.nativeInlineSuggestionPresent,
+                excludedApp: OverlaySuppressionDecision.isBackstopApp(
+                    bundleID: context.policyContext.bundleID
+                )
+            )
+            if suppress {
+                logger.info("Suppressing overlay: native inline prediction present or backstop app.")
+                clearSuggestion()
+                return
+            }
+        }
         highestPresentedRequestID = max(highestPresentedRequestID, candidate.requestID)
         activeSuggestion = candidate
         let caretRect = currentContext?.caretRectInScreen
-        overlayRenderer.showSuggestion(candidate.completion, caretRectInScreen: caretRect)
+        let caretFont = currentContext?.caretFont
+        overlayRenderer.showSuggestion(candidate.completion, caretRectInScreen: caretRect, font: caretFont)
         accessibilityAnnouncer.announceSuggestion(candidate.completion)
         Task {
             await metricsCollector.recordSuggestionShown(latencyMs: candidate.latencyMs)
