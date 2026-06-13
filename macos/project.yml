@@ -13,6 +13,11 @@ settings:
 packages:
   AutoSuggestPackage:
     path: ..
+  # Sparkle is an app-bundle / GUI-app concern (the updater lives in the host
+  # app target, not the SwiftPM library). Keep it out of Package.swift.
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.6.0
 targets:
   AutoSuggestDesktop:
     type: application
@@ -22,6 +27,8 @@ targets:
     dependencies:
       - package: AutoSuggestPackage
         product: AutoSuggestApp
+      - package: Sparkle
+        product: Sparkle
     settings:
       base:
         INFOPLIST_FILE: AutoSuggestDesktop/Info.plist

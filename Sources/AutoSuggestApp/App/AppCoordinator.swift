@@ -55,6 +55,12 @@ final class AppCoordinator {
     private nonisolated(unsafe) var didBecomeActiveObserver: NSObjectProtocol?
     private var lastInputMonitoringTrusted = false
 
+    /// Host-provided callback for "Check for Updates…". Auto-update is an
+    /// app-bundle concern owned by the host target (Sparkle); the library only
+    /// surfaces the affordance and forwards the intent. Optional: when nil (e.g.
+    /// the SwiftPM runner) the status popover hides the control.
+    var onCheckForUpdates: (() -> Void)?
+
     deinit {
         if let didBecomeActiveObserver {
             NotificationCenter.default.removeObserver(didBecomeActiveObserver)
@@ -243,6 +249,8 @@ final class AppCoordinator {
         uiModel.onQuitApp = {
             NSApp.terminate(nil)
         }
+        // Only expose the update affordance when the host wired an updater.
+        uiModel.onCheckForUpdates = onCheckForUpdates
     }
 
     private func bootstrapInitialModelIfNeeded() async throws {

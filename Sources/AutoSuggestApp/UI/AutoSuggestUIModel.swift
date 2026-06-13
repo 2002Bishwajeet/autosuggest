@@ -398,6 +398,11 @@ final class AutoSuggestUIModel: ObservableObject {
     var onClearPersonalization: (() -> Void)?
     var onRefreshPersonalizationStats: (() -> Void)?
     var onQuitApp: (() -> Void)?
+    /// Set by the host app target (via the coordinator) when an auto-updater is
+    /// available. When nil, the status popover hides the "Check for Updates…"
+    /// control. `@Published` so the popover re-renders if it is wired after the
+    /// view first appears.
+    @Published var onCheckForUpdates: (() -> Void)?
 
     init(config: AppConfig) {
         self.config = config
@@ -543,5 +548,14 @@ final class AutoSuggestUIModel: ObservableObject {
 
     func quitApp() {
         onQuitApp?()
+    }
+
+    /// True when the host wired an auto-updater; gates the popover control.
+    var canCheckForUpdates: Bool {
+        onCheckForUpdates != nil
+    }
+
+    func checkForUpdates() {
+        onCheckForUpdates?()
     }
 }

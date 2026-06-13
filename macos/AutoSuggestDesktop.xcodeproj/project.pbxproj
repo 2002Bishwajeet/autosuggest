@@ -7,18 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2C812DDED14BB47452411DD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 805ADF39AB504C34BA6F41BB /* Sparkle */; };
 		67892A96F2105B53E74E2F2B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D82DCE7503827F59F87934E3 /* Assets.xcassets */; };
 		AEDDE162242FC413F107CC67 /* AutoSuggestDesktopApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */; };
 		E20A26F73FFBE65418532373 /* AutoSuggestApp in Frameworks */ = {isa = PBXBuildFile; productRef = 18E2CE67DC41BB323A03571F /* AutoSuggestApp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4DFC9D801D93FAEA9F1CA870 /* agent-a91147629b7cc7355 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "agent-a91147629b7cc7355"; path = ..; sourceTree = SOURCE_ROOT; };
 		5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSuggestDesktopApp.swift; sourceTree = "<group>"; };
 		611527A03C860AE957A05D05 /* AutoSuggest.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AutoSuggest.entitlements; sourceTree = "<group>"; };
 		66336980298A0B9E153FE6CB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8ADC06CF1F0B1059038BB5EA /* AutoSuggestDesktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AutoSuggestDesktop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D82DCE7503827F59F87934E3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		ED5E7049E3196A333B5BAC9A /* autosuggest */ = {isa = PBXFileReference; lastKnownFileType = folder; name = autosuggest; path = ..; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -27,6 +28,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E20A26F73FFBE65418532373 /* AutoSuggestApp in Frameworks */,
+				2C812DDED14BB47452411DD8 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -64,7 +66,7 @@
 		6AC0500082C24F7E2D5D6BCE /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				ED5E7049E3196A333B5BAC9A /* autosuggest */,
+				4DFC9D801D93FAEA9F1CA870 /* agent-a91147629b7cc7355 */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -87,6 +89,7 @@
 			name = AutoSuggestDesktop;
 			packageProductDependencies = (
 				18E2CE67DC41BB323A03571F /* AutoSuggestApp */,
+				805ADF39AB504C34BA6F41BB /* Sparkle */,
 			);
 			productName = AutoSuggestDesktop;
 			productReference = 8ADC06CF1F0B1059038BB5EA /* AutoSuggestDesktop.app */;
@@ -118,6 +121,7 @@
 			mainGroup = 00FE764457E70A2ACB6F2A28;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				271FEDE85FEF47F29FF0E341 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				507BC447B3D48C922CBAEC22 /* XCLocalSwiftPackageReference ".." */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -351,10 +355,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		271FEDE85FEF47F29FF0E341 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		18E2CE67DC41BB323A03571F /* AutoSuggestApp */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AutoSuggestApp;
+		};
+		805ADF39AB504C34BA6F41BB /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 271FEDE85FEF47F29FF0E341 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
