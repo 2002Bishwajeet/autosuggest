@@ -228,7 +228,7 @@ final class OnlineLLMInferenceRuntimeTests: XCTestCase {
         do {
             _ = try await runtime.generateSuggestion(context: "hello")
             XCTFail("Expected runtimeUnavailable error but no error was thrown")
-        } catch InferenceError.runtimeUnavailable(let reason) {
+        } catch let InferenceError.runtimeUnavailable(reason) {
             XCTAssertTrue(reason.contains("HTTPS"), "Error should mention HTTPS, got: \(reason)")
         } catch {
             XCTFail("Expected InferenceError.runtimeUnavailable, got: \(error)")
@@ -246,7 +246,7 @@ final class OnlineLLMInferenceRuntimeTests: XCTestCase {
         do {
             _ = try await runtime.generateSuggestion(context: "hello")
             XCTFail("Expected runtimeUnavailable error but no error was thrown")
-        } catch InferenceError.runtimeUnavailable(let reason) {
+        } catch let InferenceError.runtimeUnavailable(reason) {
             XCTAssertTrue(reason.contains("HTTPS"), "Error should mention HTTPS, got: \(reason)")
         } catch {
             XCTFail("Expected InferenceError.runtimeUnavailable, got: \(error)")
@@ -280,7 +280,7 @@ final class OnlineLLMInferenceRuntimeTests: XCTestCase {
     }
 
     @MainActor
-    func testDefaultSanitizer_identityFunction() async {
+    func testDefaultSanitizer_identityFunction() throws {
         // Default init (no sanitize arg) must pass context through unchanged.
         // Use a plain-HTTP endpoint so it throws before any network work.
         let runtime = OnlineLLMInferenceRuntime(
@@ -292,7 +292,8 @@ final class OnlineLLMInferenceRuntimeTests: XCTestCase {
         // We can't directly observe the identity path without a network stub,
         // but we can confirm isAllowedEndpoint rejects it — proving the guard
         // (which runs after sanitize) is the first network-touching step.
-        let url = URL(string: "http://api.example.com/v1/chat/completions")!
+        _ = runtime // suppress unused-variable warning
+        let url = try XCTUnwrap(URL(string: "http://api.example.com/v1/chat/completions"))
         XCTAssertFalse(OnlineLLMInferenceRuntime.isAllowedEndpoint(url))
     }
 
