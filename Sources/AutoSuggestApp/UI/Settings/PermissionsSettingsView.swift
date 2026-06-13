@@ -90,6 +90,32 @@ struct PermissionsSettingsView: View {
             }
 
             SimplePanel {
+                SectionHeader("Personalization", systemImage: "wand.and.stars")
+
+                Toggle("Personalize suggestions", isOn: Binding(
+                    get: { uiModel.config.privacy.personalizationEnabled },
+                    set: { uiModel.updatePersonalization($0) }
+                ))
+                Text(
+                    "AutoSuggest locally re-ranks suggestions from completions you've accepted. Stored encrypted on this device, never uploaded."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                Text(
+                    "\(uiModel.personalizationStats.total) accepted · \(uiModel.personalizationStats.unique) unique"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                Button("Clear Personalization Data") {
+                    uiModel.onClearPersonalization?()
+                }
+                .disabled(!uiModel.config.privacy.personalizationEnabled)
+            }
+            .onAppear { uiModel.onRefreshPersonalizationStats?() }
+
+            SimplePanel {
                 SectionHeader("Training Data", systemImage: "doc.text")
 
                 Toggle("Collect training data (opt-in)", isOn: Binding(
