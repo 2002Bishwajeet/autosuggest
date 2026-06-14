@@ -66,8 +66,11 @@ edit persists.)
 
 ### (c) `SUFeedURL` — already set (no action)
 
-`Info.plist` already points at `https://autosuggest.cloudx.run/appcast.xml`
-(your Cloudflare Pages domain). Only touch this if the domain changes.
+`Info.plist` already points at
+`https://github.com/2002Bishwajeet/autosuggest/releases/latest/download/appcast.xml`.
+GitHub redirects `releases/latest/download/<asset>` to the newest release's
+asset, so the feed is served straight from the GitHub Release with no extra
+hosting. Only touch this if the repo moves.
 
 ### (d) Add the PRIVATE key as a GitHub secret
 
@@ -89,17 +92,14 @@ inspection.
 
 On each tagged release the workflow generates the signed `appcast.xml` (with
 each `<enclosure url>` pointing at that release's GitHub asset, via
-`--download-url-prefix`) and **commits it to `website/appcast.xml`**, which
-Cloudflare Pages serves at the `SUFeedURL`. No manual upload.
-
-(If `main` ever has branch protection that blocks the Actions bot, that final
-step is non-fatal — the release still publishes with `appcast.xml` attached as a
-Release asset, and you can drop it into `website/appcast.xml` manually.)
+`--download-url-prefix`) and **attaches it to the GitHub Release as an asset**.
+Sparkle reads it through the `releases/latest/download/appcast.xml` redirect, so
+there is no separate host to deploy and nothing to commit anywhere.
 
 Confirm after your first activated release:
 
 ```sh
-curl -fsSL https://autosuggest.cloudx.run/appcast.xml | head -40
+curl -fsSL https://github.com/2002Bishwajeet/autosuggest/releases/latest/download/appcast.xml | head -40
 ```
 
 You should see a `<rss>` document whose `<enclosure>` tags carry
@@ -108,7 +108,7 @@ You should see a `<rss>` document whose `<enclosure>` tags carry
 ## Quick verification after activation
 
 1. Tag a release (`git tag vX.Y.Z && git push --tags`) — the workflow signs the
-   appcast and auto-publishes it to `website/appcast.xml`.
+   appcast and attaches it to the GitHub Release.
 2. Install the **previous** signed/notarized build, then use the status popover's
    **Check for Updates…** — Sparkle should offer the new version and verify it
    against `SUPublicEDKey` before installing.
