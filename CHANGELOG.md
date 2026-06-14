@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.0 — 2026-06-14
+
+Reliable automatic updates.
+
+### Fixed
+- **Automatic updates** now resolve their feed straight from the GitHub Release
+  (`releases/latest/download/appcast.xml`) instead of a separately-hosted copy
+  that could go stale or fail to deploy — so AutoSuggest dependably discovers and
+  installs new versions. Every update stays EdDSA-signed and verified before it
+  installs. (No app-behavior change beyond update discovery; if you're on v0.5.0,
+  install this build once and future updates arrive automatically.)
+
 ## v0.5.0 — 2026-06-14
 
 Automatic updates arrive — plus privacy hardening and a big internal cleanup.
