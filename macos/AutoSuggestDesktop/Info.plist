@@ -34,11 +34,13 @@
     <string>AutoSuggest uses Apple Events as a fallback for text insertion when direct Accessibility insertion is unavailable.</string>
     <!-- Sparkle auto-update configuration. See docs/SPARKLE_SETUP.md for the
          maintainer activation checklist. -->
-    <!-- Sparkle appcast feed. Served from the Cloudflare Pages site
-         (website/appcast.xml), which the release workflow auto-publishes on each
-         tagged release. Binaries are downloaded from the GitHub Release assets. -->
+    <!-- Sparkle appcast feed, served straight from the GitHub Release assets.
+         The release workflow attaches a signed appcast.xml to each release, and
+         `releases/latest/download/…` always redirects to the newest release's
+         asset — so this URL needs no extra hosting. Binaries download from the
+         same release. -->
     <key>SUFeedURL</key>
-    <string>https://autosuggest.cloudx.run/appcast.xml</string>
+    <string>https://github.com/2002Bishwajeet/autosuggest/releases/latest/download/appcast.xml</string>
     <!-- EdDSA (ed25519) PUBLIC key from Sparkle's generate_keys. Sparkle verifies
          every downloaded update against it; the matching PRIVATE key lives only in
          the maintainer's Keychain + the SPARKLE_EDDSA_PRIVATE_KEY CI secret. -->
