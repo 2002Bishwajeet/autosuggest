@@ -7,8 +7,8 @@ final class PreferencesWindowController: NSWindowController {
         let hostingController = NSHostingController(rootView: SettingsRootView(uiModel: uiModel))
         let window = NSWindow(contentViewController: hostingController)
         window.title = "AutoSuggest Settings"
-        window.setContentSize(NSSize(width: 980, height: 680))
-        window.minSize = NSSize(width: 860, height: 620)
+        window.setContentSize(NSSize(width: 720, height: 560))
+        window.contentMinSize = NSSize(width: 640, height: 480)
         window.toolbarStyle = .unified
         window.titlebarAppearsTransparent = false
         window.isReleasedWhenClosed = false
