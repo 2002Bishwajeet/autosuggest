@@ -24,11 +24,22 @@ struct OnboardingFlowView: View {
     @State private var ollamaRunning = false
     @State private var llamaRunning = false
     @State private var permissionsReady = false
+    // Granted flags mirrored into @State so a grant made in System Settings
+    // re-renders the checklist on focus return. Live permissionManager reads
+    // in body don't trigger SwiftUI updates on their own — a single granted
+    // permission (permissionsReady still false) previously left a stale
+    // "Required" badge.
+    @State private var accessibilityGranted = false
+    @State private var inputMonitoringGranted = false
     @State private var copyFeedback: String?
     // Tracks whether Input Monitoring went from denied → granted this session,
     // which requires a relaunch before the CGEvent tap can be installed.
     @State private var inputMonitoringJustGranted = false
     @State private var prevInputMonitoringState = false
+    // True when the last navigation was forward; drives the slide direction
+    // of the step transition.
+    @State private var isAdvancing = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let logger = Logger(scope: "OnboardingFlowView")
 
@@ -59,6 +70,12 @@ struct OnboardingFlowView: View {
                     .foregroundStyle(.secondary)
             }
 
+            OnboardingStepIndicator(
+                total: displayedSteps.count,
+                current: displayedSteps.firstIndex(of: currentStep) ?? 0
+            )
+            .frame(maxWidth: .infinity)
+
             ScrollView {
                 Group {
                     switch currentStep {
@@ -73,7 +90,10 @@ struct OnboardingFlowView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+                .id(currentStep)
+                .transition(stepTransition)
             }
+            .clipped()
 
             HStack {
                 Button("Quit") {
@@ -122,19 +142,31 @@ struct OnboardingFlowView: View {
             // wizard advances instantly instead of lagging behind a poll.
             refreshPermissionState()
         }
+        .task(id: currentStep) {
+            // While the permissions step is visible, poll so a grant made in
+            // System Settings shows up even if the wizard never loses focus
+            // (focus-return alone misses that case). Scoped to this step and
+            // stops as soon as both permissions are granted.
+            guard currentStep == .permissions else { return }
+            while !Task.isCancelled, !permissionsReady {
+                refreshPermissionState()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
     }
 
     /// Recomputes permission-readiness from the live `PermissionManager` state.
     /// Driven by `.onAppear` and `NSApplication.didBecomeActiveNotification`
     /// (focus return) rather than an always-on timer.
     private func refreshPermissionState() {
-        permissionsReady = permissionManager.isAccessibilityTrusted() && permissionManager
-            .hasInputMonitoringPermission()
+        accessibilityGranted = permissionManager.isAccessibilityTrusted()
+        inputMonitoringGranted = permissionManager.hasInputMonitoringPermission()
+        permissionsReady = accessibilityGranted && inputMonitoringGranted
 
         // Detect Input Monitoring transitioning from denied → granted.
         // CGEvent tap installation requires a process restart, so we warn the
         // user immediately when this happens.
-        let current = permissionManager.hasInputMonitoringPermission()
+        let current = inputMonitoringGranted
         if current && !prevInputMonitoringState {
             inputMonitoringJustGranted = true
             logger.info("Input Monitoring granted during onboarding; relaunch required")
@@ -181,6 +213,16 @@ struct OnboardingFlowView: View {
 
     private var canGoBack: Bool {
         currentStep != displayedSteps.first
+    }
+
+    /// Slide+fade in the direction of travel; plain crossfade under Reduce
+    /// Motion.
+    private var stepTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .asymmetric(
+            insertion: .move(edge: isAdvancing ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: isAdvancing ? .leading : .trailing).combined(with: .opacity)
+        )
     }
 
     private var welcomeStep: some View {
@@ -251,31 +293,21 @@ struct OnboardingFlowView: View {
                 )
             }
 
-            PermissionRow(
-                systemImage: "accessibility",
-                title: "Accessibility",
-                description: "Lets AutoSuggest read what you're typing and insert completions into any text field. Required for core functionality.",
-                granted: permissionManager.isAccessibilityTrusted(),
-                primary: ("Show Prompt", {
-                    _ = permissionManager.requestAccessibilityPermission()
-                }),
-                secondary: ("Open Settings", {
-                    permissionManager.openAccessibilitySettings()
-                })
-            )
-
-            PermissionRow(
-                systemImage: "keyboard",
-                title: "Input Monitoring",
-                description: "Lets AutoSuggest detect when you press Tab, Enter, or Esc to accept or dismiss suggestions. Requires a relaunch after granting.",
-                granted: permissionManager.hasInputMonitoringPermission(),
-                primary: ("Register App", {
-                    permissionManager.requestInputMonitoringPermission()
-                    permissionManager.openInputMonitoringSettings()
-                }),
-                secondary: ("Open Settings", {
-                    permissionManager.openInputMonitoringSettings()
-                })
+            PermissionsChecklist(
+                context: .onboarding,
+                accessibilityGranted: accessibilityGranted,
+                inputMonitoringGranted: inputMonitoringGranted,
+                actions: PermissionsChecklistActions(
+                    requestAccessibility: { _ = permissionManager.requestAccessibilityPermission() },
+                    openAccessibilitySettings: { permissionManager.openAccessibilitySettings() },
+                    // "Register App" both fires the TCC request and opens the
+                    // pane — preserving the pre-checklist behavior exactly.
+                    requestInputMonitoring: {
+                        permissionManager.requestInputMonitoringPermission()
+                        permissionManager.openInputMonitoringSettings()
+                    },
+                    openInputMonitoringSettings: { permissionManager.openInputMonitoringSettings() }
+                )
             )
 
             if permissionsReady && !inputMonitoringJustGranted {
@@ -527,7 +559,8 @@ struct OnboardingFlowView: View {
         guard let currentIndex = steps.firstIndex(of: currentStep), currentIndex < steps.count - 1 else {
             return
         }
-        withAnimation(.easeInOut(duration: 0.15)) {
+        isAdvancing = true
+        withAnimation(.easeInOut(duration: 0.25)) {
             step = steps[currentIndex + 1]
         }
     }
@@ -537,7 +570,8 @@ struct OnboardingFlowView: View {
         guard let currentIndex = steps.firstIndex(of: currentStep), currentIndex > 0 else {
             return
         }
-        withAnimation(.easeInOut(duration: 0.15)) {
+        isAdvancing = false
+        withAnimation(.easeInOut(duration: 0.25)) {
             step = steps[currentIndex - 1]
         }
     }

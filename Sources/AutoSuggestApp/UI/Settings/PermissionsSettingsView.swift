@@ -30,22 +30,16 @@ struct PermissionsSettingsView: View {
             }
 
             Section("Permissions") {
-                // Accessibility row
-                PermissionRow(
-                    systemImage: "accessibility",
-                    title: "Accessibility",
-                    description: "Lets AutoSuggest read the text around your cursor and insert completions into any text field.",
-                    granted: uiModel.permissionHealth.accessibilityTrusted,
-                    primary: ("Open System Settings", { uiModel.openAccessibilitySettings() })
-                )
-
-                // Input Monitoring row
-                PermissionRow(
-                    systemImage: "keyboard",
-                    title: "Input Monitoring",
-                    description: "Lets AutoSuggest detect Tab, Enter, and Esc so you can accept or dismiss suggestions. AutoSuggest must relaunch after you grant this.",
-                    granted: uiModel.permissionHealth.inputMonitoringTrusted,
-                    primary: ("Open System Settings", { uiModel.openInputMonitoringSettings() })
+                PermissionsChecklist(
+                    context: .settings,
+                    accessibilityGranted: uiModel.permissionHealth.accessibilityTrusted,
+                    inputMonitoringGranted: uiModel.permissionHealth.inputMonitoringTrusted,
+                    actions: PermissionsChecklistActions(
+                        requestAccessibility: { uiModel.openAccessibilitySettings() },
+                        openAccessibilitySettings: { uiModel.openAccessibilitySettings() },
+                        requestInputMonitoring: { uiModel.openInputMonitoringSettings() },
+                        openInputMonitoringSettings: { uiModel.openInputMonitoringSettings() }
+                    )
                 )
 
                 // Relaunch / recheck controls

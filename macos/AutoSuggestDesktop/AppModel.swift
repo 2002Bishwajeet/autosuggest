@@ -40,7 +40,7 @@ final class AppModel: ObservableObject {
         let state = MenuBarIconState.resolve(
             permissionsReady: uiModel.permissionHealth.isReady,
             enabled: uiModel.config.enabled,
-            runtimeReady: uiModel.modelHealth.report.runtimeHealth.contains(where: \.ready)
+            runtimeReady: uiModel.runtimeReady
         )
         return MenuBarIconRenderer.image(for: state)
     }
