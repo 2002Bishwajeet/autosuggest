@@ -24,6 +24,13 @@ struct OnboardingFlowView: View {
     @State private var ollamaRunning = false
     @State private var llamaRunning = false
     @State private var permissionsReady = false
+    // Granted flags mirrored into @State so a grant made in System Settings
+    // re-renders the checklist on focus return. Live permissionManager reads
+    // in body don't trigger SwiftUI updates on their own — a single granted
+    // permission (permissionsReady still false) previously left a stale
+    // "Required" badge.
+    @State private var accessibilityGranted = false
+    @State private var inputMonitoringGranted = false
     @State private var copyFeedback: String?
     // Tracks whether Input Monitoring went from denied → granted this session,
     // which requires a relaunch before the CGEvent tap can be installed.
@@ -135,19 +142,31 @@ struct OnboardingFlowView: View {
             // wizard advances instantly instead of lagging behind a poll.
             refreshPermissionState()
         }
+        .task(id: currentStep) {
+            // While the permissions step is visible, poll so a grant made in
+            // System Settings shows up even if the wizard never loses focus
+            // (focus-return alone misses that case). Scoped to this step and
+            // stops as soon as both permissions are granted.
+            guard currentStep == .permissions else { return }
+            while !Task.isCancelled, !permissionsReady {
+                refreshPermissionState()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
     }
 
     /// Recomputes permission-readiness from the live `PermissionManager` state.
     /// Driven by `.onAppear` and `NSApplication.didBecomeActiveNotification`
     /// (focus return) rather than an always-on timer.
     private func refreshPermissionState() {
-        permissionsReady = permissionManager.isAccessibilityTrusted() && permissionManager
-            .hasInputMonitoringPermission()
+        accessibilityGranted = permissionManager.isAccessibilityTrusted()
+        inputMonitoringGranted = permissionManager.hasInputMonitoringPermission()
+        permissionsReady = accessibilityGranted && inputMonitoringGranted
 
         // Detect Input Monitoring transitioning from denied → granted.
         // CGEvent tap installation requires a process restart, so we warn the
         // user immediately when this happens.
-        let current = permissionManager.hasInputMonitoringPermission()
+        let current = inputMonitoringGranted
         if current && !prevInputMonitoringState {
             inputMonitoringJustGranted = true
             logger.info("Input Monitoring granted during onboarding; relaunch required")
@@ -276,8 +295,8 @@ struct OnboardingFlowView: View {
 
             PermissionsChecklist(
                 context: .onboarding,
-                accessibilityGranted: permissionManager.isAccessibilityTrusted(),
-                inputMonitoringGranted: permissionManager.hasInputMonitoringPermission(),
+                accessibilityGranted: accessibilityGranted,
+                inputMonitoringGranted: inputMonitoringGranted,
                 actions: PermissionsChecklistActions(
                     requestAccessibility: { _ = permissionManager.requestAccessibilityPermission() },
                     openAccessibilitySettings: { permissionManager.openAccessibilitySettings() },
