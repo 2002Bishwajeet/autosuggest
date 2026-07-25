@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
@@ -7,6 +8,7 @@ final class StatusBarController: NSObject {
     private let popover = NSPopover()
     private let overflowMenu = NSMenu()
     private weak var uiModel: AutoSuggestUIModel?
+    private var cancellables = Set<AnyCancellable>()
 
     func configure(with uiModel: AutoSuggestUIModel) {
         self.uiModel = uiModel
@@ -30,6 +32,11 @@ final class StatusBarController: NSObject {
 
         buildOverflowMenu()
         refreshAppearance()
+
+        uiModel.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.refreshAppearance() }
+            .store(in: &cancellables)
     }
 
     func refreshAppearance() {

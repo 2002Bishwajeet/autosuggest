@@ -336,7 +336,7 @@ extension MetricsSnapshot {
 }
 
 @MainActor
-final class AutoSuggestUIModel: ObservableObject {
+public final class AutoSuggestUIModel: ObservableObject {
     @Published var config: AppConfig
     @Published var selectedSettingsRoute: SettingsRoute = .general
     @Published var permissionHealth: PermissionHealth = .empty
@@ -400,6 +400,7 @@ final class AutoSuggestUIModel: ObservableObject {
     var onClearPersonalization: (() -> Void)?
     var onRefreshPersonalizationStats: (() -> Void)?
     var onQuitApp: (() -> Void)?
+    var onShowAbout: (() -> Void)?
     /// Set by the host app target (via the coordinator) when an auto-updater is
     /// available. When nil, the status popover hides the "Check for Updates…"
     /// control. `@Published` so the popover re-renders if it is wired after the
@@ -550,6 +551,10 @@ final class AutoSuggestUIModel: ObservableObject {
 
     func quitApp() {
         onQuitApp?()
+    }
+
+    func showAbout() {
+        onShowAbout?()
     }
 
     /// True when the host wired an auto-updater; gates the popover control.

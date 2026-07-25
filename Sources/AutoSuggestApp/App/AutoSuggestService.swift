@@ -14,6 +14,13 @@ public final class AutoSuggestService {
         set { coordinator.onCheckForUpdates = newValue }
     }
 
+    /// Invoked once, as soon as the UI model exists (before onboarding), so the
+    /// host's menu-bar surface can bind without owning the coordinator.
+    public var onUIModelReady: ((AutoSuggestUIModel) -> Void)? {
+        get { coordinator.onUIModelReady }
+        set { coordinator.onUIModelReady = newValue }
+    }
+
     public init() {}
 
     public func start() async {
