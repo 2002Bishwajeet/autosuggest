@@ -7,7 +7,7 @@ struct ModelsSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SimplePanel {
+            SettingsSection {
                 Text("Current runtime: \(uiModel.modelHealth.activeRuntimeLabel)")
                 Text("Current model: \(uiModel.modelHealth.activeModelLabel)")
                     .foregroundStyle(.secondary)
@@ -44,7 +44,7 @@ struct ModelsSettingsView: View {
     }
 
     private var runtimeOrderControls: some View {
-        SimplePanel {
+        SettingsSection {
             Text("Runtime order")
                 .font(.headline)
             ForEach(Array(uiModel.config.localModel.runtimeOrder.enumerated()), id: \.offset) { index, runtime in

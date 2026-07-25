@@ -4,8 +4,8 @@ struct GeneralSettingsView: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SimplePanel {
+        VStack(alignment: .leading, spacing: AutoSuggestTheme.spacingMD) {
+            SettingsSection {
                 Toggle("AutoSuggest", isOn: Binding(
                     get: { uiModel.config.enabled },
                     set: { uiModel.toggleEnabled($0) }
@@ -33,8 +33,7 @@ struct GeneralSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            SimplePanel {
-                SectionHeader("Shortcuts", systemImage: "keyboard")
+            SettingsSection("Shortcuts", systemImage: "keyboard") {
                 Text(
                     "Accept suggestions with Tab or Enter. Dismiss with Esc. Left-click the status item for quick controls and right-click for overflow actions."
                 )

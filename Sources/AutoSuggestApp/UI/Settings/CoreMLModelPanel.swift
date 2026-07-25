@@ -10,7 +10,7 @@ struct CoreMLModelPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             // Model source
-            SimplePanel {
+            SettingsSection {
                 HStack {
                     SectionHeader("Model source", systemImage: "arrow.down.circle")
                     Spacer()
@@ -42,7 +42,7 @@ struct CoreMLModelPanel: View {
             }
 
             // Installed models
-            SimplePanel {
+            SettingsSection {
                 HStack {
                     SectionHeader("Installed models", systemImage: "cube")
                     Spacer()

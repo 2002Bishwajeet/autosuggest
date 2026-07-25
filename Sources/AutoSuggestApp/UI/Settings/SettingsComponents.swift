@@ -1,36 +1,6 @@
 import AppKit
 import SwiftUI
 
-struct SettingsCard<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        content
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-            )
-    }
-}
-
-struct SimplePanel<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            content
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-    }
-}
-
 struct BannerView: View {
     let banner: AppBanner
     let onDismiss: () -> Void

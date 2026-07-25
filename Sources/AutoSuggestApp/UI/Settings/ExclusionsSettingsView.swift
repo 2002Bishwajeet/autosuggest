@@ -11,7 +11,7 @@ struct ExclusionsSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SimplePanel {
+            SettingsSection {
                 HStack {
                     TextField("Search rules", text: $searchText)
                         .textFieldStyle(.roundedBorder)
@@ -27,7 +27,7 @@ struct ExclusionsSettingsView: View {
                 }
             }
 
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("Quick add", systemImage: "bolt")
                 Text("Add a common code editor to the exclusion list in one click.")
                     .font(.caption)
@@ -39,7 +39,7 @@ struct ExclusionsSettingsView: View {
                 }
             }
 
-            SimplePanel {
+            SettingsSection {
                 if filteredRules.isEmpty {
                     VStack(spacing: 6) {
                         Image(systemName: "shield.slash")

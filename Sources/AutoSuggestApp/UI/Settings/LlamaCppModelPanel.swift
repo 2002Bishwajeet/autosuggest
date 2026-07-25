@@ -5,7 +5,7 @@ struct LlamaCppModelPanel: View {
     @State private var baseURLDraft: String = ""
 
     var body: some View {
-        SimplePanel {
+        SettingsSection {
             SectionHeader("llama.cpp endpoint", systemImage: "server.rack")
             HStack {
                 TextField("http://127.0.0.1:8080", text: $baseURLDraft)

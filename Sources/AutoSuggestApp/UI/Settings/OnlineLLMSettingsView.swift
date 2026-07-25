@@ -7,7 +7,7 @@ struct OnlineLLMSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SimplePanel {
+            SettingsSection {
                 Toggle("Enable online LLM", isOn: Binding(
                     get: { uiModel.config.onlineLLM.enabled },
                     set: { uiModel.onUpdateOnlineLLMEnabled?($0) }
@@ -18,7 +18,7 @@ struct OnlineLLMSettingsView: View {
             }
 
             if uiModel.config.onlineLLM.enabled {
-                SimplePanel {
+                SettingsSection {
                     SectionHeader("Provider", systemImage: "cloud")
 
                     Picker("Provider", selection: Binding(
@@ -54,7 +54,7 @@ struct OnlineLLMSettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                SimplePanel {
+                SettingsSection {
                     SectionHeader("API key", systemImage: "key")
                     SecureField("Enter API key", text: $onlineLLMAPIKey)
                         .textFieldStyle(.roundedBorder)

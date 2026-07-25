@@ -186,7 +186,7 @@ struct OnboardingFlowView: View {
     private var welcomeStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             if permissionsReady {
-                SettingsCard {
+                SettingsSection {
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: "checkmark.shield")
                             .foregroundStyle(AutoSuggestTheme.success)
@@ -202,7 +202,7 @@ struct OnboardingFlowView: View {
                 }
             }
 
-            SettingsCard {
+            SettingsSection {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(
                         "AutoSuggest stays lightweight in the menu bar and keeps advanced controls in a dedicated settings window."
@@ -251,29 +251,29 @@ struct OnboardingFlowView: View {
                 )
             }
 
-            PermissionDetailRow(
+            PermissionRow(
                 systemImage: "accessibility",
                 title: "Accessibility",
                 description: "Lets AutoSuggest read what you're typing and insert completions into any text field. Required for core functionality.",
-                ready: permissionManager.isAccessibilityTrusted(),
-                primaryAction: ("Show Prompt", {
+                granted: permissionManager.isAccessibilityTrusted(),
+                primary: ("Show Prompt", {
                     _ = permissionManager.requestAccessibilityPermission()
                 }),
-                secondaryAction: ("Open Settings", {
+                secondary: ("Open Settings", {
                     permissionManager.openAccessibilitySettings()
                 })
             )
 
-            PermissionDetailRow(
+            PermissionRow(
                 systemImage: "keyboard",
                 title: "Input Monitoring",
                 description: "Lets AutoSuggest detect when you press Tab, Enter, or Esc to accept or dismiss suggestions. Requires a relaunch after granting.",
-                ready: permissionManager.hasInputMonitoringPermission(),
-                primaryAction: ("Register App", {
+                granted: permissionManager.hasInputMonitoringPermission(),
+                primary: ("Register App", {
                     permissionManager.requestInputMonitoringPermission()
                     permissionManager.openInputMonitoringSettings()
                 }),
-                secondaryAction: ("Open Settings", {
+                secondary: ("Open Settings", {
                     permissionManager.openInputMonitoringSettings()
                 })
             )
@@ -337,7 +337,7 @@ struct OnboardingFlowView: View {
         VStack(alignment: .leading, spacing: 16) {
             SuggestionPreviewCard()
 
-            SettingsCard {
+            SettingsSection {
                 VStack(alignment: .leading, spacing: 14) {
                     Label("Keyboard controls", systemImage: "keyboard")
                         .font(.headline)
@@ -373,7 +373,7 @@ struct OnboardingFlowView: View {
                 )
             }
 
-            SettingsCard {
+            SettingsSection {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: selectedChoice == .coreML ? "cube.transparent" : "cpu")
                         .foregroundStyle(Color.accentColor)
@@ -393,7 +393,7 @@ struct OnboardingFlowView: View {
     }
 
     private var selectedModelSetupSection: some View {
-        SettingsCard {
+        SettingsSection {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {

@@ -6,7 +6,7 @@ struct DiagnosticsSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("Metrics", systemImage: "chart.bar")
                 metricRow("Suggestions shown", "\(uiModel.metrics.suggestionsShown)")
                 metricRow("Accepted", "\(uiModel.metrics.suggestionsAccepted)")
@@ -26,7 +26,7 @@ struct DiagnosticsSettingsView: View {
                 }
             }
 
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("Support report", systemImage: "doc.text")
                 Text("Copy or export this content-free report when filing an issue.")
                     .font(.caption)

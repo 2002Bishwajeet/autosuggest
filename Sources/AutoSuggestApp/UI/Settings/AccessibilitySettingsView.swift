@@ -6,7 +6,7 @@ struct AccessibilitySettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("VoiceOver announcements", systemImage: "speaker.wave.2")
                 Text("Suggestions are announced once and stay keyboard-first.")
                     .foregroundStyle(.secondary)
@@ -16,7 +16,7 @@ struct AccessibilitySettingsView: View {
                 .accessibilityHint("Plays a sample suggestion announcement")
             }
 
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("System accessibility settings", systemImage: "eye")
                 Text("AutoSuggest follows these macOS preferences automatically.")
                     .font(.caption)
