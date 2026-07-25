@@ -44,7 +44,10 @@ final class SuggestionOrchestrator {
             do {
                 let suggestion = try await inferenceEngine.suggest(for: context)
                 let completion = suggestion.completion.trimmingCharacters(in: .newlines)
-                guard !completion.isEmpty else {
+                // #31: drop model chatter (echoes, chat replies, quoted/markdown
+                // output) — showing nothing beats showing garbage.
+                guard !completion.isEmpty,
+                      !SuggestionQualityGate.isGarbage(completion, context: context) else {
                     onClearSuggestion?()
                     return
                 }

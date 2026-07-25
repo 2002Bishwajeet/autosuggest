@@ -24,14 +24,12 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
     }
 
     func generateSuggestion(context: String) async throws -> Suggestion {
-        // The text before the caret IS the completion prompt. We intentionally do
-        // NOT append a personalization hint as instruction text here — on a raw
-        // completion endpoint the model echoes such instructions straight into the
-        // suggestion, corrupting it. (Personalization still feeds the accept-loop
-        // via PersonalizationEngine.)
-        let prompt = context
-
-        guard let url = URL(string: "\(baseURL)/api/generate") else {
+        // #31: use the chat endpoint so the instructions live in a system
+        // message the model won't echo into the completion (the old raw
+        // /api/generate path let instruction-tuned models chat-template the
+        // bare context and "reply" to it). Low temperature + a newline stop
+        // because we render exactly one deterministic inline line.
+        guard let url = URL(string: "\(baseURL)/api/chat") else {
             throw URLError(.badURL)
         }
         var request = URLRequest(url: url)
@@ -39,11 +37,11 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 10
         request.httpBody = try JSONEncoder().encode(
-            OllamaGenerateRequest(
+            OllamaChatRequest(
                 model: model,
-                prompt: prompt,
+                messages: CompletionPrompt.chatMessages(for: context),
                 stream: false,
-                options: OllamaOptions(numPredict: 24)
+                options: OllamaOptions(numPredict: 24, temperature: 0.15, topP: 0.9, stop: ["\n"])
             )
         )
 
@@ -59,8 +57,10 @@ struct OllamaFallbackInferenceRuntime: InferenceRuntime {
             throw Self.mapErrorResponse(statusCode: status, body: data, model: model)
         }
 
-        let decoded = try JSONDecoder().decode(OllamaGenerateResponse.self, from: data)
-        let completion = decoded.response.trimmingCharacters(in: .whitespacesAndNewlines)
+        let decoded = try JSONDecoder().decode(OllamaChatResponse.self, from: data)
+        // Trim newlines only: a leading space is part of the continuation and
+        // matters at the insertion point.
+        let completion = decoded.message.content.trimmingCharacters(in: .newlines)
         if completion.isEmpty {
             return Suggestion(completion: "", confidence: 0)
         }
@@ -106,17 +106,29 @@ private struct OllamaErrorResponse: Decodable {
     let error: String
 }
 
-private struct OllamaGenerateRequest: Encodable {
+private struct OllamaChatRequest: Encodable {
     let model: String
-    let prompt: String
+    let messages: [CompletionPrompt.ChatMessage]
     let stream: Bool
     let options: OllamaOptions
 }
 
 private struct OllamaOptions: Encodable {
     let numPredict: Int
+    let temperature: Double
+    let topP: Double
+    let stop: [String]
+
+    /// Ollama expects snake_case option keys. (The old code encoded
+    /// `numPredict` verbatim, so the 24-token cap was silently ignored.)
+    enum CodingKeys: String, CodingKey {
+        case numPredict = "num_predict"
+        case temperature
+        case topP = "top_p"
+        case stop
+    }
 }
 
-private struct OllamaGenerateResponse: Decodable {
-    let response: String
+private struct OllamaChatResponse: Decodable {
+    let message: CompletionPrompt.ChatMessage
 }

@@ -157,13 +157,9 @@ struct FoundationModelsInferenceRuntime: InferenceRuntime {
     @available(macOS 26.0, *)
     @MainActor
     struct LanguageModelSessionResponder: FoundationModelResponding {
-        /// Terse instructions: emit ONLY the continuation of the user's text.
-        private static let instructions = """
-        You complete the user's text. Output ONLY the continuation that should come \
-        immediately after the provided text. Do not repeat the input, do not add \
-        quotes, preamble, explanation, or formatting. If there is nothing useful to \
-        add, output nothing.
-        """
+        /// Shared completion instructions (#31) — same steering as the Ollama
+        /// chat path, so both runtimes fail and succeed the same way.
+        private static let instructions = CompletionPrompt.systemPrompt
 
         var isModelAvailable: Bool {
             SystemLanguageModel.default.availability == .available
