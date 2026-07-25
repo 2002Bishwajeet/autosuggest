@@ -21,6 +21,7 @@ final class TypingPipeline {
     private var currentContext: TextContext?
     private var activeSuggestion: SuggestionCandidate?
     private var highestPresentedRequestID = 0
+    private var revalidationTimer: Timer?
 
     init(
         inputMonitor: InputMonitor,
@@ -87,7 +88,10 @@ final class TypingPipeline {
     }
 
     private func handleInputEvent() {
-        guard let context = contextProvider.currentContext() else { return }
+        guard let context = contextProvider.currentContext() else {
+            clearSuggestion()
+            return
+        }
         if inputMethodMonitor.isIMEActive() {
             clearSuggestion()
             return
@@ -125,7 +129,7 @@ final class TypingPipeline {
         )
     }
 
-    private func presentSuggestion(_ candidate: SuggestionCandidate) {
+    func presentSuggestion(_ candidate: SuggestionCandidate) {
         if candidate.requestID < highestPresentedRequestID {
             return
         }
@@ -153,6 +157,7 @@ final class TypingPipeline {
         let caretRect = currentContext?.caretRectInScreen
         let caretFont = currentContext?.caretFont
         overlayRenderer.showSuggestion(candidate.completion, caretRectInScreen: caretRect, font: caretFont)
+        startRevalidationTimer()
         accessibilityAnnouncer.announceSuggestion(candidate.completion)
         Task {
             await metricsCollector.recordSuggestionShown(latencyMs: candidate.latencyMs)
@@ -167,8 +172,35 @@ final class TypingPipeline {
     }
 
     private func clearSuggestion() {
+        revalidationTimer?.invalidate()
+        revalidationTimer = nil
         activeSuggestion = nil
         overlayRenderer.hideSuggestion()
+    }
+
+    /// Focus can leave the field with no keyDown ever firing (mouse click,
+    /// window switch), so while a ghost is visible we poll the AX context and
+    /// clear as soon as it stops matching the suggestion's source field.
+    // ponytail: 0.5s poll only while a ghost is visible; swap for a per-app
+    // AXObserver on kAXFocusedUIElementChanged if polling ever shows up.
+    private func startRevalidationTimer() {
+        revalidationTimer?.invalidate()
+        revalidationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.revalidateActiveSuggestion() }
+        }
+    }
+
+    func revalidateActiveSuggestion() {
+        guard let activeSuggestion else {
+            revalidationTimer?.invalidate()
+            revalidationTimer = nil
+            return
+        }
+        guard let context = contextProvider.currentContext(),
+              isSuggestion(activeSuggestion, validFor: context) else {
+            clearSuggestion()
+            return
+        }
     }
 
     private func handleShortcut(_ command: SuggestionCommand) -> Bool {
