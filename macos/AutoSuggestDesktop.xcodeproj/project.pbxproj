@@ -11,9 +11,11 @@
 		67892A96F2105B53E74E2F2B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D82DCE7503827F59F87934E3 /* Assets.xcassets */; };
 		AEDDE162242FC413F107CC67 /* AutoSuggestDesktopApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */; };
 		E20A26F73FFBE65418532373 /* AutoSuggestApp in Frameworks */ = {isa = PBXBuildFile; productRef = 18E2CE67DC41BB323A03571F /* AutoSuggestApp */; };
+		E5EAC33E1D7F9AE18AD6782C /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1D0F7F77850FD65A5BFAFD /* AppModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2B1D0F7F77850FD65A5BFAFD /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSuggestDesktopApp.swift; sourceTree = "<group>"; };
 		611527A03C860AE957A05D05 /* AutoSuggest.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AutoSuggest.entitlements; sourceTree = "<group>"; };
 		66336980298A0B9E153FE6CB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -47,6 +49,7 @@
 		431D6FA8D3A4CD9A2887AE23 /* AutoSuggestDesktop */ = {
 			isa = PBXGroup;
 			children = (
+				2B1D0F7F77850FD65A5BFAFD /* AppModel.swift */,
 				D82DCE7503827F59F87934E3 /* Assets.xcassets */,
 				611527A03C860AE957A05D05 /* AutoSuggest.entitlements */,
 				5D0D8E71C76BA3FF85228AEB /* AutoSuggestDesktopApp.swift */,
@@ -149,6 +152,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5EAC33E1D7F9AE18AD6782C /* AppModel.swift in Sources */,
 				AEDDE162242FC413F107CC67 /* AutoSuggestDesktopApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -4,11 +4,11 @@ import AppKit
 /// ghost when active, or a colored composite with a stacked status badge for
 /// attention states. Shared by the macOS app (MenuBarExtra) and the SwiftPM
 /// runner (StatusBarController).
-enum MenuBarIconRenderer {
+public enum MenuBarIconRenderer {
     /// The ghost glyph, optionally with a stacked status badge. Active state
     /// returns a clean monochrome template (the standard menu-bar look); badged
     /// states return a colored composite.
-    static func image(for state: MenuBarIconState) -> NSImage {
+    public static func image(for state: MenuBarIconState) -> NSImage {
         guard let badge = state.badge else {
             let ghost = ghostBaseImage() ?? NSImage()
             ghost.isTemplate = true

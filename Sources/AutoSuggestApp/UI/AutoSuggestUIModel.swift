@@ -67,7 +67,7 @@ struct AppBanner: Identifiable {
     let message: String
 }
 
-struct PermissionHealth {
+public struct PermissionHealth: Sendable {
     var accessibilityTrusted: Bool
     var inputMonitoringTrusted: Bool
 
@@ -76,7 +76,7 @@ struct PermissionHealth {
         inputMonitoringTrusted: false
     )
 
-    var isReady: Bool {
+    public var isReady: Bool {
         accessibilityTrusted && inputMonitoringTrusted
     }
 
@@ -337,9 +337,9 @@ extension MetricsSnapshot {
 
 @MainActor
 public final class AutoSuggestUIModel: ObservableObject {
-    @Published var config: AppConfig
+    @Published public var config: AppConfig
     @Published var selectedSettingsRoute: SettingsRoute = .general
-    @Published var permissionHealth: PermissionHealth = .empty
+    @Published public var permissionHealth: PermissionHealth = .empty
     /// Set when Input Monitoring is granted but the tap could not be armed in this
     /// process; the UI shows a one-click "Relaunch to finish enabling" action.
     @Published var needsRelaunchToEnable: Bool = false

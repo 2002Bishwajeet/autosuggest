@@ -2,12 +2,12 @@ import Foundation
 
 /// The three meaningful menu-bar states, in priority order: a missing
 /// permission outranks the on/off toggle.
-enum MenuBarIconState: Equatable {
+public enum MenuBarIconState: Equatable {
     case active // amber ghost
     case paused // pause.circle
     case needsPermission // exclamationmark.shield
 
-    static func resolve(permissionsReady: Bool, enabled: Bool) -> MenuBarIconState {
+    public static func resolve(permissionsReady: Bool, enabled: Bool) -> MenuBarIconState {
         guard permissionsReady else { return .needsPermission }
         return enabled ? .active : .paused
     }

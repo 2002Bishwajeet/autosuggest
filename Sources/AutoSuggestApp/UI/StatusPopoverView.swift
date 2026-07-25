@@ -1,8 +1,12 @@
 import AppKit
 import SwiftUI
 
-struct StatusPopoverView: View {
+public struct StatusPopoverView: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
+
+    public init(uiModel: AutoSuggestUIModel) {
+        self.uiModel = uiModel
+    }
 
     private var statusIndicator: StatusDot.Status {
         if !uiModel.config.enabled { return .inactive }
@@ -11,7 +15,7 @@ struct StatusPopoverView: View {
         return .active
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let banner = uiModel.banner {
                 BannerView(banner: banner, onDismiss: uiModel.dismissBanner)
