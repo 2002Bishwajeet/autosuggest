@@ -445,11 +445,27 @@ enum BatteryMode: String, Codable {
     case pauseOnLowPower = "pause_on_low_power"
 }
 
-struct ExclusionRule: Codable, Equatable {
+struct ExclusionRule: Codable, Equatable, Identifiable {
     var enabled: Bool
     var bundleID: String?
     var windowTitleContains: String?
     var contentPattern: String?
+
+    /// Runtime-only stable identity for SwiftUI `ForEach`. Deliberately excluded
+    /// from `CodingKeys` so it is never persisted — the on-disk config schema is
+    /// unchanged. Decoded instances receive a fresh UUID.
+    let id = UUID()
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled, bundleID, windowTitleContains, contentPattern
+    }
+
+    static func == (lhs: ExclusionRule, rhs: ExclusionRule) -> Bool {
+        lhs.enabled == rhs.enabled
+            && lhs.bundleID == rhs.bundleID
+            && lhs.windowTitleContains == rhs.windowTitleContains
+            && lhs.contentPattern == rhs.contentPattern
+    }
 }
 
 /// The remote manifest is an optional "is there a newer default model?" check.
