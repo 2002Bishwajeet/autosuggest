@@ -28,9 +28,18 @@ final class AboutWindowController {
     }
 }
 
+/// Formats the About window's version line. Pure + testable so the fallback
+/// (used when the bundle keys are missing) is locked down by a unit test rather
+/// than a stale hardcoded version number.
+enum AboutVersion {
+    static func string(shortVersion: String?, build: String?) -> String {
+        "Version \(shortVersion ?? "—") (\(build ?? "1"))"
+    }
+}
+
 private struct AboutView: View {
-    private let repoURL = URL(string: "https://github.com/2002Bishwajeet/autosuggest")!
-    private let issuesURL = URL(string: "https://github.com/2002Bishwajeet/autosuggest/issues")!
+    private let repoURL = URL(string: "https://github.com/2002Bishwajeet/autosuggest")
+    private let issuesURL = URL(string: "https://github.com/2002Bishwajeet/autosuggest/issues")
 
     var body: some View {
         VStack(spacing: 14) {
@@ -56,8 +65,12 @@ private struct AboutView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 8) {
-                Link("View on GitHub", destination: repoURL)
-                Link("Report an issue", destination: issuesURL)
+                if let repoURL {
+                    Link("View on GitHub", destination: repoURL)
+                }
+                if let issuesURL {
+                    Link("Report an issue", destination: issuesURL)
+                }
             }
             .font(.callout)
             .tint(AutoSuggestTheme.brand)
@@ -68,13 +81,14 @@ private struct AboutView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(28)
-        .frame(width: 340)
+        .frame(minWidth: 300, idealWidth: 340)
         .fixedSize(horizontal: false, vertical: true)
     }
 
     private var versionString: String {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.3.0"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "Version \(version) (\(build))"
+        AboutVersion.string(
+            shortVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+            build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        )
     }
 }
