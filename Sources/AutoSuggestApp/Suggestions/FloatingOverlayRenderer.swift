@@ -1,5 +1,4 @@
 import AppKit
-import ApplicationServices
 import Foundation
 
 @MainActor
@@ -20,6 +19,14 @@ final class FloatingOverlayRenderer: OverlayRenderer {
     private var hideGeneration = 0
 
     func showSuggestion(_ text: String, caretRectInScreen: CGRect?, font: NSFont?) {
+        // #26: the ghost is only convincing when it sits at the caret. Without
+        // usable caret bounds, show nothing — a box floating at the mouse or a
+        // window corner reads as a glitch, not a completion. (Zero WIDTH is a
+        // normal collapsed caret; zero height means the AX read failed.)
+        guard let caret = caretRectInScreen, caret.height > 0 else {
+            hideSuggestion()
+            return
+        }
         ensurePanel()
         guard let panel, let textField else { return }
 
@@ -28,7 +35,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
             panel: panel,
             textField: textField,
             text: text,
-            caretRectInScreen: caretRectInScreen,
+            caretRectInScreen: caret,
             axFont: font
         )
         hideGeneration += 1
@@ -103,7 +110,7 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         panel: NSPanel,
         textField: NSTextField,
         text: String,
-        caretRectInScreen: CGRect?,
+        caretRectInScreen: CGRect,
         axFont: NSFont?
     ) {
         // B1: render in the real field font when AX exposed one; otherwise fall
@@ -116,18 +123,11 @@ final class FloatingOverlayRenderer: OverlayRenderer {
         measured.width = min(measured.width, 556) // cap (≈560 frame after +4)
 
         // B2: baseline-aligned target frame from the pure layout function.
-        let targetFrame: NSRect
-        if let caret = caretRectInScreen, !caret.isEmpty {
-            targetFrame = GhostTextLayout.ghostFrame(caretRect: caret, font: font, measuredSize: measured)
-        } else {
-            let anchor = fallbackAnchor()
-            targetFrame = NSRect(
-                x: anchor.x,
-                y: anchor.y,
-                width: max(measured.width + 4, 1),
-                height: max(measured.height, 14)
-            )
-        }
+        let targetFrame = GhostTextLayout.ghostFrame(
+            caretRect: caretRectInScreen,
+            font: font,
+            measuredSize: measured
+        )
 
         var clampedFrame = targetFrame
         let screenFrame = targetScreenFrame(for: clampedFrame.origin)
@@ -149,57 +149,5 @@ final class FloatingOverlayRenderer: OverlayRenderer {
             return screen.visibleFrame
         }
         return NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1280, height: 720)
-    }
-
-    private func fallbackAnchor() -> CGPoint {
-        if let frame = focusedWindowFrame() {
-            return CGPoint(x: frame.minX + 24, y: frame.maxY - 52)
-        }
-        let mouse = NSEvent.mouseLocation
-        return CGPoint(x: mouse.x + 10, y: mouse.y - 12)
-    }
-
-    private func focusedWindowFrame() -> CGRect? {
-        let systemWide = AXUIElementCreateSystemWide()
-        guard let window = copyUIElementAttribute(named: "AXFocusedWindow", from: systemWide) else {
-            return nil
-        }
-        guard let position = copyCGPointAttribute(named: "AXPosition", from: window),
-              let size = copyCGSizeAttribute(named: "AXSize", from: window) else {
-            return nil
-        }
-        return CGRect(origin: position, size: size)
-    }
-
-    private func copyUIElementAttribute(named attribute: String, from element: AXUIElement) -> AXUIElement? {
-        var value: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
-        guard result == .success, let value else { return nil }
-        return AXHelpers.castToAXUIElement(value)
-    }
-
-    private func copyCGPointAttribute(named attribute: String, from element: AXUIElement) -> CGPoint? {
-        guard let value = copyAXValueAttribute(named: attribute, from: element) else { return nil }
-        var point = CGPoint.zero
-        guard AXValueGetType(value) == .cgPoint, AXValueGetValue(value, .cgPoint, &point) else {
-            return nil
-        }
-        return point
-    }
-
-    private func copyCGSizeAttribute(named attribute: String, from element: AXUIElement) -> CGSize? {
-        guard let value = copyAXValueAttribute(named: attribute, from: element) else { return nil }
-        var size = CGSize.zero
-        guard AXValueGetType(value) == .cgSize, AXValueGetValue(value, .cgSize, &size) else {
-            return nil
-        }
-        return size
-    }
-
-    private func copyAXValueAttribute(named attribute: String, from element: AXUIElement) -> AXValue? {
-        var value: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
-        guard result == .success, let value else { return nil }
-        return AXHelpers.castToAXValue(value)
     }
 }
