@@ -28,6 +28,19 @@ enum GhostTextLayout {
         return NSFont.systemFont(ofSize: 13, weight: .regular)
     }
 
+    /// AX APIs (`AXBoundsForRange` etc.) report screen rects with a top-left
+    /// origin (y grows downward); AppKit window frames use a bottom-left
+    /// origin (y grows upward). Both spaces share the primary screen's top /
+    /// bottom edges, so the flip is `y_cocoa = screenHeight - rect.maxY` (#26).
+    static func cocoaRect(fromAXRect rect: CGRect, primaryScreenHeight: CGFloat) -> CGRect {
+        CGRect(
+            x: rect.origin.x,
+            y: primaryScreenHeight - rect.maxY,
+            width: rect.width,
+            height: rect.height
+        )
+    }
+
     /// Baseline-aligned frame for the ghost text panel (B2).
     ///
     /// The caret rect spans the line box (top = `maxY`, bottom = `minY` in

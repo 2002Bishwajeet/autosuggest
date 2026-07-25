@@ -156,7 +156,30 @@ final class AXTextContextProvider: TextContextProvider {
 
     private func extractCaretRect(from element: AXUIElement, selectedRange: NSRange?) -> CGRect? {
         guard let selectedRange else { return nil }
-        var range = CFRange(location: selectedRange.location, length: selectedRange.length)
+        if let rect = boundsForRange(
+            CFRange(location: selectedRange.location, length: selectedRange.length),
+            element: element
+        ) {
+            return axRectToCocoa(rect)
+        }
+        // A collapsed caret range often yields no bounds; probe the character
+        // before the caret and use its rect (whose trailing edge is the caret
+        // position) — same trick extractCaretFont uses.
+        if selectedRange.length == 0, selectedRange.location > 0,
+           let rect = boundsForRange(
+               CFRange(location: selectedRange.location - 1, length: 1),
+               element: element
+           ) {
+            return axRectToCocoa(rect)
+        }
+        if let rect = boundsForSelectedMarkerRange(element: element) {
+            return axRectToCocoa(rect)
+        }
+        return nil
+    }
+
+    private func boundsForRange(_ range: CFRange, element: AXUIElement) -> CGRect? {
+        var range = range
         guard let rangeValue = AXValueCreate(.cfRange, &range) else { return nil }
 
         var rectRef: CFTypeRef?
@@ -170,10 +193,22 @@ final class AXTextContextProvider: TextContextProvider {
         guard let axRect = AXHelpers.castToAXValue(rectRef) else { return nil }
 
         var rect = CGRect.zero
-        if AXValueGetType(axRect) == .cgRect, AXValueGetValue(axRect, .cgRect, &rect) {
-            return rect
+        guard AXValueGetType(axRect) == .cgRect, AXValueGetValue(axRect, .cgRect, &rect) else {
+            return nil
         }
-        return boundsForSelectedMarkerRange(element: element)
+        // A zero-height rect is a failed read (some apps return .zero instead
+        // of an error); zero WIDTH is fine — that's a collapsed caret.
+        guard rect.height > 0 else { return nil }
+        return rect
+    }
+
+    /// AX rects are top-left-origin; everything downstream of TextContext is
+    /// Cocoa bottom-left. Convert once, here at the AX boundary.
+    private func axRectToCocoa(_ rect: CGRect) -> CGRect {
+        GhostTextLayout.cocoaRect(
+            fromAXRect: rect,
+            primaryScreenHeight: NSScreen.screens.first?.frame.height ?? 0
+        )
     }
 
     private func extractFocusedWindowTitle(systemWideElement: AXUIElement) -> String? {

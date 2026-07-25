@@ -96,3 +96,32 @@ final class GhostTextLayoutTests: XCTestCase {
         XCTAssertEqual(frame.height, max(lineHeight, 14), accuracy: 0.5)
     }
 }
+
+// MARK: - AX → Cocoa coordinate flip (#26)
+
+extension GhostTextLayoutTests {
+    func testCocoaRectFlipsTopLeftOriginToBottomLeft() {
+        // AX: y measured down from the top of the primary screen. A caret 50pt
+        // from the top on a 1000pt screen, 18pt tall, has its Cocoa bottom at
+        // 1000 - (50 + 18) = 932.
+        let ax = CGRect(x: 100, y: 50, width: 0, height: 18)
+        let cocoa = GhostTextLayout.cocoaRect(fromAXRect: ax, primaryScreenHeight: 1000)
+        XCTAssertEqual(cocoa, CGRect(x: 100, y: 932, width: 0, height: 18))
+    }
+
+    func testCocoaRectFlipIsItsOwnInverse() {
+        let ax = CGRect(x: 33, y: 700, width: 5, height: 22)
+        let roundTripped = GhostTextLayout.cocoaRect(
+            fromAXRect: GhostTextLayout.cocoaRect(fromAXRect: ax, primaryScreenHeight: 1080),
+            primaryScreenHeight: 1080
+        )
+        XCTAssertEqual(roundTripped, ax)
+    }
+
+    func testCocoaRectPreservesZeroWidthCaret() {
+        let ax = CGRect(x: 512, y: 300, width: 0, height: 16)
+        let cocoa = GhostTextLayout.cocoaRect(fromAXRect: ax, primaryScreenHeight: 900)
+        XCTAssertEqual(cocoa.width, 0)
+        XCTAssertEqual(cocoa.height, 16)
+    }
+}
