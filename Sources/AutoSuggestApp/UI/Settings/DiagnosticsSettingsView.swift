@@ -5,9 +5,8 @@ struct DiagnosticsSettingsView: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSection {
-                SectionHeader("Metrics", systemImage: "chart.bar")
+        Form {
+            Section("Metrics") {
                 metricRow("Suggestions shown", "\(uiModel.metrics.suggestionsShown)")
                 metricRow("Accepted", "\(uiModel.metrics.suggestionsAccepted)")
                 metricRow("Acceptance rate", uiModel.metrics.acceptanceRateText)
@@ -26,21 +25,17 @@ struct DiagnosticsSettingsView: View {
                 }
             }
 
-            SettingsSection {
-                SectionHeader("Support report", systemImage: "doc.text")
+            Section("Support Report") {
                 Text("Copy or export this content-free report when filing an issue.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextEditor(text: .constant(uiModel.diagnostics.reportText))
-                    .font(.system(.body, design: .monospaced))
-                    .frame(minHeight: 240)
-                    .scrollContentBackground(.hidden)
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
-                            .fill(Color(nsColor: .textBackgroundColor))
-                    )
-                    .accessibilityLabel("Support report")
+                ScrollView {
+                    Text(uiModel.diagnostics.reportText)
+                        .font(.system(.body, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(minHeight: 240)
                 HStack {
                     Button("Copy Report") {
                         NSPasteboard.general.clearContents()
@@ -61,6 +56,7 @@ struct DiagnosticsSettingsView: View {
                 }
             }
         }
+        .formStyle(.grouped)
     }
 
     private func metricRow(_ label: String, _ value: String) -> some View {
