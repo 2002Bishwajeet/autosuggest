@@ -16,7 +16,6 @@ struct ModelStateSnapshot {
 @MainActor
 final class AppCoordinator {
     let logger = Logger(scope: "AppCoordinator")
-    let statusBarController = StatusBarController()
     let onboardingManager = OnboardingManager()
     let configStore = ConfigStore()
     let permissionManager = PermissionManager()
@@ -61,6 +60,10 @@ final class AppCoordinator {
     /// the SwiftPM runner) the status popover hides the control.
     var onCheckForUpdates: (() -> Void)?
 
+    /// Invoked once, as soon as the UI model exists (before onboarding), so the
+    /// host's menu-bar surface can bind without owning the coordinator.
+    var onUIModelReady: ((AutoSuggestUIModel) -> Void)?
+
     deinit {
         if let didBecomeActiveObserver {
             NotificationCenter.default.removeObserver(didBecomeActiveObserver)
@@ -80,7 +83,7 @@ final class AppCoordinator {
         let uiModel = AutoSuggestUIModel(config: config)
         self.uiModel = uiModel
         bindUIModel(uiModel)
-        statusBarController.configure(with: uiModel)
+        onUIModelReady?(uiModel)
 
         didBecomeActiveObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
@@ -251,6 +254,7 @@ final class AppCoordinator {
         }
         // Only expose the update affordance when the host wired an updater.
         uiModel.onCheckForUpdates = onCheckForUpdates
+        uiModel.onShowAbout = { AboutWindowController.shared.showWindow() }
     }
 
     func mutateConfig(
@@ -361,7 +365,6 @@ final class AppCoordinator {
             lastModelError: lastModelError,
             exportPath: diagnosticsExportPath
         )
-        statusBarController.refreshAppearance()
     }
 
     func setPipelineEnabledFromCurrentState() {

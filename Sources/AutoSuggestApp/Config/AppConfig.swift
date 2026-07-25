@@ -1,10 +1,10 @@
 import Foundation
 
-struct AppConfig: Codable {
+public struct AppConfig: Codable, Sendable {
     static let currentConfigVersion = 4
 
     var configVersion: Int
-    var enabled: Bool
+    public var enabled: Bool
     var distribution: DistributionConfig
     var localModel: LocalModelConfig
     var onlineLLM: OnlineLLMConfig
@@ -55,7 +55,7 @@ struct AppConfig: Codable {
         self.shortcuts = shortcuts
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         configVersion = try container.decodeIfPresent(Int.self, forKey: .configVersion) ?? 0
         enabled = try container.decode(Bool.self, forKey: .enabled)

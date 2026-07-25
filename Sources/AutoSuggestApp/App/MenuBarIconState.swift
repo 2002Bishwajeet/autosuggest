@@ -2,13 +2,13 @@ import Foundation
 
 /// The meaningful menu-bar states, in priority order: a missing permission
 /// outranks the on/off toggle, which outranks a runtime that isn't ready.
-enum MenuBarIconState: Equatable {
+public enum MenuBarIconState: Equatable {
     case active // amber ghost
     case paused // pause.circle
     case needsPermission // exclamationmark.shield
     case degraded // enabled, but no local runtime is ready (e.g. Ollama not running)
 
-    static func resolve(permissionsReady: Bool, enabled: Bool, runtimeReady: Bool) -> MenuBarIconState {
+    public static func resolve(permissionsReady: Bool, enabled: Bool, runtimeReady: Bool) -> MenuBarIconState {
         guard permissionsReady else { return .needsPermission }
         guard enabled else { return .paused }
         return runtimeReady ? .active : .degraded
