@@ -52,6 +52,14 @@ enum AutoSuggestTheme {
     static let radiusSmall: CGFloat = 8
     static let radiusMedium: CGFloat = 12
     static let radiusLarge: CGFloat = 16
+
+    static let radiusExtraSmall: CGFloat = 6
+
+    // MARK: - Badge / tile fill
+
+    /// Canonical fill opacity for status capsules and icon tiles. Replaces the
+    /// ad-hoc 0.12 / 0.14 / 0.16 values that had drifted across views.
+    static let badgeFillOpacity: Double = 0.15
 }
 
 // MARK: - Status Indicator
@@ -98,5 +106,16 @@ struct SectionHeader: View {
             Text(title)
                 .font(.headline)
         }
+    }
+}
+
+// MARK: - App-wide tint
+
+extension View {
+    /// Applies AutoSuggest's amber brand tint. Deliberate design choice: amber
+    /// drives selection, key toggles, and primary buttons regardless of the
+    /// user's system accent. Apply once at each top-level SwiftUI view body.
+    func autoSuggestTinted() -> some View {
+        tint(AutoSuggestTheme.brand)
     }
 }
