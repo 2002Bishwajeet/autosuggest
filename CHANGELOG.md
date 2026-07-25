@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.1 — 2026-07-25
+
+Inline suggestions now behave like inline suggestions.
+
+### Fixed
+- **Ghost text renders at the caret** — completions appear as dimmed inline text
+  right after what you typed, in the field's own font and baseline
+  (Copilot-style), instead of a box floating at the mouse pointer. When caret
+  bounds aren't available, no overlay is shown at all. (#26)
+- **Suggestions dismiss on focus loss** — clicking into another field, window,
+  or app now clears the ghost text immediately; it no longer lingers until
+  Escape is pressed. (#27)
+
 ## v0.7.0 — 2026-07-25
 
 A top-to-bottom UI overhaul: a native, HIG-consistent interface with a warmer amber identity.

@@ -167,7 +167,7 @@
 				CODE_SIGN_ENTITLEMENTS = AutoSuggestDesktop/AutoSuggest.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = AutoSuggestDesktop/Info.plist;
@@ -175,7 +175,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.7.0;
+				MARKETING_VERSION = 0.7.1;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.autosuggest.desktop;
 				PRODUCT_NAME = AutoSuggest;
 				SDKROOT = macosx;
@@ -190,7 +190,7 @@
 				CODE_SIGN_ENTITLEMENTS = AutoSuggestDesktop/AutoSuggest.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = AutoSuggestDesktop/Info.plist;
@@ -198,7 +198,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.7.0;
+				MARKETING_VERSION = 0.7.1;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.autosuggest.desktop;
 				PRODUCT_NAME = AutoSuggest;
 				SDKROOT = macosx;
