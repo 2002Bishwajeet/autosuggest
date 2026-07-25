@@ -105,6 +105,7 @@ struct StatusPopoverView: View {
         }
         .padding(16)
         .frame(width: 368)
+        .autoSuggestTinted()
     }
 
     private func statusRow(_ label: String, value: String) -> some View {

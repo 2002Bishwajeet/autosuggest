@@ -114,6 +114,7 @@ struct OnboardingFlowView: View {
         .padding(28)
         .frame(minWidth: 680, minHeight: 540, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
+        .autoSuggestTinted()
         .onAppear { refreshPermissionState() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             // Refresh the moment the app regains focus — e.g. when the user
