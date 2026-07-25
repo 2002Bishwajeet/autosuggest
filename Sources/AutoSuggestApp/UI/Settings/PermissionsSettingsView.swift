@@ -5,62 +5,66 @@ struct PermissionsSettingsView: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AutoSuggestTheme.spacingMD) {
+        Form {
             if uiModel.needsRelaunchToEnable {
-                HStack(spacing: 10) {
-                    Image(systemName: "arrow.clockwise.circle.fill")
-                        .foregroundStyle(AutoSuggestTheme.brand)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Finish enabling AutoSuggest").font(.callout.weight(.semibold))
-                        Text("Input Monitoring was granted but needs a relaunch to take effect.")
-                            .font(.caption).foregroundStyle(.secondary)
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.clockwise.circle.fill")
+                            .foregroundStyle(AutoSuggestTheme.brand)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Finish enabling AutoSuggest").font(.callout.weight(.semibold))
+                            Text("Input Monitoring was granted but needs a relaunch to take effect.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Relaunch") { uiModel.relaunchApp() }
+                            .buttonStyle(.borderedProminent)
                     }
-                    Spacer()
-                    Button("Relaunch") { uiModel.relaunchApp() }
-                        .buttonStyle(.borderedProminent)
+                    .padding(AutoSuggestTheme.spacingMD)
+                    .background(
+                        AutoSuggestTheme.brand.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+                    )
                 }
-                .padding(AutoSuggestTheme.spacingMD)
-                .background(
-                    AutoSuggestTheme.brand.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
+            }
+
+            Section("Permissions") {
+                // Accessibility row
+                PermissionRow(
+                    systemImage: "accessibility",
+                    title: "Accessibility",
+                    description: "Lets AutoSuggest read the text around your cursor and insert completions into any text field.",
+                    granted: uiModel.permissionHealth.accessibilityTrusted,
+                    primary: ("Open System Settings", { uiModel.openAccessibilitySettings() })
                 )
-            }
 
-            // Accessibility row
-            PermissionRow(
-                systemImage: "accessibility",
-                title: "Accessibility",
-                description: "Lets AutoSuggest read the text around your cursor and insert completions into any text field.",
-                granted: uiModel.permissionHealth.accessibilityTrusted,
-                primary: ("Open System Settings", { uiModel.openAccessibilitySettings() })
-            )
+                // Input Monitoring row
+                PermissionRow(
+                    systemImage: "keyboard",
+                    title: "Input Monitoring",
+                    description: "Lets AutoSuggest detect Tab, Enter, and Esc so you can accept or dismiss suggestions. AutoSuggest must relaunch after you grant this.",
+                    granted: uiModel.permissionHealth.inputMonitoringTrusted,
+                    primary: ("Open System Settings", { uiModel.openInputMonitoringSettings() })
+                )
 
-            // Input Monitoring row
-            PermissionRow(
-                systemImage: "keyboard",
-                title: "Input Monitoring",
-                description: "Lets AutoSuggest detect Tab, Enter, and Esc so you can accept or dismiss suggestions. AutoSuggest must relaunch after you grant this.",
-                granted: uiModel.permissionHealth.inputMonitoringTrusted,
-                primary: ("Open System Settings", { uiModel.openInputMonitoringSettings() })
-            )
-
-            // Relaunch / recheck controls
-            HStack(spacing: 10) {
-                Button("Recheck") {
-                    uiModel.refreshPermissions()
-                }
-                .buttonStyle(.bordered)
-
-                if !uiModel.permissionHealth.isReady {
-                    Button("Relaunch Now") {
-                        uiModel.relaunchApp()
+                // Relaunch / recheck controls
+                HStack(spacing: 10) {
+                    Button("Recheck") {
+                        uiModel.refreshPermissions()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
+
+                    if !uiModel.permissionHealth.isReady {
+                        Button("Relaunch Now") {
+                            uiModel.relaunchApp()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 }
             }
 
-            SettingsSection("Privacy & Telemetry", systemImage: "hand.raised") {
+            Section("Privacy & Telemetry") {
                 Toggle("PII filtering", isOn: Binding(
                     get: { uiModel.config.privacy.piiFilteringEnabled },
                     set: { uiModel.updatePIIFiltering($0) }
@@ -85,7 +89,7 @@ struct PermissionsSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            SettingsSection("Personalization", systemImage: "wand.and.stars") {
+            Section("Personalization") {
                 Toggle("Personalize suggestions", isOn: Binding(
                     get: { uiModel.config.privacy.personalizationEnabled },
                     set: { uiModel.updatePersonalization($0) }
@@ -109,7 +113,7 @@ struct PermissionsSettingsView: View {
             }
             .onAppear { uiModel.onRefreshPersonalizationStats?() }
 
-            SettingsSection("Training Data", systemImage: "doc.text") {
+            Section("Training Data") {
                 Toggle("Collect training data (opt-in)", isOn: Binding(
                     get: { uiModel.config.privacy.trainingDataCollectionEnabled },
                     set: { uiModel.onUpdateTrainingDataCollection?($0) }
@@ -132,5 +136,6 @@ struct PermissionsSettingsView: View {
                 }
             }
         }
+        .formStyle(.grouped)
     }
 }
