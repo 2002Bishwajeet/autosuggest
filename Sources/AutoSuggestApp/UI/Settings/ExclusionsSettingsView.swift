@@ -10,8 +10,8 @@ struct ExclusionsSettingsView: View {
     @State private var ruleToDelete: ExclusionRule?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSection {
+        Form {
+            Section {
                 HStack {
                     TextField("Search rules", text: $searchText)
                         .textFieldStyle(.roundedBorder)
@@ -27,8 +27,7 @@ struct ExclusionsSettingsView: View {
                 }
             }
 
-            SettingsSection {
-                SectionHeader("Quick add", systemImage: "bolt")
+            Section("Quick add") {
                 Text("Add a common code editor to the exclusion list in one click.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -39,25 +38,15 @@ struct ExclusionsSettingsView: View {
                 }
             }
 
-            SettingsSection {
+            Section("Rules") {
                 if filteredRules.isEmpty {
-                    VStack(spacing: 6) {
-                        Image(systemName: "shield.slash")
-                            .font(.title2)
-                            .foregroundStyle(.tertiary)
-                        Text("No exclusion rules")
-                            .foregroundStyle(.secondary)
-                        Text(
-                            "Add rules to prevent suggestions in specific apps, windows, or when certain content is detected."
-                        )
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    EmptyStateView(
+                        icon: "shield.slash",
+                        title: "No exclusion rules",
+                        message: "Add rules to prevent suggestions in specific apps, windows, or when certain content is detected."
+                    )
                 } else {
-                    ForEach(Array(filteredRules.enumerated()), id: \.offset) { _, rule in
+                    ForEach(filteredRules) { rule in
                         HStack {
                             StatusDot(status: rule.enabled ? .active : .inactive)
                             Text(rule.displayTitle)
@@ -100,6 +89,7 @@ struct ExclusionsSettingsView: View {
                 }
             }
         }
+        .formStyle(.grouped)
         .sheet(isPresented: $isRuleEditorPresented) {
             ExclusionRuleEditorView(draft: ruleDraft) { savedDraft in
                 uiModel.saveExclusionRule(savedDraft, originalRule: editingRule)

@@ -5,9 +5,8 @@ struct AccessibilitySettingsView: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSection {
-                SectionHeader("VoiceOver announcements", systemImage: "speaker.wave.2")
+        Form {
+            Section("VoiceOver announcements") {
                 Text("Suggestions are announced once and stay keyboard-first.")
                     .foregroundStyle(.secondary)
                 Button("Preview VoiceOver Announcement") {
@@ -16,8 +15,7 @@ struct AccessibilitySettingsView: View {
                 .accessibilityHint("Plays a sample suggestion announcement")
             }
 
-            SettingsSection {
-                SectionHeader("System accessibility settings", systemImage: "eye")
+            Section("System accessibility") {
                 Text("AutoSuggest follows these macOS preferences automatically.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -31,6 +29,7 @@ struct AccessibilitySettingsView: View {
                 )
             }
         }
+        .formStyle(.grouped)
     }
 
     private func settingRow(_ title: String, on: Bool) -> some View {

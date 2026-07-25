@@ -283,6 +283,8 @@ struct ModelSourceDraft: Equatable, Identifiable {
 enum RuntimeDisplayName {
     static func label(for runtimeID: String) -> String {
         switch runtimeID.lowercased() {
+        case "foundationmodels", "foundation models":
+            "Foundation Models"
         case "ollama":
             "Ollama"
         case "llama.cpp", "llamacpp", "llamaserver":

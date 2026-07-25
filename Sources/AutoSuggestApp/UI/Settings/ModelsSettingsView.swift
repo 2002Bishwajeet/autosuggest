@@ -3,77 +3,78 @@ import SwiftUI
 struct ModelsSettingsView: View {
     @ObservedObject var uiModel: AutoSuggestUIModel
 
-    @State private var selectedRuntimeTab: String = ""
+    @State private var selectedRuntime: ModelRuntime = .ollama
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSection {
+        Form {
+            Section("Status") {
                 Text("Current runtime: \(uiModel.modelHealth.activeRuntimeLabel)")
-                Text("Current model: \(uiModel.modelHealth.activeModelLabel)")
-                    .foregroundStyle(.secondary)
-                Text(uiModel.modelHealth.menuSummary)
-                    .foregroundStyle(.secondary)
+                Text("Current model: \(uiModel.modelHealth.activeModelLabel)").foregroundStyle(.secondary)
+                Text(uiModel.modelHealth.menuSummary).foregroundStyle(.secondary)
             }
 
-            Picker("Runtime", selection: $selectedRuntimeTab) {
-                ForEach(uiModel.config.localModel.runtimeOrder, id: \.self) { rt in
-                    Text(RuntimeDisplayName.label(for: rt)).tag(rt)
+            Section("Runtime") {
+                Picker("Runtime", selection: $selectedRuntime) {
+                    ForEach(availableRuntimes) { rt in
+                        Text(rt.displayName).tag(rt)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-
-            switch selectedRuntimeTab {
-            case "ollama":
-                OllamaModelPanel(uiModel: uiModel)
-            case "llama.cpp", "llamacpp", "llama_cpp":
-                LlamaCppModelPanel(uiModel: uiModel)
-            default:
-                CoreMLModelPanel(uiModel: uiModel)
+                .pickerStyle(.menu)
             }
 
-            DisclosureGroup("Fallback order") {
-                runtimeOrderControls
+            runtimePanel
+
+            Section("Fallback order") {
+                fallbackOrderList
             }
         }
+        .formStyle(.grouped)
         .onAppear {
-            if selectedRuntimeTab.isEmpty {
-                selectedRuntimeTab = uiModel.config.localModel.runtimeOrder.first ?? "ollama"
+            if let first = availableRuntimes.first, !availableRuntimes.contains(selectedRuntime) {
+                selectedRuntime = first
             }
         }
     }
 
-    private var runtimeOrderControls: some View {
-        SettingsSection {
-            Text("Runtime order")
-                .font(.headline)
-            ForEach(Array(uiModel.config.localModel.runtimeOrder.enumerated()), id: \.offset) { index, runtime in
-                HStack {
-                    Text("\(index + 1).")
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                    Text(RuntimeDisplayName.label(for: runtime))
-                    Spacer()
-                    Button {
-                        uiModel.moveRuntime(from: index, direction: -1)
-                    } label: {
-                        Image(systemName: "arrow.up")
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(index == 0)
-                    .accessibilityLabel("Move \(RuntimeDisplayName.label(for: runtime)) up")
+    /// Runtimes present in the user's configured order, typed. Unknown strings are dropped.
+    private var availableRuntimes: [ModelRuntime] {
+        uiModel.config.localModel.runtimeOrder.compactMap(ModelRuntime.init(configValue:))
+    }
 
-                    Button {
-                        uiModel.moveRuntime(from: index, direction: 1)
-                    } label: {
-                        Image(systemName: "arrow.down")
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(index == uiModel.config.localModel.runtimeOrder.count - 1)
-                    .accessibilityLabel("Move \(RuntimeDisplayName.label(for: runtime)) down")
+    @ViewBuilder private var runtimePanel: some View {
+        switch selectedRuntime {
+        case .ollama:
+            OllamaModelPanel(uiModel: uiModel)
+        case .llamaCpp:
+            LlamaCppModelPanel(uiModel: uiModel)
+        case .coreML:
+            CoreMLModelPanel(uiModel: uiModel)
+        case .foundationModels:
+            EmptyStateView(
+                icon: "sparkles",
+                title: "No setup needed",
+                message: "Foundation Models runs on-device using Apple Intelligence and requires no configuration."
+            )
+        }
+    }
+
+    private var fallbackOrderList: some View {
+        List {
+            ForEach(uiModel.config.localModel.runtimeOrder, id: \.self) { runtime in
+                Text(RuntimeDisplayName.label(for: runtime))
+            }
+            .onMove { indices, newOffset in
+                guard let from = indices.first else { return }
+                // Translate a SwiftUI move (from, insert-before newOffset) into the
+                // model's step API. Move one position toward the destination per call
+                // by using direction sign; for multi-step moves apply until placed.
+                let to = newOffset > from ? newOffset - 1 : newOffset
+                if to != from {
+                    uiModel.moveRuntime(from: from, direction: to > from ? 1 : -1)
                 }
             }
         }
+        .frame(minHeight: 120)
     }
 }
 

@@ -6,8 +6,8 @@ struct OnlineLLMSettingsView: View {
     @State private var onlineLLMAPIKey = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSection {
+        Form {
+            Section {
                 Toggle("Enable online LLM", isOn: Binding(
                     get: { uiModel.config.onlineLLM.enabled },
                     set: { uiModel.onUpdateOnlineLLMEnabled?($0) }
@@ -18,9 +18,7 @@ struct OnlineLLMSettingsView: View {
             }
 
             if uiModel.config.onlineLLM.enabled {
-                SettingsSection {
-                    SectionHeader("Provider", systemImage: "cloud")
-
+                Section("Provider") {
                     Picker("Provider", selection: Binding(
                         get: { uiModel.config.onlineLLM.byok.provider },
                         set: { uiModel.onUpdateOnlineLLMProvider?($0) }
@@ -54,8 +52,7 @@ struct OnlineLLMSettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                SettingsSection {
-                    SectionHeader("API key", systemImage: "key")
+                Section("API key") {
                     SecureField("Enter API key", text: $onlineLLMAPIKey)
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: onlineLLMAPIKey) { newValue in
@@ -67,5 +64,6 @@ struct OnlineLLMSettingsView: View {
                 }
             }
         }
+        .formStyle(.grouped)
     }
 }
