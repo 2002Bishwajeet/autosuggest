@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.7.0 — 2026-07-25
+
+A top-to-bottom UI overhaul: a native, HIG-consistent interface with a warmer amber identity.
+
+### Changed
+- **Settings** rebuilt on native macOS patterns — a source-list sidebar and grouped
+  forms across every pane, a resizable window that remembers its size, drag-to-reorder for
+  the model fallback order, and a selectable diagnostics report.
+- **Menu bar** now uses the system MenuBarExtra: one click opens the popover, one
+  consistent action list (About and Export Diagnostics folded in), and no more hidden
+  right-click menu. The icon always shows the AutoSuggest glyph, with a small amber/red
+  status badge when paused or when a permission is needed.
+- **Onboarding** gains a step indicator, smooth paging between steps, and a shared
+  permission checklist so its wording matches Settings exactly.
+- **About** window and the inline suggestion overlay picked up spacing, color, and
+  accessibility polish; the Accessibility settings now reflect system changes live.
+
+### Fixed
+- Exclusion rules no longer glitch while filtering, and the About window sizes to its
+  content instead of showing a fixed width or a stale version number.
+
 ## v0.6.0 — 2026-06-14
 
 Reliable automatic updates.
