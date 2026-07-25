@@ -148,6 +148,7 @@ final class AXTextInsertionEngine: TextInsertionEngine {
 
         pasteboard.clearContents()
         pasteboard.setString(suggestion, forType: .string)
+        let suggestionChangeCount = pasteboard.changeCount
 
         guard sendCommandV() else {
             // Restore immediately on failure.
@@ -158,14 +159,27 @@ final class AXTextInsertionEngine: TextInsertionEngine {
 
         // Defer restore so the paste event can be processed before the clipboard
         // is restored, without blocking the main thread. The crash-backup key is
-        // cleared inside the deferred block so a crash in the 50ms window still
+        // cleared inside the deferred block so a crash in the window still
         // restores the user's clipboard on next launch.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        //
+        // ponytail: fixed restore window — macOS gives no cross-app "paste
+        // consumed" signal, so this is a bounded wait, not confirmation. 150ms
+        // covers real apps (50ms raced slow targets); raise it if a specific
+        // app still pastes the wrong text. The changeCount guard means that if
+        // the user (or the paste target) put something new on the clipboard in
+        // the window, we leave it alone instead of clobbering it with the stale
+        // snapshot.
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.clipboardRestoreDelay) {
+            defer { defaults.removeObject(forKey: Self.clipboardBackupKey) }
+            guard pasteboard.changeCount == suggestionChangeCount else { return }
             snapshot.restore(to: pasteboard)
-            defaults.removeObject(forKey: Self.clipboardBackupKey)
         }
         return true
     }
+
+    /// Bounded wait before the user's clipboard is restored after a paste. See
+    /// `insertByClipboardPaste` for why this is a timer and not a confirmation.
+    static let clipboardRestoreDelay: TimeInterval = 0.15
 
     private func insertByCGEventTyping(_ suggestion: String) -> Bool {
         for scalar in suggestion.unicodeScalars {

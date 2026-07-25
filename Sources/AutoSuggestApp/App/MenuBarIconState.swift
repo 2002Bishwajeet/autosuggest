@@ -1,15 +1,17 @@
 import Foundation
 
-/// The three meaningful menu-bar states, in priority order: a missing
-/// permission outranks the on/off toggle.
+/// The meaningful menu-bar states, in priority order: a missing permission
+/// outranks the on/off toggle, which outranks a runtime that isn't ready.
 enum MenuBarIconState: Equatable {
     case active // amber ghost
     case paused // pause.circle
     case needsPermission // exclamationmark.shield
+    case degraded // enabled, but no local runtime is ready (e.g. Ollama not running)
 
-    static func resolve(permissionsReady: Bool, enabled: Bool) -> MenuBarIconState {
+    static func resolve(permissionsReady: Bool, enabled: Bool, runtimeReady: Bool) -> MenuBarIconState {
         guard permissionsReady else { return .needsPermission }
-        return enabled ? .active : .paused
+        guard enabled else { return .paused }
+        return runtimeReady ? .active : .degraded
     }
 
     var tooltip: String {
@@ -17,6 +19,7 @@ enum MenuBarIconState: Equatable {
         case .active: "AutoSuggest is active"
         case .paused: "AutoSuggest is paused"
         case .needsPermission: "AutoSuggest needs permission — click to fix"
+        case .degraded: "AutoSuggest can't reach a model — click to fix"
         }
     }
 
@@ -28,6 +31,7 @@ enum MenuBarIconState: Equatable {
         case .active: nil
         case .paused: .paused
         case .needsPermission: .needsPermission
+        case .degraded: .degraded
         }
     }
 }
@@ -38,12 +42,14 @@ enum MenuBarIconState: Equatable {
 enum MenuBarBadge: Equatable {
     case paused
     case needsPermission
+    case degraded
 
     /// SF Symbol drawn inside the badge dot.
     var symbolName: String {
         switch self {
         case .paused: "pause.fill"
         case .needsPermission: "exclamationmark"
+        case .degraded: "bolt.slash.fill"
         }
     }
 }

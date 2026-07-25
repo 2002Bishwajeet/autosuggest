@@ -17,7 +17,7 @@ struct OnboardingFlowView: View {
     let onComplete: () -> Void
 
     @State private var step: OnboardingStep = .welcome
-    @State private var selectedChoice: OnboardingModelChoice = .ollama
+    @State private var selectedChoice: OnboardingModelChoice = .coreML
     @State private var isDownloadingCoreML = false
     @State private var downloadError: String?
     @State private var isCoreMLInstalled: Bool
@@ -296,8 +296,16 @@ struct OnboardingFlowView: View {
         VStack(alignment: .leading, spacing: 16) {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 OnboardingChoiceCard(
-                    title: "Recommended: Ollama",
-                    subtitle: "Best overall quality path for the current app.",
+                    title: "Recommended: CoreML",
+                    subtitle: "One-click download, runs on-device. No Terminal needed.",
+                    selected: selectedChoice == .coreML
+                ) {
+                    selectedChoice = .coreML
+                }
+
+                OnboardingChoiceCard(
+                    title: "Ollama",
+                    subtitle: "Higher quality, but installed from the Terminal.",
                     selected: selectedChoice == .ollama
                 ) {
                     selectedChoice = .ollama
@@ -309,14 +317,6 @@ struct OnboardingFlowView: View {
                     selected: selectedChoice == .llamaCpp
                 ) {
                     selectedChoice = .llamaCpp
-                }
-
-                OnboardingChoiceCard(
-                    title: "Import CoreML",
-                    subtitle: "Use a local CoreML artifact or bootstrap the default package.",
-                    selected: selectedChoice == .coreML
-                ) {
-                    selectedChoice = .coreML
                 }
             }
             selectedModelSetupSection

@@ -3,16 +3,26 @@ import XCTest
 
 final class MenuBarIconStateTests: XCTestCase {
     func testNeedsPermission() {
-        XCTAssertEqual(MenuBarIconState.resolve(permissionsReady: false, enabled: true), .needsPermission)
-        XCTAssertEqual(MenuBarIconState.resolve(permissionsReady: false, enabled: false), .needsPermission)
+        XCTAssertEqual(
+            MenuBarIconState.resolve(permissionsReady: false, enabled: true, runtimeReady: true),
+            .needsPermission
+        )
+        XCTAssertEqual(
+            MenuBarIconState.resolve(permissionsReady: false, enabled: false, runtimeReady: false),
+            .needsPermission
+        )
     }
 
     func testPausedWhenReadyButDisabled() {
-        XCTAssertEqual(MenuBarIconState.resolve(permissionsReady: true, enabled: false), .paused)
+        XCTAssertEqual(MenuBarIconState.resolve(permissionsReady: true, enabled: false, runtimeReady: true), .paused)
     }
 
-    func testActiveWhenReadyAndEnabled() {
-        XCTAssertEqual(MenuBarIconState.resolve(permissionsReady: true, enabled: true), .active)
+    func testActiveWhenReadyEnabledAndRuntimeReady() {
+        XCTAssertEqual(MenuBarIconState.resolve(permissionsReady: true, enabled: true, runtimeReady: true), .active)
+    }
+
+    func testDegradedWhenEnabledButNoRuntimeReady() {
+        XCTAssertEqual(MenuBarIconState.resolve(permissionsReady: true, enabled: true, runtimeReady: false), .degraded)
     }
 
     func testActiveHasNoBadge() {
@@ -22,10 +32,12 @@ final class MenuBarIconStateTests: XCTestCase {
     func testAttentionStatesCarryBadges() {
         XCTAssertEqual(MenuBarIconState.paused.badge, .paused)
         XCTAssertEqual(MenuBarIconState.needsPermission.badge, .needsPermission)
+        XCTAssertEqual(MenuBarIconState.degraded.badge, .degraded)
     }
 
     func testBadgeSymbols() {
         XCTAssertEqual(MenuBarBadge.paused.symbolName, "pause.fill")
         XCTAssertEqual(MenuBarBadge.needsPermission.symbolName, "exclamationmark")
+        XCTAssertEqual(MenuBarBadge.degraded.symbolName, "bolt.slash.fill")
     }
 }

@@ -41,7 +41,8 @@ final class StatusBarController: NSObject {
         // communicating status.
         let state = MenuBarIconState.resolve(
             permissionsReady: uiModel.permissionHealth.isReady,
-            enabled: uiModel.config.enabled
+            enabled: uiModel.config.enabled,
+            runtimeReady: uiModel.modelHealth.report.runtimeHealth.contains(where: \.ready)
         )
         let image = Self.menuBarImage(for: state)
         image?.accessibilityDescription = state.tooltip
@@ -143,6 +144,7 @@ final class StatusBarController: NSObject {
         switch badge {
         case .paused: brandAmber
         case .needsPermission: .systemRed
+        case .degraded: .systemOrange
         }
     }
 

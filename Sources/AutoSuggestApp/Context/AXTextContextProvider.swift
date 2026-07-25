@@ -30,12 +30,19 @@ final class AXTextContextProvider: TextContextProvider {
         enableElectronAccessibilityIfNeeded(bundleID: bundleID, pid: frontApp.processIdentifier)
 
         let systemWide = AXUIElementCreateSystemWide()
+        // ponytail: this read runs synchronously on the main thread on every
+        // keystroke and issues cross-process AX IPC (incl. parameterized layout
+        // queries). Without a timeout a hung/busy target app blocks typing
+        // indefinitely. Cap every AX message at 0.5s — a hang guard, not a perf
+        // knob; a slow-but-working app just yields no context for that event.
+        AXUIElementSetMessagingTimeout(systemWide, 0.5)
         guard let focusedElement = copyUIElementAttribute(
             named: "AXFocusedUIElement",
             from: systemWide
         ) else {
             return nil
         }
+        AXUIElementSetMessagingTimeout(focusedElement, 0.5)
 
         let role = (copyAttribute(named: "AXRole", from: focusedElement) as? String) ?? ""
         let subrole = (copyAttribute(named: "AXSubrole", from: focusedElement) as? String) ?? ""
