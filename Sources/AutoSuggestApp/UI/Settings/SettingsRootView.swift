@@ -14,6 +14,7 @@ struct SettingsRootView: View {
                     .tag(route)
             }
             .navigationSplitViewColumnWidth(min: 180, ideal: 210, max: 280)
+            .listStyle(.sidebar)
         } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: AutoSuggestTheme.spacingLG) {

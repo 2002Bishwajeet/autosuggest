@@ -34,6 +34,7 @@ struct DiagnosticsSettingsView: View {
                         .font(.system(.body, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Support report")
                 }
                 .frame(minHeight: 240)
                 HStack {
