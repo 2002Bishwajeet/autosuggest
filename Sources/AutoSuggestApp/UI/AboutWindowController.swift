@@ -14,7 +14,7 @@ final class AboutWindowController {
         }
 
         let aboutView = AboutView()
-        let hostingController = NSHostingController(rootView: aboutView)
+        let hostingController = NSHostingController(rootView: aboutView.autoSuggestTinted())
         hostingController.sizingOptions = [.preferredContentSize]
         let window = NSWindow(contentViewController: hostingController)
         window.title = "About AutoSuggest"

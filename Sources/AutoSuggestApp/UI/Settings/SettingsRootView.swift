@@ -37,6 +37,7 @@ struct SettingsRootView: View {
             }
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .autoSuggestTinted()
     }
 }
 
@@ -54,10 +55,10 @@ private struct SettingsSidebarRow: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: route.systemImage)
-                    .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                    .foregroundStyle(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.secondary)
                     .frame(width: 18)
                 Text(route.title)
-                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    .foregroundStyle(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : Color.primary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }

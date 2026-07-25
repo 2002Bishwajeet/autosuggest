@@ -1,77 +1,6 @@
 import AppKit
 import SwiftUI
 
-struct PermissionDetailRow: View {
-    let systemImage: String
-    let title: String
-    let description: String
-    let ready: Bool
-    let primaryAction: (String, () -> Void)
-    let secondaryAction: (String, () -> Void)
-
-    private var accent: Color {
-        ready ? AutoSuggestTheme.success : AutoSuggestTheme.warning
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Status icon
-            ZStack {
-                RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusSmall, style: .continuous)
-                    .fill(accent.opacity(0.12))
-                    .frame(width: 44, height: 44)
-                Image(systemName: ready ? "checkmark.shield.fill" : systemImage)
-                    .font(.system(size: 20))
-                    .foregroundStyle(accent)
-            }
-            .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(title)
-                        .font(.headline)
-                    Spacer()
-                    Text(ready ? "Granted" : "Required")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Capsule().fill(accent.opacity(0.12)))
-                        .foregroundStyle(accent)
-                }
-
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if !ready {
-                    HStack(spacing: 8) {
-                        Button(primaryAction.0, action: primaryAction.1)
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
-                        Button(secondaryAction.0, action: secondaryAction.1)
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                    }
-                    .padding(.top, 2)
-                }
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AutoSuggestTheme.radiusMedium, style: .continuous)
-                        .stroke(
-                            ready ? AutoSuggestTheme.success.opacity(0.2) : Color(nsColor: .separatorColor),
-                            lineWidth: 1
-                        )
-                )
-        )
-    }
-}
-
 struct OnboardingChoiceCard: View {
     let title: String
     let subtitle: String
@@ -153,7 +82,7 @@ struct CommandSnippetCard: View {
 
 struct SuggestionPreviewCard: View {
     var body: some View {
-        SettingsCard {
+        SettingsSection {
             VStack(alignment: .leading, spacing: 14) {
                 Label("How suggestions appear", systemImage: "text.cursor")
                     .font(.headline)
@@ -221,7 +150,7 @@ struct ShortcutActionCard: View {
     let systemImage: String
 
     var body: some View {
-        SettingsCard {
+        SettingsSection {
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: systemImage)
                     .foregroundStyle(Color.accentColor)

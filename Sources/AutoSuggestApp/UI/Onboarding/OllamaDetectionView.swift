@@ -11,7 +11,7 @@ struct OllamaDetectionView: View {
     }
 
     var body: some View {
-        SettingsCard {
+        SettingsSection {
             HStack(spacing: 12) {
                 switch status {
                 case .checking:

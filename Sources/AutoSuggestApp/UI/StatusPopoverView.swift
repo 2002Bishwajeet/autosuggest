@@ -29,7 +29,7 @@ struct StatusPopoverView: View {
             }
 
             if let pauseReason = uiModel.quickPanelState.pauseReason {
-                SimplePanel {
+                SettingsSection {
                     VStack(alignment: .leading, spacing: 4) {
                         Label(pauseReason, systemImage: "pause.circle")
                             .foregroundStyle(.secondary)
@@ -105,6 +105,7 @@ struct StatusPopoverView: View {
         }
         .padding(16)
         .frame(width: 368)
+        .autoSuggestTinted()
     }
 
     private func statusRow(_ label: String, value: String) -> some View {

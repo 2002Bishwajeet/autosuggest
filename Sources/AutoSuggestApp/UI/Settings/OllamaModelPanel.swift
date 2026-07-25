@@ -12,7 +12,7 @@ struct OllamaModelPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             // Endpoint + status
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("Ollama endpoint", systemImage: "server.rack")
                 HStack {
                     TextField("http://127.0.0.1:11434", text: $baseURLDraft)
@@ -35,7 +35,7 @@ struct OllamaModelPanel: View {
             }
 
             // Installed
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("Installed models", systemImage: "cube")
                 if uiModel.ollamaInstalled.isEmpty {
                     Text(uiModel.ollamaRunning ? "No models pulled yet — download one below."
@@ -88,7 +88,7 @@ struct OllamaModelPanel: View {
             }
 
             // Suggested
-            SimplePanel {
+            SettingsSection {
                 SectionHeader("Suggested models", systemImage: "sparkles")
                 ForEach(OllamaSuggestedModels.all) { suggestion in
                     suggestionRow(suggestion)
