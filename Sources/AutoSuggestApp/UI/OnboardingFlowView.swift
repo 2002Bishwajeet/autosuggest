@@ -29,6 +29,10 @@ struct OnboardingFlowView: View {
     // which requires a relaunch before the CGEvent tap can be installed.
     @State private var inputMonitoringJustGranted = false
     @State private var prevInputMonitoringState = false
+    // True when the last navigation was forward; drives the slide direction
+    // of the step transition.
+    @State private var isAdvancing = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let logger = Logger(scope: "OnboardingFlowView")
 
@@ -59,6 +63,12 @@ struct OnboardingFlowView: View {
                     .foregroundStyle(.secondary)
             }
 
+            OnboardingStepIndicator(
+                total: displayedSteps.count,
+                current: displayedSteps.firstIndex(of: currentStep) ?? 0
+            )
+            .frame(maxWidth: .infinity)
+
             ScrollView {
                 Group {
                     switch currentStep {
@@ -73,7 +83,10 @@ struct OnboardingFlowView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+                .id(currentStep)
+                .transition(stepTransition)
             }
+            .clipped()
 
             HStack {
                 Button("Quit") {
@@ -181,6 +194,16 @@ struct OnboardingFlowView: View {
 
     private var canGoBack: Bool {
         currentStep != displayedSteps.first
+    }
+
+    /// Slide+fade in the direction of travel; plain crossfade under Reduce
+    /// Motion.
+    private var stepTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .asymmetric(
+            insertion: .move(edge: isAdvancing ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: isAdvancing ? .leading : .trailing).combined(with: .opacity)
+        )
     }
 
     private var welcomeStep: some View {
@@ -517,7 +540,8 @@ struct OnboardingFlowView: View {
         guard let currentIndex = steps.firstIndex(of: currentStep), currentIndex < steps.count - 1 else {
             return
         }
-        withAnimation(.easeInOut(duration: 0.15)) {
+        isAdvancing = true
+        withAnimation(.easeInOut(duration: 0.25)) {
             step = steps[currentIndex + 1]
         }
     }
@@ -527,7 +551,8 @@ struct OnboardingFlowView: View {
         guard let currentIndex = steps.firstIndex(of: currentStep), currentIndex > 0 else {
             return
         }
-        withAnimation(.easeInOut(duration: 0.15)) {
+        isAdvancing = false
+        withAnimation(.easeInOut(duration: 0.25)) {
             step = steps[currentIndex - 1]
         }
     }
