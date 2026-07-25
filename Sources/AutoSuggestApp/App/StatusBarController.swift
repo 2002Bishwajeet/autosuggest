@@ -49,7 +49,7 @@ final class StatusBarController: NSObject {
         let state = MenuBarIconState.resolve(
             permissionsReady: uiModel.permissionHealth.isReady,
             enabled: uiModel.config.enabled,
-            runtimeReady: uiModel.modelHealth.report.runtimeHealth.contains(where: \.ready)
+            runtimeReady: uiModel.runtimeReady
         )
         let image = MenuBarIconRenderer.image(for: state)
         image.accessibilityDescription = state.tooltip

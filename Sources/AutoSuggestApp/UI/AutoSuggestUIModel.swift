@@ -345,6 +345,13 @@ public final class AutoSuggestUIModel: ObservableObject {
     @Published var needsRelaunchToEnable: Bool = false
     @Published var quickPanelState: QuickPanelState = .empty
     @Published var modelHealth: ModelHealth = .empty
+    /// Whether at least one inference runtime is ready — the menu-bar icon's
+    /// degraded-state input. Public so the app target's `AppModel` can feed
+    /// `MenuBarIconState.resolve` without exposing all of `ModelHealth`.
+    public var runtimeReady: Bool {
+        modelHealth.report.runtimeHealth.contains(where: \.ready)
+    }
+
     @Published var ollamaRunning: Bool = false
     @Published var ollamaInstalled: [OllamaModelService.InstalledModel] = []
     /// model name -> in-flight pull progress
