@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.7.2 — 2026-07-25
+
+Suggestion quality.
+
+### Fixed
+- **Suggestions actually continue your text** instead of replying to it. Local
+  models now get a proper completion prompt (with tone/language matching and
+  examples) via Ollama's chat API, plus autocomplete-tuned sampling — low
+  temperature, single-line stop, and a token cap that previously wasn't being
+  applied at all. (#31)
+- **Garbage filter**: completions that echo what you typed, answer you like a
+  chatbot ("Sure, here's…"), or arrive wrapped in quotes/markdown are dropped
+  instead of shown. (#31)
+
 ## v0.7.1 — 2026-07-25
 
 Inline suggestions now behave like inline suggestions.
