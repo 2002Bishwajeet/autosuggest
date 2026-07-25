@@ -251,31 +251,21 @@ struct OnboardingFlowView: View {
                 )
             }
 
-            PermissionRow(
-                systemImage: "accessibility",
-                title: "Accessibility",
-                description: "Lets AutoSuggest read what you're typing and insert completions into any text field. Required for core functionality.",
-                granted: permissionManager.isAccessibilityTrusted(),
-                primary: ("Show Prompt", {
-                    _ = permissionManager.requestAccessibilityPermission()
-                }),
-                secondary: ("Open Settings", {
-                    permissionManager.openAccessibilitySettings()
-                })
-            )
-
-            PermissionRow(
-                systemImage: "keyboard",
-                title: "Input Monitoring",
-                description: "Lets AutoSuggest detect when you press Tab, Enter, or Esc to accept or dismiss suggestions. Requires a relaunch after granting.",
-                granted: permissionManager.hasInputMonitoringPermission(),
-                primary: ("Register App", {
-                    permissionManager.requestInputMonitoringPermission()
-                    permissionManager.openInputMonitoringSettings()
-                }),
-                secondary: ("Open Settings", {
-                    permissionManager.openInputMonitoringSettings()
-                })
+            PermissionsChecklist(
+                context: .onboarding,
+                accessibilityGranted: permissionManager.isAccessibilityTrusted(),
+                inputMonitoringGranted: permissionManager.hasInputMonitoringPermission(),
+                actions: PermissionsChecklistActions(
+                    requestAccessibility: { _ = permissionManager.requestAccessibilityPermission() },
+                    openAccessibilitySettings: { permissionManager.openAccessibilitySettings() },
+                    // "Register App" both fires the TCC request and opens the
+                    // pane — preserving the pre-checklist behavior exactly.
+                    requestInputMonitoring: {
+                        permissionManager.requestInputMonitoringPermission()
+                        permissionManager.openInputMonitoringSettings()
+                    },
+                    openInputMonitoringSettings: { permissionManager.openInputMonitoringSettings() }
+                )
             )
 
             if permissionsReady && !inputMonitoringJustGranted {
