@@ -62,12 +62,27 @@ final class AXTextContextProvider: TextContextProvider {
         let windowTitle = extractFocusedWindowTitle(focusRoot: focusRoot)
         let caretFont = extractCaretFont(from: focusedElement, selectedRange: selectedRange)
         let nativeSuggestionPresent = detectNativeInlineSuggestion(from: focusedElement)
+        // Only address-bar-shaped roles carry these attributes, so composers
+        // (AXTextArea / AXWebArea — the common case) skip three AX round-trips per
+        // keystroke entirely.
+        let nativeCompletionUI = role == "AXTextField" || role == "AXComboBox"
+            ? Self.hasNativeCompletionUI(
+                role: role,
+                identifier: copyAttribute(named: "AXIdentifier", from: focusedElement) as? String,
+                autocompleteValue: copyAttribute(
+                    named: "AXAutocompleteValue",
+                    from: focusedElement
+                ) as? String,
+                domClassList: copyAttribute(named: "AXDOMClassList", from: focusedElement) as? [String]
+            )
+            : false
 
         return TextContext(
             policyContext: PolicyContext(
                 bundleID: bundleID,
                 axRole: roleMarker,
                 isSecureField: subrole == "AXSecureTextField",
+                hasNativeCompletionUI: nativeCompletionUI,
                 windowTitle: windowTitle,
                 textPrefix: textBeforeCaret
             ),
@@ -78,6 +93,33 @@ final class AXTextContextProvider: TextContextProvider {
             caretFont: caretFont,
             nativeInlineSuggestionPresent: nativeSuggestionPresent
         )
+    }
+
+    /// Whether the focused field runs its own completion UI — browser address bars and
+    /// combo boxes.
+    ///
+    /// Ghost text there competes with the app's own inline completion or dropdown (the
+    /// double-ghost problem), and an address bar is not prose worth completing anyway.
+    /// Every signal here is measured and non-localized; the AXDescription each browser
+    /// offers ("Address and search bar", "smart search field") is localized and unusable.
+    /// See docs/AX_COMPAT_MATRIX.md.
+    static func hasNativeCompletionUI(
+        role: String,
+        identifier: String?,
+        autocompleteValue: String?,
+        domClassList: [String]?
+    ) -> Bool {
+        // Safari.
+        if identifier == "WEB_BROWSER_ADDRESS_AND_SEARCH_FIELD" { return true }
+        // Chromium: the omnibox declares its own autocomplete. Probing confirmed ordinary
+        // web inputs and contenteditables do not expose this attribute at all, so it is a
+        // precise signal rather than a blunt one.
+        if let autocompleteValue, !autocompleteValue.isEmpty { return true }
+        if domClassList?.contains(where: { $0.contains("Omnibox") }) == true { return true }
+        // Firefox exposes no identifier and only a localized description, so its role is
+        // the one stable signal. Combo boxes supply their own dropdown in any app.
+        if role == "AXComboBox" { return true }
+        return false
     }
 
     /// Resolves the focused element, and the root it was resolved from.

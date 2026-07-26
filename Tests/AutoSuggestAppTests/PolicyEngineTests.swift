@@ -45,6 +45,23 @@ final class PolicyEngineTests: XCTestCase {
         }
     }
 
+    /// Address bars and combo boxes run their own completion UI; ghost text there would
+    /// overlap the browser's own inline suggestion. Note the role is a plain text field —
+    /// the pre-existing `contains("url")` check cannot catch this, which is why real
+    /// browsers were never actually excluded.
+    func testFieldWithNativeCompletionUIIsExcluded() {
+        let engine = PolicyEngine(defaults: .default)
+        let context = PolicyContext(
+            bundleID: "com.apple.Safari",
+            axRole: "AXTextField",
+            isSecureField: false,
+            hasNativeCompletionUI: true,
+            windowTitle: "Example page",
+            textPrefix: "https://exam"
+        )
+        XCTAssertFalse(engine.shouldSuggest(in: context))
+    }
+
     func testSecureFieldIsExcluded() {
         let engine = PolicyEngine(defaults: .default)
         let context = PolicyContext(
