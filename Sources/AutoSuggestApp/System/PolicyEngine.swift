@@ -40,6 +40,9 @@ struct PolicyContext {
     let bundleID: String
     let axRole: String
     let isSecureField: Bool
+    /// Field runs its own completion UI (browser address bar, combo box). Defaulted so
+    /// existing call sites and fixtures are unaffected.
+    var hasNativeCompletionUI: Bool = false
     let windowTitle: String?
     let textPrefix: String
 }
@@ -92,6 +95,12 @@ struct PolicyEngine {
         if defaults.blacklistedBundleIDs.contains(context.bundleID) { return false }
         if defaults.codingBundleIDs.contains(context.bundleID) { return false }
         if context.isSecureField { return false }
+        // Browser address bars and combo boxes: they run their own completion UI, so
+        // ghost text would sit on top of the app's own inline suggestion or dropdown.
+        // This is what actually catches address bars — the role check below never fires
+        // on real browsers, which report a plain AXTextField (Safari, Chromium) or
+        // AXComboBox (Firefox). Kept anyway for any app that does name its role "url".
+        if context.hasNativeCompletionUI { return false }
         if context.axRole.lowercased().contains("url") { return false }
         if isCodeWindowTitle(context.windowTitle) { return false }
         if looksLikeCode(context.textPrefix) { return false }

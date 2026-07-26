@@ -5,6 +5,61 @@ import XCTest
 /// policy engine (which decides whether to suggest in secure fields). Pins down
 /// current caret-extraction and value-coercion behavior ahead of plan 004.
 final class AXTextContextParsingTests: XCTestCase {
+    // MARK: - Fields that run their own completion UI
+
+    /// Safari's address bar. Non-localized and stable, unlike its AXDescription.
+    func testNativeCompletionUIDetectsSafariAddressBar() {
+        XCTAssertTrue(AXTextContextProvider.hasNativeCompletionUI(
+            role: "AXTextField",
+            identifier: "WEB_BROWSER_ADDRESS_AND_SEARCH_FIELD",
+            autocompleteValue: nil,
+            domClassList: nil
+        ))
+    }
+
+    /// Chromium's omnibox declares its own autocomplete. Probing showed ordinary web
+    /// inputs and contenteditables do not expose this attribute at all, so it is a
+    /// specific signal rather than a blunt one.
+    func testNativeCompletionUIDetectsChromiumOmnibox() {
+        XCTAssertTrue(AXTextContextProvider.hasNativeCompletionUI(
+            role: "AXTextField",
+            identifier: nil,
+            autocompleteValue: "both",
+            domClassList: nil
+        ))
+        // Belt and braces: the DOM class name is not localized either.
+        XCTAssertTrue(AXTextContextProvider.hasNativeCompletionUI(
+            role: "AXTextField",
+            identifier: nil,
+            autocompleteValue: nil,
+            domClassList: ["BraveOmniboxViewViews"]
+        ))
+    }
+
+    /// Firefox's address bar exposes no identifier and only a localized description —
+    /// the role is the one stable signal.
+    func testNativeCompletionUIDetectsFirefoxAddressBar() {
+        XCTAssertTrue(AXTextContextProvider.hasNativeCompletionUI(
+            role: "AXComboBox",
+            identifier: nil,
+            autocompleteValue: nil,
+            domClassList: nil
+        ))
+    }
+
+    /// The fields we exist to serve must be untouched: a plain input, a textarea, and a
+    /// rich composer all carry none of these signals.
+    func testNativeCompletionUISkipsOrdinaryTextFields() {
+        for role in ["AXTextField", "AXTextArea", "AXWebArea"] {
+            XCTAssertFalse(AXTextContextProvider.hasNativeCompletionUI(
+                role: role,
+                identifier: nil,
+                autocompleteValue: nil,
+                domClassList: ["someLayoutClass"]
+            ), "\(role) must still receive suggestions")
+        }
+    }
+
     /// When no root can answer `AXFocusedUIElement`, the result must be nil rather than a
     /// half-built context. Roots built from pids that own no AX-visible application answer
     /// nothing regardless of Accessibility trust, so this is deterministic in CI.
