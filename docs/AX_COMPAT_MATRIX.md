@@ -185,18 +185,27 @@ than with an empty subrole. Harmless today because `PolicyEngine` only pattern-m
 `"url"` against the role, but any future role *allowlist* must not assume the subrole is
 empty or absent.
 
-### System-wide focus reads can fail where per-app reads succeed
+### System-wide focus reads can fail where per-app reads succeed (fixed)
 
 `AXUIElementCreateSystemWide()` + `AXFocusedUIElement` returned
 `kAXErrorAPIDisabled (-25204)` consistently for the probe process, while
 `AXUIElementCreateApplication(pid)` + `AXFocusedUIElement` succeeded against the same
 frontmost app. Every row above was therefore collected via the per-app path.
 
-`AXTextContextProvider.currentContext()` uses the system-wide element **only** (and so does
-`extractFocusedWindowTitle`), so under that condition it returns nil and the feature dies
-silently. This was observed in a differently-trusted helper process, not in the signed app,
-so it is **not** confirmed to affect shipping AutoSuggest — but the per-app fallback is a
-few lines and the failure mode is total. Worth a follow-up.
+`AXTextContextProvider.currentContext()` used the system-wide element **only** (as did
+`extractFocusedWindowTitle`), so under that condition it returned nil and the feature died
+silently. It now falls back to `AXUIElementCreateApplication(pid)` via
+`focusedElementAndRoot(pid:)`, which returns the root alongside the element — the focused
+*window* has to be read from whichever root answered.
+
+Honest scope: this was observed in a differently-trusted helper process, **not** in the
+signed app, so it is not confirmed to have affected shipping AutoSuggest. The fallback costs
+no extra AX IPC on the happy path (it only runs after the system-wide read already failed)
+and the failure mode is total, which is why it went in anyway.
+
+Only the "no root answers" contract is unit-tested — the live success paths need a focused
+app and cannot run in CI, per the repo's existing AX testing constraint. The probe is what
+exercises them.
 
 ### Electron apps missing from the AX unlock list (fixed)
 

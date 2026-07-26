@@ -45,16 +45,8 @@ final class AXTextContextProvider: TextContextProvider {
         // B6: unlock AX text in Chromium/Electron apps before reading.
         enableElectronAccessibilityIfNeeded(bundleID: bundleID, pid: frontApp.processIdentifier)
 
-        let systemWide = AXUIElementCreateSystemWide()
-        // ponytail: this read runs synchronously on the main thread on every
-        // keystroke and issues cross-process AX IPC (incl. parameterized layout
-        // queries). Without a timeout a hung/busy target app blocks typing
-        // indefinitely. Cap every AX message at 0.5s — a hang guard, not a perf
-        // knob; a slow-but-working app just yields no context for that event.
-        AXUIElementSetMessagingTimeout(systemWide, 0.5)
-        guard let focusedElement = copyUIElementAttribute(
-            named: "AXFocusedUIElement",
-            from: systemWide
+        guard let (focusedElement, focusRoot) = focusedElementAndRoot(
+            pid: frontApp.processIdentifier
         ) else {
             return nil
         }
@@ -67,7 +59,7 @@ final class AXTextContextProvider: TextContextProvider {
         let selectedRange = extractSelectedRange(from: focusedElement, fullValue: fullValue)
         let textBeforeCaret = extractTextBeforeCaret(fullValue: fullValue, selectedRange: selectedRange)
         let caretRect = extractCaretRect(from: focusedElement, selectedRange: selectedRange)
-        let windowTitle = extractFocusedWindowTitle(systemWideElement: systemWide)
+        let windowTitle = extractFocusedWindowTitle(focusRoot: focusRoot)
         let caretFont = extractCaretFont(from: focusedElement, selectedRange: selectedRange)
         let nativeSuggestionPresent = detectNativeInlineSuggestion(from: focusedElement)
 
@@ -86,6 +78,44 @@ final class AXTextContextProvider: TextContextProvider {
             caretFont: caretFont,
             nativeInlineSuggestionPresent: nativeSuggestionPresent
         )
+    }
+
+    /// Resolves the focused element, and the root it was resolved from.
+    ///
+    /// The system-wide element is the normal path, but it can return
+    /// `kAXErrorAPIDisabled (-25204)` in trust configurations where the per-application
+    /// element still answers fine (observed while probing for #30 — see
+    /// docs/AX_COMPAT_MATRIX.md). System-wide-only means the whole feature goes silent
+    /// there, so fall back to the app element rather than giving up.
+    ///
+    /// The root comes back with the element because the focused *window* has to be read
+    /// from the same one — a system-wide root that cannot answer `AXFocusedUIElement`
+    /// will not answer `AXFocusedWindow` either.
+    ///
+    /// Costs no extra AX IPC on the happy path: the fallback is only consulted when the
+    /// system-wide read already failed, which would otherwise have returned nil.
+    func focusedElementAndRoot(pid: pid_t) -> (element: AXUIElement, root: AXUIElement)? {
+        // Creating the elements is local (no IPC); only the attribute reads talk to
+        // other processes, and those stop at the first root that answers.
+        focusedElementAndRoot(roots: [AXUIElementCreateSystemWide(), AXUIElementCreateApplication(pid)])
+    }
+
+    /// First root that can answer `AXFocusedUIElement`, with that root.
+    /// Split out from `focusedElementAndRoot(pid:)` so the "nothing answers" contract is
+    /// testable without Accessibility trust.
+    func focusedElementAndRoot(roots: [AXUIElement]) -> (element: AXUIElement, root: AXUIElement)? {
+        for root in roots {
+            // ponytail: these reads run synchronously on the main thread on every
+            // keystroke and issue cross-process AX IPC (incl. parameterized layout
+            // queries). Without a timeout a hung/busy target app blocks typing
+            // indefinitely. Cap every AX message at 0.5s — a hang guard, not a perf
+            // knob; a slow-but-working app just yields no context for that event.
+            AXUIElementSetMessagingTimeout(root, 0.5)
+            if let element = copyUIElementAttribute(named: "AXFocusedUIElement", from: root) {
+                return (element, root)
+            }
+        }
+        return nil
     }
 
     private func copyAttribute(named attribute: String, from element: AXUIElement) -> AnyObject? {
@@ -227,10 +257,10 @@ final class AXTextContextProvider: TextContextProvider {
         )
     }
 
-    private func extractFocusedWindowTitle(systemWideElement: AXUIElement) -> String? {
+    private func extractFocusedWindowTitle(focusRoot: AXUIElement) -> String? {
         guard let focusedWindow = copyUIElementAttribute(
             named: "AXFocusedWindow",
-            from: systemWideElement
+            from: focusRoot
         ) else {
             return nil
         }

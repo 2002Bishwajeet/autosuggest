@@ -5,6 +5,24 @@ import XCTest
 /// policy engine (which decides whether to suggest in secure fields). Pins down
 /// current caret-extraction and value-coercion behavior ahead of plan 004.
 final class AXTextContextParsingTests: XCTestCase {
+    /// When no root can answer `AXFocusedUIElement`, the result must be nil rather than a
+    /// half-built context. Roots built from pids that own no AX-visible application answer
+    /// nothing regardless of Accessibility trust, so this is deterministic in CI.
+    ///
+    /// The success paths (system-wide, and the per-app fallback) need a live focused app
+    /// and are exercised by `scripts/ax-probe.swift` instead — see docs/AX_COMPAT_MATRIX.md.
+    func testFocusedElementAndRootReturnsNilWhenNoRootAnswers() {
+        let provider = AXTextContextProvider()
+        let deadRoots = [AXUIElementCreateApplication(-1), AXUIElementCreateApplication(-2)]
+        XCTAssertNil(provider.focusedElementAndRoot(roots: deadRoots))
+    }
+
+    /// Ordering is the point of the fallback: the system-wide root is tried first and the
+    /// per-app root only backs it up, so an empty list must not silently succeed.
+    func testFocusedElementAndRootReturnsNilForNoRoots() {
+        XCTAssertNil(AXTextContextProvider().focusedElementAndRoot(roots: []))
+    }
+
     // MARK: - extractTextBeforeCaret
 
     func testExtractTextBeforeCaretMidText() {
