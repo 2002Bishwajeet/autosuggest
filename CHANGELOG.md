@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.7.4 — 2026-07-26
+
+### Fixed
+- **No more suggestions in browser address bars.** AutoSuggest was completing in
+  Safari's address bar, drawing ghost text on top of Safari's own URL
+  autocomplete. Address bars are now excluded in Safari, Chrome, Brave, Edge, Arc
+  and Firefox — along with combo boxes generally, which provide their own
+  dropdown. Text fields on the page are unaffected.
+
 ## v0.7.3 — 2026-07-26
 
 Accessibility compatibility. Findings from reverse-engineering how each app
