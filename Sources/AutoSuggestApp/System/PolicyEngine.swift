@@ -14,6 +14,19 @@ extension PolicyRules {
             "com.bitwarden.desktop",
             "org.keepassxc.keepassxc",
             "com.lastpass.LastPass",
+            // Terminals: AX reports a text surface, but it is a shell prompt. Probed
+            // (docs/AX_COMPAT_MATRIX.md): Terminal.app exposes the visible prompt as
+            // AXValue; Ghostty exposes the whole scrollback with the caret stuck at
+            // offset 0. Context is wrong even where it is readable, and an accepted
+            // completion lands on a command line. Terminal.app and Ghostty are
+            // probe-verified; the rest share the same shell-prompt shape.
+            "com.apple.Terminal",
+            "com.mitchellh.ghostty",
+            "com.googlecode.iterm2",
+            "net.kovidgoyal.kitty",
+            "org.alacritty",
+            "com.github.wez.wezterm",
+            "dev.warp.Warp-Stable",
         ],
         codingBundleIDs: [
             "com.microsoft.VSCode",

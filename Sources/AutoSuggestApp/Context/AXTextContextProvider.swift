@@ -7,18 +7,34 @@ final class AXTextContextProvider: TextContextProvider {
 
     /// Bundle-ID prefixes/markers for Chromium-class apps whose AX text stays
     /// hidden until we opt the app element into accessibility (B6).
-    private static let chromiumBundleMarkers = [
+    /// Verified against installed bundles with `scripts/ax-probe.swift`; see
+    /// `docs/AX_COMPAT_MATRIX.md`. Electron ships whatever bundle ID the vendor
+    /// picks, so there is no pattern to match — each app is listed by hand.
+    static let chromiumBundleMarkers = [
         "com.google.Chrome",
         "com.microsoft.edgemac",
         "com.brave.Browser",
         "com.vivaldi.Vivaldi",
         "company.thebrowser.Browser", // Arc
         "com.github.Electron",
+        "com.microsoft.VSCode", // VS Code (also matches VSCodeInsiders)
+        "com.visualstudio.code", // VS Code OSS / VSCodium builds
+        "com.google.antigravity", // Antigravity (VS Code fork)
+        "com.todesktop", // Cursor and other ToDesktop-packaged editors
         "com.tinyspeck.slackmacgap", // Slack
         "com.hnc.Discord",
+        "org.whispersystems.signal-desktop", // Signal
+        "md.obsidian", // Obsidian
+        "com.figma.Desktop",
         "notion.id", // Notion
         "com.electron", // generic Electron prefix
     ]
+
+    /// Whether `bundleID` names a Chromium/Electron app that needs the
+    /// `AXManualAccessibility` opt-in before its text tree is readable.
+    static func needsChromiumAXUnlock(bundleID: String) -> Bool {
+        chromiumBundleMarkers.contains { bundleID.hasPrefix($0) }
+    }
 
     func currentContext() -> TextContext? {
         guard let frontApp = NSWorkspace.shared.frontmostApplication,
@@ -331,7 +347,7 @@ final class AXTextContextProvider: TextContextProvider {
     /// For apps that still refuse, launch them with the Chromium flag
     /// `--force-renderer-accessibility=complete` (documented for users).
     private func enableElectronAccessibilityIfNeeded(bundleID: String, pid: pid_t) {
-        guard Self.chromiumBundleMarkers.contains(where: { bundleID.hasPrefix($0) }) else {
+        guard Self.needsChromiumAXUnlock(bundleID: bundleID) else {
             return
         }
         let appElement = AXUIElementCreateApplication(pid)

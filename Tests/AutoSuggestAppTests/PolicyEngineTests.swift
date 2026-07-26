@@ -26,6 +26,25 @@ final class PolicyEngineTests: XCTestCase {
         XCTAssertFalse(engine.shouldSuggest(in: context))
     }
 
+    /// Terminals expose a text surface that looks writable to AX but is a shell
+    /// prompt. Probing (docs/AX_COMPAT_MATRIX.md) showed Terminal.app reporting the
+    /// visible prompt line as AXValue, and Ghostty reporting the entire scrollback
+    /// with the caret pinned at offset 0 — so the completion context is wrong even
+    /// when it is readable, and an accepted suggestion lands on a command line.
+    func testTerminalBundlesAreExcluded() {
+        let engine = PolicyEngine(defaults: .default)
+        for bundleID in ["com.apple.Terminal", "com.mitchellh.ghostty", "com.googlecode.iterm2"] {
+            let context = PolicyContext(
+                bundleID: bundleID,
+                axRole: "AXTextArea",
+                isSecureField: false,
+                windowTitle: nil,
+                textPrefix: "git comm"
+            )
+            XCTAssertFalse(engine.shouldSuggest(in: context), "\(bundleID) must not get suggestions")
+        }
+    }
+
     func testSecureFieldIsExcluded() {
         let engine = PolicyEngine(defaults: .default)
         let context = PolicyContext(

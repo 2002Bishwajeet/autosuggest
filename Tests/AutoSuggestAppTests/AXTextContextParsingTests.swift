@@ -64,4 +64,36 @@ final class AXTextContextParsingTests: XCTestCase {
         let number = NSNumber(value: 42)
         XCTAssertEqual(provider.stringValue(from: number), "42")
     }
+
+    // MARK: - Chromium/Electron AX unlock list
+
+    /// Electron apps ship arbitrary bundle IDs, so every high-traffic one has to
+    /// be listed by hand or its text tree stays invisible to us.
+    func testChromiumUnlockCoversHighTrafficElectronApps() {
+        for bundleID in [
+            "com.microsoft.VSCode",
+            "com.microsoft.VSCodeInsiders",
+            "com.google.antigravity",
+            "com.tinyspeck.slackmacgap",
+            "com.hnc.Discord",
+            "org.whispersystems.signal-desktop",
+            "md.obsidian",
+            "com.google.Chrome",
+            "com.brave.Browser",
+        ] {
+            XCTAssertTrue(
+                AXTextContextProvider.needsChromiumAXUnlock(bundleID: bundleID),
+                "\(bundleID) must get the AXManualAccessibility opt-in"
+            )
+        }
+    }
+
+    func testChromiumUnlockSkipsNativeApps() {
+        for bundleID in ["com.apple.TextEdit", "com.apple.Safari", "net.whatsapp.WhatsApp", "ru.keepcoder.Telegram"] {
+            XCTAssertFalse(
+                AXTextContextProvider.needsChromiumAXUnlock(bundleID: bundleID),
+                "\(bundleID) is native; it must not be treated as Chromium"
+            )
+        }
+    }
 }
