@@ -19,11 +19,17 @@ actually exposes its text to the Accessibility API. (#30)
   directly, instead of giving up and producing nothing on every keystroke.
 
 ### Known limitations
-- **Chromium-based apps cannot show inline ghost text in rich composers.** Slack,
-  Discord and Chromium browsers report no caret position for `contenteditable`
-  fields, so there is nowhere to anchor the overlay. Safari and Firefox are
-  unaffected. Documented in `docs/AX_COMPAT_MATRIX.md`.
+- **Chromium address bars cannot show inline ghost text.** Chromium reports no
+  caret position and no text-marker range for the omnibox, so there is nowhere to
+  anchor the overlay. Page content is unaffected.
 - **Telegram is unsupported.** It exposes no accessible text content at all.
+
+> Correction to the notes as first published: this section originally claimed
+> Chromium apps could not show ghost text in rich `contenteditable` composers
+> (Slack, Discord, Gmail). That was wrong — a documentation error, not a code one.
+> Chromium reports no bounds for the caret range, but it *does* answer the
+> text-marker range with a usable rect, and AutoSuggest already falls back to it.
+> Only the omnibox is genuinely unanchorable. No shipped behaviour changed.
 
 ### Internal
 - `docs/AX_COMPAT_MATRIX.md` records the measured accessibility behaviour of 29

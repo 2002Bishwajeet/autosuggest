@@ -48,7 +48,7 @@ Two things learned driving this in bulk, worth knowing before re-running it:
 | `AXSelectedTextRange` | Collapsed caret offset. Flagged `OUT OF BOUNDS` if past the text length. Also reports UTF-16 vs grapheme length when they diverge (emoji/CJK off-by-N risk). |
 | `Bounds (caret)` | `AXBoundsForRange` on the zero-length caret range. `zero-rect` → app returns `.zero` instead of an error; we fall back. |
 | `Bounds (1-char)` | The 1-char-before-caret fallback `extractCaretRect` uses. If both bounds columns fail, we cannot anchor ghost text and must not draw. |
-| `MarkerRange` | WebKit `AXSelectedTextMarkerRange` present, and whether bounds/string work off it. Expected path for Safari. |
+| `MarkerRange` | WebKit `AXSelectedTextMarkerRange` bounds, printed as dimensions. This is `extractCaretRect`'s last fallback, so it is only usable at **height > 0** — `zero-height` means no anchor. |
 | `Font` | `AXAttributedStringForRange` → `.font`. `FAIL` → renderer falls back to the caret-height heuristic. |
 | `Secure` | `AXSubrole == AXSecureTextField`. **Any password field that reports `no` here is a hard safety finding — file it immediately and blocklist the app.** |
 | `Native suggestion` | Apple inline-prediction markers present (double-ghost suppression, B5). |
@@ -89,33 +89,38 @@ Collected 2026-07-26, macOS 15 (Darwin 25.5.0), Apple Silicon. Web rows come fro
 single-field pages (`textarea`, `input`, `input type=password`, `contenteditable`) so the
 same content is compared across engines. Bounds are AX screen coordinates.
 
+`answers (height not measured)` means the row was collected before the probe reported
+marker-bounds dimensions — the call answered, but whether the rect is usable
+(height > 0) was not recorded. It only matters where both `AXBoundsForRange` columns are
+`zero-rect`, since that is the only case where the marker range is load-bearing.
+
 | App / surface | Role | AXValue | Caret | Bounds (caret) | Bounds (1-char) | Marker | Font | Secure |
 |---|---|---|---|---|---|---|---|---|
 | **TextEdit** plain text | `AXTextArea` | len 44 | 44 | `453,92 0x13` | `447,105 7x13` | no | Menlo-Regular 11 | no |
-| **Safari** textarea | `AXTextArea` | len 44 | 44 | `367,218 2x18` | `363,218 6x18` | yes | Helvetica 16 | no |
-| **Safari** input | `AXTextField` | len 38 | 38 | `233,217 2x13` | `226,217 9x13` | yes | .SFNS-Regular 11 | no |
-| **Safari** password | `AXTextField:AXSecureTextField` | len 16 | 16 | `156,217 2x13` | `149,217 9x13` | yes | .SFNS-Regular 11 | **YES** |
-| **Safari** contenteditable | `AXTextArea` | len 51 | 1 | `58,222 2x18` | `47,222 13x18` | yes | Helvetica 16 | no |
+| **Safari** textarea | `AXTextArea` | len 44 | 44 | `367,218 2x18` | `363,218 6x18` | answers (height not measured) | Helvetica 16 | no |
+| **Safari** input | `AXTextField` | len 38 | 38 | `233,217 2x13` | `226,217 9x13` | answers (height not measured) | .SFNS-Regular 11 | no |
+| **Safari** password | `AXTextField:AXSecureTextField` | len 16 | 16 | `156,217 2x13` | `149,217 9x13` | answers (height not measured) | .SFNS-Regular 11 | **YES** |
+| **Safari** contenteditable | `AXTextArea` | len 51 | 1 | `58,222 2x18` | `47,222 13x18` | answers (height not measured) | Helvetica 16 | no |
 | **Safari** address bar | `AXTextField` | len 133 | 133 | `1007,37 0x16` | `1004,53 3x16` | no | — | no |
-| **Brave** textarea | `AXTextArea` | len 44 | 44 | `362,240 0x18` | `358,240 4x18` | yes | (size 16 only) | no |
-| **Brave** input | `AXTextField` | len 38 | 38 | `253,240 0x15` | `246,240 7x15` | yes | (size 13.3 only) | no |
-| **Brave** password | `AXTextField:AXSecureTextField` | len 16 | 16 | `117,240 0x15` | `112,240 5x15` | yes | (size 13.3 only) | **YES** |
-| **Brave** contenteditable | `AXTextArea:AXApplicationGroup` | len 51 | 1 | **zero-rect** | **zero-rect** | yes | (size 16 only) | no |
+| **Brave** textarea | `AXTextArea` | len 44 | 44 | `362,240 0x18` | `358,240 4x18` | answers (height not measured) | (size 16 only) | no |
+| **Brave** input | `AXTextField` | len 38 | 38 | `253,240 0x15` | `246,240 7x15` | answers (height not measured) | (size 13.3 only) | no |
+| **Brave** password | `AXTextField:AXSecureTextField` | len 16 | 16 | `117,240 0x15` | `112,240 5x15` | answers (height not measured) | (size 13.3 only) | **YES** |
+| **Brave** contenteditable | `AXTextArea:AXApplicationGroup` | len 51 | 1 | **zero-rect** | **zero-rect** | **0x18 usable** | (size 16 only) | no |
 | **Brave** address bar | `AXTextField` | len 133 | 133 | **zero-rect** | **zero-rect** | no | — | no |
-| **Firefox** textarea | `AXTextArea:AXUnknown` | len 44 | 44 | `363,210 1x16` | `358,210 4x16` | yes | Helvetica 16 | no |
-| **Firefox** input | `AXTextField:AXUnknown` | len 38 | 38 | `264,210 1x16` | `257,210 8x16` | yes | .SF NS 13 | no |
-| **Firefox** password | `AXTextField:AXSecureTextField` | len 16 | 16 | `141,210 1x16` | `135,210 6x16` | yes | .SF NS 13 | **YES** |
-| **Firefox** contenteditable | `AXTextArea:AXApplicationGroup` | len 51 | 1 | `58,216 1x16` | `47,216 12x16` | yes | Helvetica 16 | no |
-| **VS Code** editor (Monaco) | `AXTextArea` | len 50 | 50 | **zero-rect** | **zero-rect** | yes | (size 12 only) | no |
-| **VS Code** quick-open | `AXStaticText` | len 19 | 0 | zero-rect | FAIL | yes | (size 13 only) | no |
-| **Antigravity** editor | `AXWebArea` | len 0 | 0 | zero-rect | FAIL | yes | (size 16 only) | no |
+| **Firefox** textarea | `AXTextArea:AXUnknown` | len 44 | 44 | `363,210 1x16` | `358,210 4x16` | answers (height not measured) | Helvetica 16 | no |
+| **Firefox** input | `AXTextField:AXUnknown` | len 38 | 38 | `264,210 1x16` | `257,210 8x16` | answers (height not measured) | .SF NS 13 | no |
+| **Firefox** password | `AXTextField:AXSecureTextField` | len 16 | 16 | `141,210 1x16` | `135,210 6x16` | answers (height not measured) | .SF NS 13 | **YES** |
+| **Firefox** contenteditable | `AXTextArea:AXApplicationGroup` | len 51 | 1 | `58,216 1x16` | `47,216 12x16` | answers (height not measured) | Helvetica 16 | no |
+| **VS Code** editor (Monaco) | `AXTextArea` | len 50 | 50 | **zero-rect** | **zero-rect** | answers (height not measured) | (size 12 only) | no |
+| **VS Code** quick-open | `AXStaticText` | len 19 | 0 | zero-rect | FAIL | answers (height not measured) | (size 13 only) | no |
+| **Antigravity** editor | `AXWebArea` | len 0 | 0 | zero-rect | FAIL | answers (height not measured) | (size 16 only) | no |
 | **Notes** note body | `AXTextArea` | len 395 | 394 | `657,613 0x16` | `651,629 7x16` | no | .AppleSystemUIFont 13 | no |
 | **Mail** subject | `AXTextField` | len 5 | 5 | `270,174 0x16` | `262,190 8x16` | no | .AppleSystemUIFont 13 | no |
 | **Mail** compose body | `AXWebArea` | FAIL | FAIL | FAIL | FAIL | yes (bounds ok, string ok) | FAIL | no |
 | **Messages** composer (empty) | `AXTextField` | FAIL | 0 | `614,766 0x16` | FAIL | no | FAIL | no |
 | **WhatsApp** composer | `AXTextArea` | len 16 | 16 | `604,848 0x17` | `596,848 9x17` | no | .SFNS-Regular 13 | no |
-| **Slack** composer | `AXTextArea` | len 8 | 8 | **zero-rect** | **zero-rect** | yes | (size 15 only) | no |
-| **Discord** composer | `AXTextArea` | len 25 | 25 | **zero-rect** | **zero-rect** | yes | (size 16 only) | no |
+| **Slack** composer | `AXTextArea` | len 8 | 8 | **zero-rect** | **zero-rect** | answers (height not measured) | (size 15 only) | no |
+| **Discord** composer | `AXTextArea` | len 25 | 25 | **zero-rect** | **zero-rect** | answers (height not measured) | (size 16 only) | no |
 | **Telegram** | — | no AX content exposed at all (see below) | | | | | | |
 | **AppKit** `NSSecureTextField` | `AXTextField:AXSecureTextField` | len 20 (masked) | 20 | `488,546 0x16` | `480,562 8x16` | no | FAIL | **YES** |
 | **Terminal.app** | `AXTextArea` | len 71 | 48 | zero-rect | `647,140 7x14` | no | FAIL | no |
@@ -165,18 +170,27 @@ for both the caret and the 1-char fallback in **`contenteditable`** — which is
 Slack-web, Notion and most rich composers use. Safari and Firefox return real rects for
 the same page, so this is a Chromium AX limitation, not a page-structure issue.
 
-Consequence: in Chromium, ghost text cannot be anchored in rich composers. Context is
-readable, so the suggestion is generated and then has nowhere to draw. The renderer must
-treat zero-rect as "do not draw" rather than drawing at the origin.
+**This does not make Chromium composers unanchorable** — `extractCaretRect` has a third
+fallback, `AXBoundsForTextMarkerRange`, and on the same Brave `contenteditable` it returns
+`59,246 0x18`: zero *width* (a collapsed caret, expected) but a real height of 18. That is
+a usable caret rect, so ghost text anchors via the marker path.
 
-**Confirmed in production, not just on the test page.** The Slack and Discord message
-composers are Electron contenteditables and behave identically: `AXValue` and the caret
-offset are correct (len 8 / len 25, caret at the end), the marker range answers, and both
-`AXBoundsForRange` reads come back `zero-rect`. These are two of the highest-traffic
-targets in #30, so the zero-rect case is the norm for chat, not an edge case.
+> Correction: an earlier revision of this document claimed Chromium rich composers could
+> not show ghost text at all. That was wrong. It came from the probe's old `MarkerRange`
+> column, which printed "bounds ok" whenever the call merely *answered*, without checking
+> whether the rect had a non-zero height. The column now prints the dimensions
+> (`0x18 usable` / `zero-height`) so the distinction cannot be missed again.
 
-The Chromium omnibox is also zero-rect (and Safari's address bar is a plain `AXTextField`
-whose role does not contain "url", so `PolicyEngine`'s URL check does not catch it by role).
+What *is* genuinely unanchorable is the **Chromium omnibox**: it reports no
+`AXSelectedTextMarkerRange` at all, so there is no third fallback and every bounds read is
+zero-rect. (Safari's address bar is a plain `AXTextField` whose role does not contain
+"url", so `PolicyEngine`'s URL check does not catch it by role either.)
+
+The Slack and Discord composers are Electron `contenteditable`s that behaved like the Brave
+test page on every column measured — `AXValue` and caret offset correct, marker range
+answering, both `AXBoundsForRange` reads zero-rect. Their marker-bounds *height* was not
+re-measured before the apps were closed, so "usable" is inferred from the shared engine
+rather than observed; re-run the probe against them to confirm.
 
 ### Telegram exposes no accessible content at all
 

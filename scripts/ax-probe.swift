@@ -160,9 +160,20 @@ func probeFocusedElement() -> Probe? {
 
     // 4. WebKit marker-range family.
     if let marker = attr(element, "AXSelectedTextMarkerRange") {
-        let bounds = asRect(paramAttr(element, "AXBoundsForTextMarkerRange", marker))
         let text = asString(paramAttr(element, "AXStringForTextMarkerRange", marker))
-        probe.markerRange = "yes (bounds \(bounds != nil ? "ok" : "FAIL"), string \(text != nil ? "ok" : "FAIL"))"
+        // Report the rect's DIMENSIONS, not just whether the call answered. This is the
+        // last fallback in extractCaretRect, so "answered" is not the same as "usable":
+        // it is usable only when height > 0 (zero WIDTH is just a collapsed caret).
+        // An earlier version printed "bounds ok" for any non-nil rect and led to the
+        // wrong conclusion that Chromium composers could not be anchored at all.
+        if let rect = asRect(paramAttr(element, "AXBoundsForTextMarkerRange", marker)) {
+            probe.markerRange = rect.height > 0
+                ? String(format: "%.0fx%.0f usable", rect.width, rect.height)
+                : "zero-height"
+        } else {
+            probe.markerRange = "bounds FAIL"
+        }
+        probe.markerRange += text != nil ? " / string ok" : " / string FAIL"
     }
 
     // 5. Font via AXAttributedStringForRange.
