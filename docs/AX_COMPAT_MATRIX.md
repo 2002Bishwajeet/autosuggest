@@ -117,6 +117,7 @@ same content is compared across engines. Bounds are AX screen coordinates.
 | **Slack** composer | `AXTextArea` | len 8 | 8 | **zero-rect** | **zero-rect** | yes | (size 15 only) | no |
 | **Discord** composer | `AXTextArea` | len 25 | 25 | **zero-rect** | **zero-rect** | yes | (size 16 only) | no |
 | **Telegram** | — | no AX content exposed at all (see below) | | | | | | |
+| **AppKit** `NSSecureTextField` | `AXTextField:AXSecureTextField` | len 20 (masked) | 20 | `488,546 0x16` | `480,562 8x16` | no | FAIL | **YES** |
 | **Terminal.app** | `AXTextArea` | len 71 | 48 | zero-rect | `647,140 7x14` | no | FAIL | no |
 | **Ghostty** | `AXTextArea` | len 2286 | 0 | FAIL | FAIL | no | FAIL | no |
 
@@ -124,8 +125,8 @@ same content is compared across engines. Bounds are AX screen coordinates.
 
 | App | Why |
 |---|---|
-| A native (non-web) password field | The safety-critical column. Verified in Safari, Brave and Firefox only; no native `AXSecureTextField` has been probed. |
-| Xcode | Not probed. |
+| Xcode | Not probed. Low value for now: it is in `codingBundleIDs`, so `PolicyEngine` blocks suggestions there regardless. |
+| 1Password, Bitwarden, KeePassXC, LastPass | Blocked by bundle ID, so their subrole behaviour is untested. |
 | Chrome, Edge, Arc, Signal, Obsidian, Notion | Not installed on the probe machine. |
 
 Composer rows were collected by locating each app's text element in its AX tree and
@@ -208,14 +209,27 @@ by `PolicyEngineTests.testTerminalBundlesAreExcluded`.
 
 ### Secure-field detection holds everywhere it was tested
 
-No safety finding **so far**. `AXSubrole == AXSecureTextField` was reported correctly for
-`<input type=password>` in Safari, Brave **and** Firefox.
+No safety finding. `AXSubrole == AXSecureTextField` is reported correctly for
+`<input type=password>` in Safari, Brave **and** Firefox, and for a native AppKit
+`NSSecureTextField`.
 
-This is the one column where a wrong answer is a security bug rather than a missing
-feature, and it has only been verified in browsers. **No native `AXSecureTextField` has
-been probed**, and neither have the password managers already on the blocklist. Until a
-native secure field is measured, treat "secure-field suppression works" as verified for web
-content only.
+The native case was measured with a purpose-built harness (`NSSecureTextField` holding a
+known sentinel) rather than a real credential, so the leak question could be answered
+directly instead of inferred:
+
+- `AXValue` returns a string of the **correct length** whose characters are all the
+  private-use glyph `U+F79A` — Apple's mask. The plaintext does **not** appear.
+- `AXSelectedText` and `AXStringForRange` both return nil on the secure field.
+
+So the field's **length** is observable through AX but its **contents** are not. That is an
+acceptable exposure: `PolicyEngine.shouldSuggest` rejects on `isSecureField` before any
+suggestion is requested, and nothing on that path logs or persists field text
+(`CLAUDE.md` privacy invariant).
+
+Still unverified: the password managers already on `blacklistedBundleIDs` (1Password,
+Bitwarden, KeePassXC, LastPass) are blocked by bundle ID and were not probed, so whether
+*their* fields self-report as secure is unknown — the bundle-ID block is what protects
+them, not the subrole check.
 
 ### Firefox reports `AXUnknown` as the subrole
 
