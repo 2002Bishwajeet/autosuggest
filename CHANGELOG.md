@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.7.3 — 2026-07-26
+
+Accessibility compatibility. Findings from reverse-engineering how each app
+actually exposes its text to the Accessibility API. (#30)
+
+### Fixed
+- **Ghost text now matches the font of the field you're typing in.** The font was
+  being read from an attribute no macOS app populates, so every suggestion fell
+  back to a guess based on caret height. It is now read from the attribute apps
+  really use, and matches in TextEdit, Notes, Mail, WhatsApp and web pages.
+- **No more suggestions in terminals.** Terminal.app, Ghostty, iTerm2, kitty,
+  Alacritty, WezTerm and Warp are excluded. A terminal looks like an editable
+  text field to the Accessibility API, but the text is a shell prompt — so
+  accepting a suggestion typed it onto your command line.
+- **Suggestions no longer go silent when the system-wide accessibility read
+  fails.** AutoSuggest now falls back to reading focus from the frontmost app
+  directly, instead of giving up and producing nothing on every keystroke.
+
+### Known limitations
+- **Chromium-based apps cannot show inline ghost text in rich composers.** Slack,
+  Discord and Chromium browsers report no caret position for `contenteditable`
+  fields, so there is nowhere to anchor the overlay. Safari and Firefox are
+  unaffected. Documented in `docs/AX_COMPAT_MATRIX.md`.
+- **Telegram is unsupported.** It exposes no accessible text content at all.
+
+### Internal
+- `docs/AX_COMPAT_MATRIX.md` records the measured accessibility behaviour of 29
+  text surfaces across 14 apps, and `scripts/ax-probe.swift` reproduces it.
+  Secure-field suppression is verified for web *and* native password fields.
+
 ## v0.7.2 — 2026-07-25
 
 Suggestion quality.
