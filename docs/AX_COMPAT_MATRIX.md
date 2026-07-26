@@ -109,7 +109,14 @@ same content is compared across engines. Bounds are AX screen coordinates.
 | **VS Code** editor (Monaco) | `AXTextArea` | len 50 | 50 | **zero-rect** | **zero-rect** | yes | (size 12 only) | no |
 | **VS Code** quick-open | `AXStaticText` | len 19 | 0 | zero-rect | FAIL | yes | (size 13 only) | no |
 | **Antigravity** editor | `AXWebArea` | len 0 | 0 | zero-rect | FAIL | yes | (size 16 only) | no |
+| **Notes** note body | `AXTextArea` | len 395 | 394 | `657,613 0x16` | `651,629 7x16` | no | .AppleSystemUIFont 13 | no |
+| **Mail** subject | `AXTextField` | len 5 | 5 | `270,174 0x16` | `262,190 8x16` | no | .AppleSystemUIFont 13 | no |
+| **Mail** compose body | `AXWebArea` | FAIL | FAIL | FAIL | FAIL | yes (bounds ok, string ok) | FAIL | no |
 | **Messages** composer (empty) | `AXTextField` | FAIL | 0 | `614,766 0x16` | FAIL | no | FAIL | no |
+| **WhatsApp** composer | `AXTextArea` | len 16 | 16 | `604,848 0x17` | `596,848 9x17` | no | .SFNS-Regular 13 | no |
+| **Slack** composer | `AXTextArea` | len 8 | 8 | **zero-rect** | **zero-rect** | yes | (size 15 only) | no |
+| **Discord** composer | `AXTextArea` | len 25 | 25 | **zero-rect** | **zero-rect** | yes | (size 16 only) | no |
+| **Telegram** | — | no AX content exposed at all (see below) | | | | | | |
 | **Terminal.app** | `AXTextArea` | len 71 | 48 | zero-rect | `647,140 7x14` | no | FAIL | no |
 | **Ghostty** | `AXTextArea` | len 2286 | 0 | FAIL | FAIL | no | FAIL | no |
 
@@ -117,14 +124,14 @@ same content is compared across engines. Bounds are AX screen coordinates.
 
 | App | Why |
 |---|---|
-| Notes, Mail | Focus landed on `AXTable` (note/message list). The compose surface needs a human click — run watch mode. |
-| Slack, Discord, WhatsApp, Telegram | Focus landed on `AXGroup:AXApplicationDialog` / `AXWebArea` root / `AXButton` / `AXWindow`. Composers need a human click; blind-clicking a live chat app risks hitting a channel, link or message action. |
+| A native (non-web) password field | The safety-critical column. Verified in Safari, Brave and Firefox only; no native `AXSecureTextField` has been probed. |
 | Xcode | Not probed. |
 | Chrome, Edge, Arc, Signal, Obsidian, Notion | Not installed on the probe machine. |
 
-Slack and Discord *did* return a reachable, font-carrying AX tree after the
-`AXManualAccessibility` ping, so the unlock itself works there — only the focused
-element was wrong.
+Composer rows were collected by locating each app's text element in its AX tree and
+reading it in place, rather than clicking at guessed coordinates. `AXFocusedUIElement`
+alone is not enough on these apps: activating Slack, Discord, Notes or Mail resolves focus
+to a list, dialog or `AXWebArea` root, and only a tree walk finds the real composer.
 
 ## Findings
 
@@ -161,8 +168,35 @@ Consequence: in Chromium, ghost text cannot be anchored in rich composers. Conte
 readable, so the suggestion is generated and then has nowhere to draw. The renderer must
 treat zero-rect as "do not draw" rather than drawing at the origin.
 
+**Confirmed in production, not just on the test page.** The Slack and Discord message
+composers are Electron contenteditables and behave identically: `AXValue` and the caret
+offset are correct (len 8 / len 25, caret at the end), the marker range answers, and both
+`AXBoundsForRange` reads come back `zero-rect`. These are two of the highest-traffic
+targets in #30, so the zero-rect case is the norm for chat, not an edge case.
+
 The Chromium omnibox is also zero-rect (and Safari's address bar is a plain `AXTextField`
 whose role does not contain "url", so `PolicyEngine`'s URL check does not catch it by role).
+
+### Telegram exposes no accessible content at all
+
+Walking Telegram's AX tree returns 214 nodes: 189 `AXMenuItem`, 15 `AXMenu`, 6
+`AXMenuBarItem`, 2 `AXMenuBar`, 1 `AXApplication` and 1 `AXWindow`. The window has **no
+children** — not an empty text field, not a group, nothing. There is no text surface to
+read and no caret to anchor to, so Telegram is unsupported and nothing in the app can
+change that from our side.
+
+Worth distinguishing from the Chromium case: Slack and Discord expose text we cannot
+*position*; Telegram exposes no text at all.
+
+### Mail's compose body is reachable only through the marker range
+
+Focus in a Mail compose window resolves to an `AXWebArea` whose `AXValue` and
+`AXSelectedTextRange` both fail. The WebKit `AXSelectedTextMarkerRange` family does answer
+(bounds and string both resolve), which is exactly what `extractTextFromSelectedMarkerRange`
+and `boundsForSelectedMarkerRange` exist for — this is the first measured confirmation that
+those fallbacks carry a real app rather than being defensive dead code.
+
+Mail's subject line is an ordinary `AXTextField` and works on the primary path.
 
 ### Terminals expose a shell prompt as a text field (blocklisted)
 
@@ -174,9 +208,14 @@ by `PolicyEngineTests.testTerminalBundlesAreExcluded`.
 
 ### Secure-field detection holds everywhere it was tested
 
-No safety finding. `AXSubrole == AXSecureTextField` was reported correctly for
-`<input type=password>` in Safari, Brave **and** Firefox. The chat and password-manager
-surfaces have not been probed yet — that check remains open.
+No safety finding **so far**. `AXSubrole == AXSecureTextField` was reported correctly for
+`<input type=password>` in Safari, Brave **and** Firefox.
+
+This is the one column where a wrong answer is a security bug rather than a missing
+feature, and it has only been verified in browsers. **No native `AXSecureTextField` has
+been probed**, and neither have the password managers already on the blocklist. Until a
+native secure field is measured, treat "secure-field suppression works" as verified for web
+content only.
 
 ### Firefox reports `AXUnknown` as the subrole
 
