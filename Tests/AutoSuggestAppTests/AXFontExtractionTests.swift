@@ -26,6 +26,75 @@ final class AXFontExtractionTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(extracted).pointSize, 21, accuracy: 0.01)
     }
 
+    // MARK: - AXFont dictionary (what real apps actually return)
+
+    /// Probed via `scripts/ax-probe.swift` (see docs/AX_COMPAT_MATRIX.md): TextEdit,
+    /// Safari, Brave and Firefox all return the font under the AX-native `AXFont`
+    /// key as a *dictionary*, never as an NSFont/CTFont. Neither `.font` nor
+    /// `kCTFontAttributeName` is ever populated, so those paths alone yield nil in
+    /// production and the overlay silently falls back to the caret-height guess.
+    func testFontFromAXFontDictionary() throws {
+        // Exactly the payload Safari returns for a 16px Helvetica field.
+        let axFont: [String: Any] = [
+            "AXFontName": "Helvetica",
+            "AXFontFamily": "Helvetica",
+            "AXFontSize": 16,
+        ]
+        let attributed = NSAttributedString(
+            string: "hello",
+            attributes: [NSAttributedString.Key("AXFont"): axFont]
+        )
+
+        let extracted = try XCTUnwrap(AXFontExtraction.font(from: attributed))
+        XCTAssertEqual(extracted.pointSize, 16, accuracy: 0.01)
+        XCTAssertEqual(extracted.familyName, "Helvetica")
+    }
+
+    /// TextEdit's payload: a PostScript name with a hyphenated style.
+    func testFontFromAXFontDictionaryResolvesPostScriptName() throws {
+        let axFont: [String: Any] = [
+            "AXFontName": "Menlo-Regular",
+            "AXFontFamily": "Menlo",
+            "AXFontSize": 11,
+            "AXVisibleName": "Menlo Regular",
+        ]
+        let attributed = NSAttributedString(
+            string: "code()",
+            attributes: [NSAttributedString.Key("AXFont"): axFont]
+        )
+
+        let extracted = try XCTUnwrap(AXFontExtraction.font(from: attributed))
+        XCTAssertEqual(extracted.pointSize, 11, accuracy: 0.01)
+        XCTAssertEqual(extracted.familyName, "Menlo")
+    }
+
+    /// An unresolvable face still carries a usable size — size-correct beats nil,
+    /// because the overlay's whole purpose for the font is line metrics.
+    func testFontFromAXFontDictionaryFallsBackToSystemFontForUnknownFace() throws {
+        let axFont: [String: Any] = [
+            "AXFontName": "NoSuchFontFace-Ultra",
+            "AXFontSize": 13,
+        ]
+        let attributed = NSAttributedString(
+            string: "x",
+            attributes: [NSAttributedString.Key("AXFont"): axFont]
+        )
+
+        let extracted = try XCTUnwrap(AXFontExtraction.font(from: attributed))
+        XCTAssertEqual(extracted.pointSize, 13, accuracy: 0.01)
+    }
+
+    /// No usable size → nil, so the caller uses the caret-height heuristic rather
+    /// than rendering ghost text at an invented size.
+    func testFontFromAXFontDictionaryWithoutSizeReturnsNil() {
+        let axFont: [String: Any] = ["AXFontName": "Helvetica"]
+        let attributed = NSAttributedString(
+            string: "x",
+            attributes: [NSAttributedString.Key("AXFont"): axFont]
+        )
+        XCTAssertNil(AXFontExtraction.font(from: attributed))
+    }
+
     func testFontAbsentReturnsNil() {
         // No font attribute at all → caller must fall back to the heuristic.
         let attributed = NSAttributedString(
